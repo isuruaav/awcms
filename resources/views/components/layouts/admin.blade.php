@@ -1,5 +1,5 @@
 @props([
-    'title' => 'AWCMS',
+    'title' => 'Dashboard',
 ])
 
 <!DOCTYPE html>
@@ -20,7 +20,9 @@
         content="{{ csrf_token() }}"
     >
 
-    <title>{{ $title }} | {{ config('app.name', 'AWCMS') }}</title>
+    <title>
+        {{ $title }} | {{ config('awcms.name', 'AWCMS') }}
+    </title>
 
     @vite([
         'resources/css/app.css',
@@ -30,16 +32,82 @@
     @livewireStyles
 </head>
 
-<body class="min-h-full bg-zinc-100 text-zinc-950 antialiased">
-    <div class="min-h-screen lg:flex">
+<body
+    class="min-h-full bg-zinc-100 text-zinc-950 antialiased"
+    x-data="{ sidebarOpen: false }"
+>
+    {{-- Mobile overlay --}}
+    <div
+        x-cloak
+        x-show="sidebarOpen"
+        x-transition.opacity
+        class="fixed inset-0 z-40 bg-zinc-950/70 lg:hidden"
+        @click="sidebarOpen = false"
+    ></div>
 
-        {{-- Sidebar --}}
-        <aside
-            class="border-b border-zinc-200 bg-zinc-950 text-white
-                   lg:min-h-screen lg:w-72 lg:border-b-0
-                   lg:border-r lg:border-zinc-800"
+    {{-- Mobile sidebar --}}
+    <aside
+        x-cloak
+        x-show="sidebarOpen"
+        x-transition:enter="transition ease-out duration-200"
+        x-transition:enter-start="-translate-x-full"
+        x-transition:enter-end="translate-x-0"
+        x-transition:leave="transition ease-in duration-150"
+        x-transition:leave-start="translate-x-0"
+        x-transition:leave-end="-translate-x-full"
+        class="fixed inset-y-0 left-0 z-50 w-72 bg-zinc-950
+               text-white shadow-2xl lg:hidden"
+    >
+        <div
+            class="flex h-20 items-center justify-between
+                   border-b border-zinc-800 px-5"
         >
-            <div class="flex h-20 items-center px-6">
+            <a
+                href="{{ route('admin.dashboard') }}"
+                class="flex items-center gap-3"
+            >
+                <div
+                    class="flex size-10 items-center justify-center
+                           rounded-xl bg-emerald-600 font-bold"
+                >
+                    A
+                </div>
+
+                <div>
+                    <p class="font-bold">
+                        {{ config('awcms.name', 'AWCMS') }}
+                    </p>
+
+                    <p class="text-xs text-zinc-400">
+                        Administration
+                    </p>
+                </div>
+            </a>
+
+            <button
+                type="button"
+                class="rounded-lg p-2 text-zinc-400
+                       hover:bg-zinc-800 hover:text-white"
+                @click="sidebarOpen = false"
+                aria-label="Close navigation"
+            >
+                ✕
+            </button>
+        </div>
+
+        @include('admin.partials.sidebar-navigation')
+    </aside>
+
+    <div class="min-h-screen lg:flex">
+        {{-- Desktop sidebar --}}
+        <aside
+            class="hidden min-h-screen w-72 shrink-0
+                   bg-zinc-950 text-white lg:block"
+        >
+            <div
+                class="flex h-20 items-center
+                       border-b border-zinc-800 px-6"
+            >
                 <a
                     href="{{ route('admin.dashboard') }}"
                     class="flex items-center gap-3"
@@ -53,7 +121,7 @@
 
                     <div>
                         <p class="font-bold tracking-wide">
-                            AWCMS
+                            {{ config('awcms.name', 'AWCMS') }}
                         </p>
 
                         <p class="text-xs text-zinc-400">
@@ -63,69 +131,60 @@
                 </a>
             </div>
 
-            <nav class="space-y-1 px-4 pb-6">
-                <a
-                    href="{{ route('admin.dashboard') }}"
-                    class="flex items-center rounded-xl px-4 py-3
-                           text-sm font-medium transition
-                           {{ request()->routeIs('admin.dashboard')
-                                ? 'bg-emerald-600 text-white'
-                                : 'text-zinc-300 hover:bg-zinc-800 hover:text-white' }}"
-                >
-                    Dashboard
-                </a>
-
-                {{-- These modules will be connected later. --}}
-                <div class="px-4 pt-6 text-xs font-semibold uppercase tracking-wider text-zinc-500">
-                    Content Management
-                </div>
-
-                <span class="block rounded-xl px-4 py-3 text-sm text-zinc-500">
-                    Pages
-                </span>
-
-                <span class="block rounded-xl px-4 py-3 text-sm text-zinc-500">
-                    News
-                </span>
-
-                <span class="block rounded-xl px-4 py-3 text-sm text-zinc-500">
-                    Galleries
-                </span>
-
-                <span class="block rounded-xl px-4 py-3 text-sm text-zinc-500">
-                    Documents
-                </span>
-            </nav>
+            @include('admin.partials.sidebar-navigation')
         </aside>
 
-        {{-- Main area --}}
+        {{-- Main content area --}}
         <div class="min-w-0 flex-1">
-
-            {{-- Top navigation --}}
             <header
-                class="flex min-h-20 items-center justify-between
-                       border-b border-zinc-200 bg-white px-4
-                       shadow-sm sm:px-6 lg:px-8"
+                class="sticky top-0 z-30 flex min-h-20
+                       items-center justify-between
+                       border-b border-zinc-200 bg-white/95
+                       px-4 shadow-sm backdrop-blur
+                       sm:px-6 lg:px-8"
             >
-                <div>
-                    <p class="text-sm text-zinc-500">
-                        Secure Administration Panel
-                    </p>
+                <div class="flex min-w-0 items-center gap-3">
+                    <button
+                        type="button"
+                        class="rounded-xl border border-zinc-200
+                               bg-white p-2.5 text-zinc-700
+                               hover:bg-zinc-100 lg:hidden"
+                        @click="sidebarOpen = true"
+                        aria-label="Open navigation"
+                    >
+                        ☰
+                    </button>
 
-                    <h1 class="font-semibold text-zinc-950">
-                        {{ $title }}
-                    </h1>
+                    <div class="min-w-0">
+                        <p class="text-xs font-medium text-zinc-500">
+                            Secure Administration Panel
+                        </p>
+
+                        <p
+                            class="truncate font-semibold text-zinc-950"
+                        >
+                            {{ $title }}
+                        </p>
+                    </div>
                 </div>
 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-3">
                     <div class="hidden text-right sm:block">
                         <p class="text-sm font-semibold text-zinc-900">
                             {{ auth()->user()->name }}
                         </p>
 
                         <p class="text-xs text-zinc-500">
-                            {{ auth()->user()->email }}
+                            {{ auth()->user()->roles->pluck('name')->join(', ') }}
                         </p>
+                    </div>
+
+                    <div
+                        class="flex size-10 items-center justify-center
+                               rounded-full bg-emerald-100
+                               text-sm font-bold text-emerald-700"
+                    >
+                        {{ auth()->user()->initials() }}
                     </div>
 
                     <form
@@ -136,21 +195,43 @@
 
                         <button
                             type="submit"
-                            class="rounded-lg border border-zinc-300
-                                   bg-white px-4 py-2 text-sm font-medium
-                                   text-zinc-700 transition
-                                   hover:bg-zinc-100"
+                            class="rounded-xl border border-zinc-300
+                                   bg-white px-3 py-2 text-sm
+                                   font-medium text-zinc-700
+                                   transition hover:bg-zinc-100"
                         >
-                            Sign Out
+                            Logout
                         </button>
                     </form>
                 </div>
             </header>
 
-            {{-- Page content --}}
             <main class="p-4 sm:p-6 lg:p-8">
-                {{ $slot }}
+                <div class="mx-auto w-full max-w-7xl">
+                    {{ $slot }}
+                </div>
             </main>
+
+            <footer
+                class="border-t border-zinc-200 bg-white
+                       px-4 py-4 sm:px-6 lg:px-8"
+            >
+                <div
+                    class="mx-auto flex max-w-7xl flex-col
+                           gap-1 text-xs text-zinc-500
+                           sm:flex-row sm:items-center
+                           sm:justify-between"
+                >
+                    <p>
+                        © {{ now()->year }}
+                        {{ config('awcms.full_name') }}
+                    </p>
+
+                    <p>
+                        Version {{ config('awcms.version') }}
+                    </p>
+                </div>
+            </footer>
         </div>
     </div>
 
