@@ -1,16 +1,30 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 
-test('guests are redirected to the login page', function () {
-    $response = $this->get(route('dashboard'));
-    $response->assertRedirect(route('login'));
+beforeEach(function (): void {
+    $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-test('authenticated users can visit the dashboard', function () {
-    $user = User::factory()->create();
-    $this->actingAs($user);
+test('guests are redirected to the login page', function (): void {
+    $this->get(route('dashboard'))
+        ->assertRedirect(route('login'));
+});
 
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
+test('authorized users are redirected to the admin dashboard', function (): void {
+    $user = User::factory()->create([
+        'email_verified_at' => now(),
+    ]);
+
+    $user->assignRole('Super Administrator');
+
+    $this->actingAs($user)
+        ->get(route('dashboard'))
+        ->assertRedirect(route('admin.dashboard'));
+
+    $this->actingAs($user)
+        ->get(route('admin.dashboard'))
+        ->assertOk()
+        ->assertSee('AWCMS Foundation Ready');
 });
