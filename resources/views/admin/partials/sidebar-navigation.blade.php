@@ -1,17 +1,12 @@
 <nav class="space-y-1 px-4 py-6">
     @can('dashboard.view')
-        <x-admin.nav-link
-            :href="route('admin.dashboard')"
-            :active="request()->routeIs('admin.dashboard')"
-        >
+        <x-admin.nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
             Dashboard
         </x-admin.nav-link>
     @endcan
 
-    <div
-        class="px-4 pb-2 pt-6 text-xs font-semibold
-               uppercase tracking-wider text-zinc-500"
-    >
+    <div class="px-4 pb-2 pt-6 text-xs font-semibold
+               uppercase tracking-wider text-zinc-500">
         Content Management
     </div>
 
@@ -45,15 +40,13 @@
         </x-admin.nav-link>
     @endcan
 
-    <div
-        class="px-4 pb-2 pt-6 text-xs font-semibold
-               uppercase tracking-wider text-zinc-500"
-    >
+    <div class="px-4 pb-2 pt-6 text-xs font-semibold
+               uppercase tracking-wider text-zinc-500">
         Administration
     </div>
 
     @can('users.view')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.users.index')" :active="request()->routeIs('admin.users.*')">
             Users
         </x-admin.nav-link>
     @endcan
