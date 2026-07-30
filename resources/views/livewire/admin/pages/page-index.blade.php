@@ -1,8 +1,31 @@
 <div class="space-y-6">
-    <x-admin.page-header
-        title="Pages"
-        description="Create, review and publish website pages."
-    />
+  <div
+    class="flex flex-col gap-4 sm:flex-row
+           sm:items-start sm:justify-between"
+>
+    <div>
+        <h1 class="text-2xl font-bold text-zinc-950">
+            Pages
+        </h1>
+
+        <p class="mt-1 text-sm text-zinc-600">
+            Create, review and publish website pages.
+        </p>
+    </div>
+
+    @can('pages.create')
+        <a
+            href="{{ route('admin.pages.create') }}"
+            wire:navigate
+            class="inline-flex items-center justify-center
+                   rounded-xl bg-emerald-700 px-4 py-2.5
+                   text-sm font-semibold text-white
+                   shadow-sm hover:bg-emerald-800"
+        >
+            Create Page
+        </a>
+    @endcan
+</div>
 
     {{-- Filters --}}
     <section

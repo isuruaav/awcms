@@ -47,6 +47,13 @@ Route::middleware([
             )
                 ->middleware('can:pages.view')
                 ->name('pages.index');
+
+            Route::livewire(
+                '/pages/create',
+                'admin.pages.page-create',
+            )
+                ->middleware('can:pages.create')
+                ->name('pages.create');
         });
 });
 
