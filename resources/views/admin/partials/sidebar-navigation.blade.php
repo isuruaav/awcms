@@ -11,11 +11,11 @@
     </div>
 
     @can('pages.view')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.pages.index')" :active="request()->routeIs('admin.pages.*')">
             Pages
         </x-admin.nav-link>
     @endcan
-
+    
     @can('news.view')
         <x-admin.nav-link disabled>
             News
