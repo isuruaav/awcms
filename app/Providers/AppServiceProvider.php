@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use App\Livewire\Admin\AuditLogs\AuditLogIndex;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {

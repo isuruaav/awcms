@@ -40,6 +40,13 @@ Route::middleware([
             Route::get('/users/{user}/edit', UserEdit::class)
                 ->middleware('can:users.update')
                 ->name('users.edit');
+
+            Route::livewire(
+                '/audit-logs',
+                'admin.audit-logs.audit-log-index',
+            )
+                ->middleware('can:audit.view')
+                ->name('audit-logs.index');
         });
 });
 

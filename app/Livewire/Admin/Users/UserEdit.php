@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Support\UserManagementRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
@@ -54,9 +55,11 @@ final class UserEdit extends Component
         $this->userId = $user->id;
         $this->name = $user->name;
         $this->email = $user->email;
+
         $this->role = $assignedRole instanceof Role
             ? $assignedRole->name
             : '';
+
         $this->isActive = (bool) $user->is_active;
     }
 
@@ -82,6 +85,8 @@ final class UserEdit extends Component
             ? $assignedRole->name
             : null;
 
+        $nameChanged = $target->name !== $this->name;
+        $emailChanged = $target->email !== $this->email;
         $roleChanged = $currentRole !== $this->role;
 
         $statusChanged = (bool) $target->is_active
@@ -108,10 +113,15 @@ final class UserEdit extends Component
         DB::transaction(function () use (
             $actor,
             $target,
+            $currentRole,
+            $nameChanged,
+            $emailChanged,
             $roleChanged,
             $statusChanged,
         ): void {
-            $emailChanged = $target->email !== $this->email;
+            $oldName = $target->name;
+            $oldEmail = $target->email;
+            $oldStatus = (bool) $target->is_active;
 
             $attributes = [
                 'name' => $this->name,
@@ -120,10 +130,18 @@ final class UserEdit extends Component
                 'updated_by' => $actor->id,
             ];
 
+            /*
+             * An administrator-entered email address is treated as
+             * verified. Change this to null if email re-verification
+             * is required by the deployment policy.
+             */
             if ($emailChanged) {
                 $attributes['email_verified_at'] = Carbon::now();
             }
 
+            /*
+             * Rotate the remember token when disabling an account.
+             */
             if ($statusChanged && ! $this->isActive) {
                 $attributes['remember_token'] = Str::random(60);
             }
@@ -131,13 +149,73 @@ final class UserEdit extends Component
             $target->forceFill($attributes)->save();
 
             if ($roleChanged) {
-                $target->syncRoles([$this->role]);
+                $target->syncRoles([
+                    $this->role,
+                ]);
             }
 
+            /*
+             * Terminate all database sessions when the account
+             * is disabled.
+             */
             if ($statusChanged && ! $this->isActive) {
                 DB::table('sessions')
                     ->where('user_id', $target->id)
                     ->delete();
+            }
+
+            $auditLogger = app(AuditLogger::class);
+
+            if ($nameChanged || $emailChanged) {
+                $auditLogger->log(
+                    event: 'users.profile-updated',
+                    description: 'Administrator account details updated.',
+                    actor: $actor,
+                    subject: $target,
+                    oldValues: [
+                        'name' => $oldName,
+                        'email' => $oldEmail,
+                    ],
+                    newValues: [
+                        'name' => $this->name,
+                        'email' => $this->email,
+                    ],
+                );
+            }
+
+            if ($roleChanged) {
+                $auditLogger->log(
+                    event: 'users.role-changed',
+                    description: 'Administrator account role changed.',
+                    actor: $actor,
+                    subject: $target,
+                    oldValues: [
+                        'role' => $currentRole,
+                    ],
+                    newValues: [
+                        'role' => $this->role,
+                    ],
+                );
+            }
+
+            if ($statusChanged) {
+                $auditLogger->log(
+                    event: $this->isActive
+                        ? 'users.activated'
+                        : 'users.disabled',
+                    description: $this->isActive
+                        ? 'Administrator account activated.'
+                        : 'Administrator account disabled.',
+                    actor: $actor,
+                    subject: $target,
+                    oldValues: [
+                        'is_active' => $oldStatus,
+                    ],
+                    newValues: [
+                        'is_active' => $this->isActive,
+                        'sessions_terminated' => ! $this->isActive,
+                    ],
+                );
             }
         });
 
@@ -192,11 +270,35 @@ final class UserEdit extends Component
                 'updated_by' => $actor->id,
             ])->save();
 
+            /*
+             * Terminate all active database sessions.
+             */
             DB::table('sessions')
                 ->where('user_id', $target->id)
                 ->delete();
 
-            PasswordBroker::broker()->deleteToken($target);
+            /*
+             * Invalidate outstanding password reset links.
+             */
+            PasswordBroker::broker()
+                ->deleteToken($target);
+
+            /*
+             * Password values are deliberately excluded from
+             * the audit event.
+             */
+            app(AuditLogger::class)->log(
+                event: 'users.password-reset',
+                description: 'Administrator reset another user password.',
+                actor: $actor,
+                subject: $target,
+                newValues: [
+                    'sessions_terminated' => true,
+                    'password_reset_token_invalidated' => true,
+                    'passkeys_preserved' => true,
+                    'two_factor_authentication_preserved' => true,
+                ],
+            );
         });
 
         $this->reset([
@@ -260,7 +362,10 @@ final class UserEdit extends Component
 
         return view(
             'livewire.admin.users.user-edit',
-            compact('target', 'roles'),
+            compact(
+                'target',
+                'roles',
+            ),
         )->layout(
             'components.layouts.admin',
             [
