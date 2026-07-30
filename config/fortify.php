@@ -160,23 +160,23 @@ return [
     |
     */
 
-'features' => [
-    // Public registration disabled.
-    // Features::registration(),
+    'features' => [
+        // Public registration disabled.
+        // Features::registration(),
 
-    Features::resetPasswords(),
-    Features::emailVerification(),
-    Features::updateProfileInformation(),
-    Features::updatePasswords(),
+        Features::resetPasswords(),
+        Features::emailVerification(),
+        Features::updateProfileInformation(),
+        Features::updatePasswords(),
 
-    Features::twoFactorAuthentication([
-        'confirm' => true,
-        'confirmPassword' => true,
-    ]),
+        Features::twoFactorAuthentication([
+            'confirm' => true,
+            'confirmPassword' => true,
+        ]),
 
-    Features::passkeys([
-        'confirmPassword' => true,
-    ]),
-],
+        Features::passkeys([
+            'confirmPassword' => true,
+        ]),
+    ],
 
 ];

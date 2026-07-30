@@ -60,22 +60,24 @@
         "lint": [
             "pint --parallel"
         ],
+
         "lint:check": [
             "pint --parallel --test"
-        ],
-        "ci:check": [
-            "Composer\\Config::disableProcessTimeout",
-            "@test"
-        ],
-        "types:check": [
-            "phpstan analyse"
-        ],
-        "test": [
-            "@php artisan config:clear --ansi",
-            "@lint:check",
-            "@types:check",
-            "@php artisan test"
-        ],
+            ],
+            "ci:check": [
+                "Composer\\Config::disableProcessTimeout",
+                "@test"
+            ],
+    "types:check": [
+    "@php -d memory_limit=1G vendor/bin/phpstan analyse --memory-limit=1G --debug --no-progress"
+],
+            "test": [
+                "@php artisan config:clear --ansi",
+                "@lint:check",
+                "@types:check",
+                "@php artisan test"
+            ],
+
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\User;
 use Illuminate\Console\Command;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Password;
@@ -72,7 +73,7 @@ class CreateSuperAdministrator extends Command
 
             $user->name = $data['name'];
             $user->password = $data['password'];
-            $user->email_verified_at ??= now();
+            $user->email_verified_at = Carbon::now();
             $user->save();
 
             $role = Role::findOrCreate('Super Administrator', 'web');

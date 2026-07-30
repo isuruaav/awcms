@@ -6,8 +6,10 @@ Route::view('/', 'welcome')->name('home');
 
 Route::middleware([
     'auth',
+    'active',
     'verified',
 ])->group(function (): void {
+
     Route::redirect('/dashboard', '/admin')
         ->name('dashboard');
 
