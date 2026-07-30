@@ -95,7 +95,7 @@ final class PageCreate extends Component
                         ? $this->content
                         : null,
                     'blocks' => null,
-                    'status' => PageStatus::Draft,
+                    'status' => PageStatus::Draft->value,
                     'created_by' => $actor->id,
                     'updated_by' => $actor->id,
                     'approved_by' => null,
@@ -105,10 +105,6 @@ final class PageCreate extends Component
                     'archived_at' => null,
                 ]);
 
-                /*
-                 * Do not write the complete page body to audit logs.
-                 * Audit metadata only.
-                 */
                 app(AuditLogger::class)->log(
                     event: 'pages.created',
                     description: 'Website page created as a draft.',
@@ -117,7 +113,7 @@ final class PageCreate extends Component
                     newValues: [
                         'title' => $page->title,
                         'slug' => $page->slug,
-                        'status' => $page->status->value,
+                        'status' => PageStatus::Draft->value,
                         'excerpt_present' => $page->excerpt !== null,
                         'content_present' => $page->content !== null,
                     ],

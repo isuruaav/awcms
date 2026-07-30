@@ -1,11 +1,9 @@
 <?php
 
-use App\Livewire\Admin\Users\UserCreate;
-use App\Livewire\Admin\Users\UserEdit;
-use App\Livewire\Admin\Users\UserIndex;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::view('/', 'welcome')
+    ->name('home');
 
 Route::middleware([
     'auth',
@@ -22,25 +20,36 @@ Route::middleware([
             Route::view('/', 'admin.dashboard')
                 ->name('dashboard');
 
-            Route::get('/users', UserIndex::class)
+            /*
+             * User Management
+             */
+            Route::livewire(
+                '/users',
+                'admin.users.user-index',
+            )
                 ->middleware('can:users.view')
                 ->name('users.index');
 
-            Route::get('/users', UserIndex::class)
-                ->middleware('can:users.view')
-                ->name('users.index');
-
-            Route::get('/users/create', UserCreate::class)
+            Route::livewire(
+                '/users/create',
+                'admin.users.user-create',
+            )
                 ->middleware([
                     'can:users.create',
                     'can:users.assign-role',
                 ])
                 ->name('users.create');
 
-            Route::get('/users/{user}/edit', UserEdit::class)
+            Route::livewire(
+                '/users/{user}/edit',
+                'admin.users.user-edit',
+            )
                 ->middleware('can:users.update')
                 ->name('users.edit');
 
+            /*
+             * Pages
+             */
             Route::livewire(
                 '/pages',
                 'admin.pages.page-index',
@@ -54,6 +63,16 @@ Route::middleware([
             )
                 ->middleware('can:pages.create')
                 ->name('pages.create');
+
+            /*
+             * Audit Logs
+             */
+            Route::livewire(
+                '/audit-logs',
+                'admin.audit-logs.audit-log-index',
+            )
+                ->middleware('can:audit.view')
+                ->name('audit-logs.index');
         });
 });
 

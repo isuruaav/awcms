@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Support\UserManagementRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -71,20 +72,19 @@ final class UserIndex extends Component
 
     public function updatedRole(): void
     {
+        $this->normaliseRole();
         $this->resetPage();
     }
 
     public function updatedStatus(): void
     {
+        $this->normaliseStatus();
         $this->resetPage();
     }
 
     public function updatedPerPage(): void
     {
-        if (! in_array($this->perPage, self::PER_PAGE_OPTIONS, true)) {
-            $this->perPage = 15;
-        }
-
+        $this->normalisePerPage();
         $this->resetPage();
     }
 
@@ -125,7 +125,10 @@ final class UserIndex extends Component
 
         $actor = Auth::user();
 
-        abort_unless($actor instanceof User, 403);
+        abort_unless(
+            $actor instanceof User,
+            403,
+        );
 
         $target = User::query()
             ->with('roles')
@@ -136,7 +139,8 @@ final class UserIndex extends Component
             $target,
         );
 
-        $newStatus = ! $target->is_active;
+        $oldStatus = (bool) $target->is_active;
+        $newStatus = ! $oldStatus;
 
         UserManagementRules::ensureStatusChangeAllowed(
             $actor,
@@ -144,19 +148,59 @@ final class UserIndex extends Component
             $newStatus,
         );
 
-        $target->forceFill([
-            'is_active' => $newStatus,
-            'updated_by' => $actor->id,
-            'remember_token' => $newStatus
-                ? $target->getRememberToken()
-                : Str::random(60),
-        ])->save();
+        DB::transaction(function () use (
+            $actor,
+            $target,
+            $oldStatus,
+            $newStatus,
+        ): void {
+            $attributes = [
+                'is_active' => $newStatus,
+                'updated_by' => $actor->id,
+            ];
 
-        if (! $newStatus) {
-            DB::table('sessions')
-                ->where('user_id', $target->id)
-                ->delete();
-        }
+            /*
+             * Rotate the remember token when disabling an account.
+             * This invalidates remembered browser authentication.
+             */
+            if (! $newStatus) {
+                $attributes['remember_token'] = Str::random(60);
+            }
+
+            $target->forceFill($attributes)->save();
+
+            /*
+             * Remove all database-backed sessions when the account
+             * is disabled.
+             */
+            if (! $newStatus) {
+                DB::table('sessions')
+                    ->where('user_id', $target->id)
+                    ->delete();
+            }
+
+            app(AuditLogger::class)->log(
+                event: $newStatus
+                    ? 'users.activated'
+                    : 'users.disabled',
+
+                description: $newStatus
+                    ? 'Administrator account activated.'
+                    : 'Administrator account disabled.',
+
+                actor: $actor,
+                subject: $target,
+
+                oldValues: [
+                    'is_active' => $oldStatus,
+                ],
+
+                newValues: [
+                    'is_active' => $newStatus,
+                    'sessions_terminated' => ! $newStatus,
+                ],
+            );
+        });
 
         session()->flash(
             'status',
@@ -183,7 +227,11 @@ final class UserIndex extends Component
                 function (Builder $query) use ($search): void {
                     $query
                         ->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere(
+                            'email',
+                            'like',
+                            "%{$search}%",
+                        );
                 },
             );
         }
@@ -217,7 +265,9 @@ final class UserIndex extends Component
             compact('users', 'roles'),
         )->layout(
             'components.layouts.admin',
-            ['title' => 'Users'],
+            [
+                'title' => 'Users',
+            ],
         );
     }
 
@@ -226,12 +276,54 @@ final class UserIndex extends Component
         $this->sortField = $this->normalisedSortField();
         $this->sortDirection = $this->normalisedSortDirection();
 
-        if (! in_array($this->perPage, self::PER_PAGE_OPTIONS, true)) {
+        $this->normalisePerPage();
+        $this->normaliseStatus();
+        $this->normaliseRole();
+    }
+
+    private function normalisePerPage(): void
+    {
+        if (
+            ! in_array(
+                $this->perPage,
+                self::PER_PAGE_OPTIONS,
+                true,
+            )
+        ) {
             $this->perPage = 15;
         }
+    }
 
-        if (! in_array($this->status, ['all', 'active', 'disabled'], true)) {
+    private function normaliseStatus(): void
+    {
+        if (
+            ! in_array(
+                $this->status,
+                [
+                    'all',
+                    'active',
+                    'disabled',
+                ],
+                true,
+            )
+        ) {
             $this->status = 'all';
+        }
+    }
+
+    private function normaliseRole(): void
+    {
+        if ($this->role === 'all') {
+            return;
+        }
+
+        $roleExists = Role::query()
+            ->where('guard_name', 'web')
+            ->where('name', $this->role)
+            ->exists();
+
+        if (! $roleExists) {
+            $this->role = 'all';
         }
     }
 

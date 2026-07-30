@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Users;
 
 use App\Models\User;
+use App\Services\AuditLogger;
 use App\Support\UserManagementRules;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Carbon;
@@ -59,11 +60,35 @@ final class UserCreate extends Component
                 'updated_by' => $actor->id,
             ]);
 
+            /*
+             * Administrator-created accounts are considered verified.
+             * Change this to null if deployments require the new user
+             * to verify their email address before accessing AWCMS.
+             */
             $user->forceFill([
                 'email_verified_at' => Carbon::now(),
             ])->saveQuietly();
 
-            $user->syncRoles([$this->role]);
+            $user->syncRoles([
+                $this->role,
+            ]);
+
+            /*
+             * The password is deliberately excluded from audit values.
+             */
+            app(AuditLogger::class)->log(
+                event: 'users.created',
+                description: 'Administrator account created.',
+                actor: $actor,
+                subject: $user,
+                newValues: [
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $this->role,
+                    'is_active' => (bool) $user->is_active,
+                    'email_verified' => $user->email_verified_at !== null,
+                ],
+            );
 
             return $user;
         });
@@ -75,7 +100,9 @@ final class UserCreate extends Component
 
         $this->redirectRoute(
             'admin.users.edit',
-            ['user' => $user->id],
+            [
+                'user' => $user->id,
+            ],
             navigate: true,
         );
     }
@@ -139,7 +166,9 @@ final class UserCreate extends Component
             compact('roles'),
         )->layout(
             'components.layouts.admin',
-            ['title' => 'Create User'],
+            [
+                'title' => 'Create User',
+            ],
         );
     }
 
@@ -147,9 +176,10 @@ final class UserCreate extends Component
     {
         $actor = Auth::user();
 
-        if (! $actor instanceof User) {
-            abort(403);
-        }
+        abort_unless(
+            $actor instanceof User,
+            403,
+        );
 
         return $actor;
     }
@@ -157,7 +187,11 @@ final class UserCreate extends Component
     private function normaliseInput(): void
     {
         $this->name = trim($this->name);
-        $this->email = mb_strtolower(trim($this->email));
+
+        $this->email = mb_strtolower(
+            trim($this->email),
+        );
+
         $this->role = trim($this->role);
     }
 }

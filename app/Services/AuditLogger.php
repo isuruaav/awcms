@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 final class AuditLogger
 {
     /**
+     * These values must never be written to an audit log.
+     *
      * @var list<string>
      */
     private const SENSITIVE_KEYS = [
@@ -46,9 +48,11 @@ final class AuditLogger
 
         $subjectId = is_int($subjectKey)
             ? $subjectKey
-            : (is_numeric($subjectKey)
-                ? (int) $subjectKey
-                : null);
+            : (
+                is_numeric($subjectKey)
+                    ? (int) $subjectKey
+                    : null
+            );
 
         $userAgent = $request?->userAgent();
 
@@ -60,6 +64,11 @@ final class AuditLogger
             ),
 
             'actor_id' => $actor?->id,
+
+            /*
+             * Actor details remain available even if the user
+             * account is later deleted.
+             */
             'actor_name' => $actor?->name,
             'actor_email' => $actor?->email,
 
@@ -83,7 +92,11 @@ final class AuditLogger
             'ip_address' => $request?->ip(),
 
             'user_agent' => is_string($userAgent)
-                ? Str::limit($userAgent, 1000, '')
+                ? Str::limit(
+                    $userAgent,
+                    1000,
+                    '',
+                )
                 : null,
 
             'request_method' => $request?->method(),
@@ -157,7 +170,13 @@ final class AuditLogger
 
     private function isSensitiveKey(string $key): bool
     {
-        if (in_array($key, self::SENSITIVE_KEYS, true)) {
+        if (
+            in_array(
+                $key,
+                self::SENSITIVE_KEYS,
+                true,
+            )
+        ) {
             return true;
         }
 

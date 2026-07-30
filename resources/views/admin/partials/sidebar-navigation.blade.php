@@ -70,7 +70,7 @@
     @endcan
 
     @can('audit.view')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.audit-logs.index')" :active="request()->routeIs('admin.audit-logs.*')">
             Activity Logs
         </x-admin.nav-link>
     @endcan
