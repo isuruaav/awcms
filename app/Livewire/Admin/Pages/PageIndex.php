@@ -4,8 +4,11 @@ namespace App\Livewire\Admin\Pages;
 
 use App\Enums\PageStatus;
 use App\Models\Page;
+use App\Models\User;
+use App\Services\PageWorkflowService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -105,6 +108,81 @@ final class PageIndex extends Component
         $this->sortDirection = 'asc';
 
         $this->resetPage();
+    }
+
+    public function submitPage(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+
+        app(PageWorkflowService::class)->submit(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$page->title} was submitted for review.",
+        );
+    }
+
+    public function approvePage(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+
+        app(PageWorkflowService::class)->approve(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$page->title} was approved.",
+        );
+    }
+
+    public function publishPage(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+
+        app(PageWorkflowService::class)->publish(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$page->title} was published.",
+        );
+    }
+
+    public function archivePage(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+
+        app(PageWorkflowService::class)->archive(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$page->title} was archived.",
+        );
+    }
+
+    public function returnPageToDraft(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+
+        app(PageWorkflowService::class)->returnToDraft(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$page->title} was returned to Draft.",
+        );
     }
 
     public function render(): View
@@ -230,5 +308,17 @@ final class PageIndex extends Component
         return $this->sortDirection === 'asc'
             ? 'asc'
             : 'desc';
+    }
+
+    private function actor(): User
+    {
+        $actor = Auth::user();
+
+        abort_unless(
+            $actor instanceof User,
+            403,
+        );
+
+        return $actor;
     }
 }

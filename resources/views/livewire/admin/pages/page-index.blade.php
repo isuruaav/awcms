@@ -1,8 +1,6 @@
 <div class="space-y-6">
-    <div
-        class="flex flex-col gap-4 sm:flex-row
-               sm:items-start sm:justify-between"
-    >
+    <div class="flex flex-col gap-4 sm:flex-row
+               sm:items-start sm:justify-between">
         <div>
             <h1 class="text-2xl font-bold text-zinc-950">
                 Pages
@@ -14,14 +12,11 @@
         </div>
 
         @can('pages.create')
-            <a
-                href="{{ route('admin.pages.create') }}"
-                wire:navigate
+            <a href="{{ route('admin.pages.create') }}" wire:navigate
                 class="inline-flex items-center justify-center
                        rounded-xl bg-emerald-700 px-4 py-2.5
                        text-sm font-semibold text-white
-                       shadow-sm hover:bg-emerald-800"
-            >
+                       shadow-sm hover:bg-emerald-800">
                 Create Page
             </a>
         @endcan
@@ -31,55 +26,49 @@
         <div
             class="rounded-xl border border-emerald-200
                    bg-emerald-50 px-4 py-3 text-sm
-                   font-medium text-emerald-800"
-        >
+                   font-medium text-emerald-800">
             {{ session('status') }}
         </div>
     @endif
 
+
+
+    @error('workflow')
+        <div
+            class="rounded-xl border border-red-200
+               bg-red-50 px-4 py-3 text-sm
+               font-medium text-red-800">
+            {{ $message }}
+        </div>
+    @enderror
     {{-- Filters --}}
-    <section
-        class="rounded-2xl border border-zinc-200
-               bg-white p-5 shadow-sm"
-    >
+    <section class="rounded-2xl border border-zinc-200
+               bg-white p-5 shadow-sm">
         <div class="grid gap-4 md:grid-cols-3">
             <div class="md:col-span-2">
-                <label
-                    for="page-search"
-                    class="mb-2 block text-sm font-medium text-zinc-700"
-                >
+                <label for="page-search" class="mb-2 block text-sm font-medium text-zinc-700">
                     Search pages
                 </label>
 
-                <input
-                    id="page-search"
-                    type="search"
-                    wire:model.live.debounce.300ms="search"
+                <input id="page-search" type="search" wire:model.live.debounce.300ms="search"
                     placeholder="Search by title, slug or excerpt..."
                     class="w-full rounded-xl border border-zinc-300
                            bg-white px-4 py-2.5 text-sm outline-none
                            placeholder:text-zinc-400
                            focus:border-emerald-500
-                           focus:ring-4 focus:ring-emerald-500/10"
-                >
+                           focus:ring-4 focus:ring-emerald-500/10">
             </div>
 
             <div>
-                <label
-                    for="page-status"
-                    class="mb-2 block text-sm font-medium text-zinc-700"
-                >
+                <label for="page-status" class="mb-2 block text-sm font-medium text-zinc-700">
                     Workflow status
                 </label>
 
-                <select
-                    id="page-status"
-                    wire:model.live="status"
+                <select id="page-status" wire:model.live="status"
                     class="w-full rounded-xl border border-zinc-300
                            bg-white px-4 py-2.5 text-sm outline-none
                            focus:border-emerald-500
-                           focus:ring-4 focus:ring-emerald-500/10"
-                >
+                           focus:ring-4 focus:ring-emerald-500/10">
                     <option value="all">
                         All statuses
                     </option>
@@ -96,31 +85,21 @@
         <div
             class="mt-4 flex flex-col gap-3 border-t
                    border-zinc-100 pt-4 sm:flex-row
-                   sm:items-center sm:justify-between"
-        >
-            <button
-                type="button"
-                wire:click="resetFilters"
+                   sm:items-center sm:justify-between">
+            <button type="button" wire:click="resetFilters"
                 class="text-left text-sm font-semibold
-                       text-emerald-700 hover:text-emerald-800"
-            >
+                       text-emerald-700 hover:text-emerald-800">
                 Reset filters
             </button>
 
             <div class="flex items-center gap-2">
-                <label
-                    for="pages-per-page"
-                    class="text-sm text-zinc-500"
-                >
+                <label for="pages-per-page" class="text-sm text-zinc-500">
                     Rows
                 </label>
 
-                <select
-                    id="pages-per-page"
-                    wire:model.live="perPage"
+                <select id="pages-per-page" wire:model.live="perPage"
                     class="rounded-lg border border-zinc-300
-                           bg-white px-3 py-2 text-sm"
-                >
+                           bg-white px-3 py-2 text-sm">
                     <option value="10">10</option>
                     <option value="15">15</option>
                     <option value="25">25</option>
@@ -131,22 +110,17 @@
     </section>
 
     {{-- Pages table --}}
-    <section
-        class="overflow-hidden rounded-2xl
-               border border-zinc-200 bg-white shadow-sm"
-    >
+    <section class="overflow-hidden rounded-2xl
+               border border-zinc-200 bg-white shadow-sm">
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-zinc-200">
                 <thead class="bg-zinc-50">
                     <tr>
                         <th class="px-5 py-3 text-left">
-                            <button
-                                type="button"
-                                wire:click="sort('title')"
+                            <button type="button" wire:click="sort('title')"
                                 class="text-xs font-semibold uppercase
                                        tracking-wide text-zinc-600
-                                       hover:text-zinc-900"
-                            >
+                                       hover:text-zinc-900">
                                 Title
 
                                 @if ($sortField === 'title')
@@ -156,13 +130,10 @@
                         </th>
 
                         <th class="px-5 py-3 text-left">
-                            <button
-                                type="button"
-                                wire:click="sort('status')"
+                            <button type="button" wire:click="sort('status')"
                                 class="text-xs font-semibold uppercase
                                        tracking-wide text-zinc-600
-                                       hover:text-zinc-900"
-                            >
+                                       hover:text-zinc-900">
                                 Status
 
                                 @if ($sortField === 'status')
@@ -174,19 +145,15 @@
                         <th
                             class="px-5 py-3 text-left text-xs
                                    font-semibold uppercase tracking-wide
-                                   text-zinc-600"
-                        >
+                                   text-zinc-600">
                             Author
                         </th>
 
                         <th class="px-5 py-3 text-left">
-                            <button
-                                type="button"
-                                wire:click="sort('updated_at')"
+                            <button type="button" wire:click="sort('updated_at')"
                                 class="text-xs font-semibold uppercase
                                        tracking-wide text-zinc-600
-                                       hover:text-zinc-900"
-                            >
+                                       hover:text-zinc-900">
                                 Updated
 
                                 @if ($sortField === 'updated_at')
@@ -196,13 +163,10 @@
                         </th>
 
                         <th class="px-5 py-3 text-left">
-                            <button
-                                type="button"
-                                wire:click="sort('published_at')"
+                            <button type="button" wire:click="sort('published_at')"
                                 class="text-xs font-semibold uppercase
                                        tracking-wide text-zinc-600
-                                       hover:text-zinc-900"
-                            >
+                                       hover:text-zinc-900">
                                 Published
 
                                 @if ($sortField === 'published_at')
@@ -214,8 +178,7 @@
                         <th
                             class="px-5 py-3 text-right text-xs
                                    font-semibold uppercase tracking-wide
-                                   text-zinc-600"
-                        >
+                                   text-zinc-600">
                             Actions
                         </th>
                     </tr>
@@ -225,27 +188,19 @@
                     @forelse ($pages as $page)
                         @php
                             $statusClasses = match ($page->status) {
-                                \App\Enums\PageStatus::Draft =>
-                                    'bg-zinc-100 text-zinc-700',
+                                \App\Enums\PageStatus::Draft => 'bg-zinc-100 text-zinc-700',
 
-                                \App\Enums\PageStatus::Submitted =>
-                                    'bg-blue-50 text-blue-700',
+                                \App\Enums\PageStatus::Submitted => 'bg-blue-50 text-blue-700',
 
-                                \App\Enums\PageStatus::Approved =>
-                                    'bg-violet-50 text-violet-700',
+                                \App\Enums\PageStatus::Approved => 'bg-violet-50 text-violet-700',
 
-                                \App\Enums\PageStatus::Published =>
-                                    'bg-emerald-50 text-emerald-700',
+                                \App\Enums\PageStatus::Published => 'bg-emerald-50 text-emerald-700',
 
-                                \App\Enums\PageStatus::Archived =>
-                                    'bg-amber-50 text-amber-700',
+                                \App\Enums\PageStatus::Archived => 'bg-amber-50 text-amber-700',
                             };
                         @endphp
 
-                        <tr
-                            wire:key="page-{{ $page->id }}"
-                            class="hover:bg-zinc-50/70"
-                        >
+                        <tr wire:key="page-{{ $page->id }}" class="hover:bg-zinc-50/70">
                             <td class="px-5 py-4">
                                 <p class="font-semibold text-zinc-900">
                                     {{ $page->title }}
@@ -257,10 +212,7 @@
 
                                 @if ($page->excerpt)
                                     <p class="mt-2 max-w-md text-sm text-zinc-600">
-                                        {{ \Illuminate\Support\Str::limit(
-                                            $page->excerpt,
-                                            100,
-                                        ) }}
+                                        {{ \Illuminate\Support\Str::limit($page->excerpt, 100) }}
                                     </p>
                                 @endif
                             </td>
@@ -269,8 +221,7 @@
                                 <span
                                     class="inline-flex rounded-full
                                            px-2.5 py-1 text-xs font-semibold
-                                           {{ $statusClasses }}"
-                                >
+                                           {{ $statusClasses }}">
                                     {{ $page->status->label() }}
                                 </span>
                             </td>
@@ -280,10 +231,7 @@
                                     {{ $page->creator?->name ?? 'Unknown' }}
                                 </p>
 
-                                @if (
-                                    $page->updater
-                                    && ! $page->updater->is($page->creator)
-                                )
+                                @if ($page->updater && !$page->updater->is($page->creator))
                                     <p class="mt-1 text-xs text-zinc-500">
                                         Edited by {{ $page->updater->name }}
                                     </p>
@@ -316,50 +264,132 @@
                                 @endif
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4 text-right">
-                                @can('pages.update')
-                                    @if (
-                                        $page->status
-                                            === \App\Enums\PageStatus::Draft
-                                    )
-                                        <a
-                                            href="{{ route(
-                                                'admin.pages.edit',
-                                                $page,
-                                            ) }}"
-                                            wire:navigate
-                                            class="inline-flex rounded-lg
-                                                   border border-zinc-300
-                                                   bg-white px-3 py-2
-                                                   text-xs font-semibold
-                                                   text-zinc-700
-                                                   hover:bg-zinc-100"
-                                        >
-                                            Edit
-                                        </a>
-                                    @else
-                                        <span
-                                            class="inline-flex rounded-lg
-                                                   bg-zinc-100 px-3 py-2
-                                                   text-xs font-medium
-                                                   text-zinc-500"
-                                        >
-                                            Locked
-                                        </span>
+                            <td class="px-5 py-4">
+                                <div class="flex min-w-48 flex-wrap justify-end gap-2">
+                                    {{-- Draft actions --}}
+                                    @if ($page->status === \App\Enums\PageStatus::Draft)
+                                        @can('pages.update')
+                                            <a href="{{ route('admin.pages.edit', $page) }}" wire:navigate
+                                                class="inline-flex rounded-lg border
+                           border-zinc-300 bg-white px-3 py-2
+                           text-xs font-semibold text-zinc-700
+                           hover:bg-zinc-100">
+                                                Edit
+                                            </a>
+                                        @endcan
+
+                                        @can('pages.submit')
+                                            <button type="button" wire:click="submitPage({{ $page->id }})"
+                                                wire:loading.attr="disabled" wire:target="submitPage({{ $page->id }})"
+                                                class="inline-flex rounded-lg bg-blue-700
+                           px-3 py-2 text-xs font-semibold
+                           text-white hover:bg-blue-800
+                           disabled:cursor-not-allowed
+                           disabled:opacity-60">
+                                                Submit
+                                            </button>
+                                        @endcan
                                     @endif
-                                @else
-                                    <span class="text-xs text-zinc-400">
-                                        View only
-                                    </span>
-                                @endcan
+
+                                    {{-- Submitted actions --}}
+                                    @if ($page->status === \App\Enums\PageStatus::Submitted)
+                                        @can('pages.approve')
+                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="returnPageToDraft({{ $page->id }})"
+                                                class="inline-flex rounded-lg border
+                           border-zinc-300 bg-white px-3 py-2
+                           text-xs font-semibold text-zinc-700
+                           hover:bg-zinc-100 disabled:opacity-60">
+                                                Return
+                                            </button>
+
+                                            <button type="button" wire:click="approvePage({{ $page->id }})"
+                                                wire:loading.attr="disabled" wire:target="approvePage({{ $page->id }})"
+                                                class="inline-flex rounded-lg bg-violet-700
+                           px-3 py-2 text-xs font-semibold
+                           text-white hover:bg-violet-800
+                           disabled:opacity-60">
+                                                Approve
+                                            </button>
+                                        @endcan
+                                    @endif
+
+                                    {{-- Approved actions --}}
+                                    @if ($page->status === \App\Enums\PageStatus::Approved)
+                                        @can('pages.approve')
+                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="returnPageToDraft({{ $page->id }})"
+                                                class="inline-flex rounded-lg border
+                           border-zinc-300 bg-white px-3 py-2
+                           text-xs font-semibold text-zinc-700
+                           hover:bg-zinc-100 disabled:opacity-60">
+                                                Return
+                                            </button>
+                                        @endcan
+
+                                        @can('pages.publish')
+                                            <button type="button" wire:click="publishPage({{ $page->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="publishPage({{ $page->id }})"
+                                                class="inline-flex rounded-lg bg-emerald-700
+                           px-3 py-2 text-xs font-semibold
+                           text-white hover:bg-emerald-800
+                           disabled:opacity-60">
+                                                Publish
+                                            </button>
+                                        @endcan
+                                    @endif
+
+                                    {{-- Published actions --}}
+                                    @if ($page->status === \App\Enums\PageStatus::Published)
+                                        @can('pages.publish')
+                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="returnPageToDraft({{ $page->id }})"
+                                                class="inline-flex rounded-lg border
+                           border-amber-300 bg-amber-50
+                           px-3 py-2 text-xs font-semibold
+                           text-amber-800 hover:bg-amber-100
+                           disabled:opacity-60">
+                                                Unpublish
+                                            </button>
+                                        @endcan
+                                    @endif
+
+                                    {{-- Archived actions --}}
+                                    @if ($page->status === \App\Enums\PageStatus::Archived)
+                                        @can('pages.archive')
+                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="returnPageToDraft({{ $page->id }})"
+                                                class="inline-flex rounded-lg border
+                           border-zinc-300 bg-white px-3 py-2
+                           text-xs font-semibold text-zinc-700
+                           hover:bg-zinc-100 disabled:opacity-60">
+                                                Restore Draft
+                                            </button>
+                                        @endcan
+                                    @else
+                                        @can('pages.archive')
+                                            <button type="button" wire:click="archivePage({{ $page->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="archivePage({{ $page->id }})"
+                                                class="inline-flex rounded-lg border
+                           border-red-200 bg-red-50 px-3 py-2
+                           text-xs font-semibold text-red-700
+                           hover:bg-red-100 disabled:opacity-60">
+                                                Archive
+                                            </button>
+                                        @endcan
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td
-                                colspan="6"
-                                class="px-5 py-14 text-center"
-                            >
+                            <td colspan="6" class="px-5 py-14 text-center">
                                 <p class="font-semibold text-zinc-700">
                                     No pages found
                                 </p>
