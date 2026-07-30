@@ -64,6 +64,13 @@ Route::middleware([
                 ->middleware('can:pages.create')
                 ->name('pages.create');
 
+            Route::livewire(
+                '/pages/{page}/edit',
+                'admin.pages.page-edit',
+            )
+                ->middleware('can:pages.update')
+                ->name('pages.edit');
+
             /*
              * Audit Logs
              */

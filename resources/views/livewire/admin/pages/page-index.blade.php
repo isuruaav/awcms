@@ -1,31 +1,41 @@
 <div class="space-y-6">
-  <div
-    class="flex flex-col gap-4 sm:flex-row
-           sm:items-start sm:justify-between"
->
-    <div>
-        <h1 class="text-2xl font-bold text-zinc-950">
-            Pages
-        </h1>
+    <div
+        class="flex flex-col gap-4 sm:flex-row
+               sm:items-start sm:justify-between"
+    >
+        <div>
+            <h1 class="text-2xl font-bold text-zinc-950">
+                Pages
+            </h1>
 
-        <p class="mt-1 text-sm text-zinc-600">
-            Create, review and publish website pages.
-        </p>
+            <p class="mt-1 text-sm text-zinc-600">
+                Create, review and publish website pages.
+            </p>
+        </div>
+
+        @can('pages.create')
+            <a
+                href="{{ route('admin.pages.create') }}"
+                wire:navigate
+                class="inline-flex items-center justify-center
+                       rounded-xl bg-emerald-700 px-4 py-2.5
+                       text-sm font-semibold text-white
+                       shadow-sm hover:bg-emerald-800"
+            >
+                Create Page
+            </a>
+        @endcan
     </div>
 
-    @can('pages.create')
-        <a
-            href="{{ route('admin.pages.create') }}"
-            wire:navigate
-            class="inline-flex items-center justify-center
-                   rounded-xl bg-emerald-700 px-4 py-2.5
-                   text-sm font-semibold text-white
-                   shadow-sm hover:bg-emerald-800"
+    @if (session('status'))
+        <div
+            class="rounded-xl border border-emerald-200
+                   bg-emerald-50 px-4 py-3 text-sm
+                   font-medium text-emerald-800"
         >
-            Create Page
-        </a>
-    @endcan
-</div>
+            {{ session('status') }}
+        </div>
+    @endif
 
     {{-- Filters --}}
     <section
@@ -161,7 +171,11 @@
                             </button>
                         </th>
 
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
+                        <th
+                            class="px-5 py-3 text-left text-xs
+                                   font-semibold uppercase tracking-wide
+                                   text-zinc-600"
+                        >
                             Author
                         </th>
 
@@ -195,6 +209,14 @@
                                     {{ $sortDirection === 'asc' ? '↑' : '↓' }}
                                 @endif
                             </button>
+                        </th>
+
+                        <th
+                            class="px-5 py-3 text-right text-xs
+                                   font-semibold uppercase tracking-wide
+                                   text-zinc-600"
+                        >
+                            Actions
                         </th>
                     </tr>
                 </thead>
@@ -293,11 +315,49 @@
                                     </span>
                                 @endif
                             </td>
+
+                            <td class="whitespace-nowrap px-5 py-4 text-right">
+                                @can('pages.update')
+                                    @if (
+                                        $page->status
+                                            === \App\Enums\PageStatus::Draft
+                                    )
+                                        <a
+                                            href="{{ route(
+                                                'admin.pages.edit',
+                                                $page,
+                                            ) }}"
+                                            wire:navigate
+                                            class="inline-flex rounded-lg
+                                                   border border-zinc-300
+                                                   bg-white px-3 py-2
+                                                   text-xs font-semibold
+                                                   text-zinc-700
+                                                   hover:bg-zinc-100"
+                                        >
+                                            Edit
+                                        </a>
+                                    @else
+                                        <span
+                                            class="inline-flex rounded-lg
+                                                   bg-zinc-100 px-3 py-2
+                                                   text-xs font-medium
+                                                   text-zinc-500"
+                                        >
+                                            Locked
+                                        </span>
+                                    @endif
+                                @else
+                                    <span class="text-xs text-zinc-400">
+                                        View only
+                                    </span>
+                                @endcan
+                            </td>
                         </tr>
                     @empty
                         <tr>
                             <td
-                                colspan="5"
+                                colspan="6"
                                 class="px-5 py-14 text-center"
                             >
                                 <p class="font-semibold text-zinc-700">
