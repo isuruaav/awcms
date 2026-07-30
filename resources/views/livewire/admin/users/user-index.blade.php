@@ -2,8 +2,23 @@
     <x-admin.page-header
         title="User Management"
         description="Search, review and control access to AWCMS administrator accounts."
-    />
+    >
+        @can('users.create')
+            <x-slot:actions>
+                <a
+                    href="{{ route('admin.users.create') }}"
+                    wire:navigate
+                    class="rounded-xl bg-emerald-600 px-4 py-2.5
+                           text-sm font-semibold text-white
+                           transition hover:bg-emerald-700"
+                >
+                    Create User
+                </a>
+            </x-slot:actions>
+        @endcan
+    </x-admin.page-header>
 
+    {{-- Success message --}}
     @if (session('status'))
         <div
             class="rounded-xl border border-emerald-200
@@ -14,6 +29,7 @@
         </div>
     @endif
 
+    {{-- User management error --}}
     @error('user')
         <div
             class="rounded-xl border border-red-200
@@ -30,6 +46,7 @@
                bg-white p-5 shadow-sm"
     >
         <div class="grid gap-4 lg:grid-cols-4">
+            {{-- Search --}}
             <div class="lg:col-span-2">
                 <label
                     for="user-search"
@@ -52,6 +69,7 @@
                 >
             </div>
 
+            {{-- Role filter --}}
             <div>
                 <label
                     for="role-filter"
@@ -69,7 +87,9 @@
                            focus:border-emerald-500
                            focus:ring-4 focus:ring-emerald-500/10"
                 >
-                    <option value="all">All roles</option>
+                    <option value="all">
+                        All roles
+                    </option>
 
                     @foreach ($roles as $roleName)
                         <option value="{{ $roleName }}">
@@ -79,6 +99,7 @@
                 </select>
             </div>
 
+            {{-- Status filter --}}
             <div>
                 <label
                     for="status-filter"
@@ -96,9 +117,17 @@
                            focus:border-emerald-500
                            focus:ring-4 focus:ring-emerald-500/10"
                 >
-                    <option value="all">All statuses</option>
-                    <option value="active">Active</option>
-                    <option value="disabled">Disabled</option>
+                    <option value="all">
+                        All statuses
+                    </option>
+
+                    <option value="active">
+                        Active
+                    </option>
+
+                    <option value="disabled">
+                        Disabled
+                    </option>
                 </select>
             </div>
         </div>
@@ -112,7 +141,8 @@
                 type="button"
                 wire:click="resetFilters"
                 class="text-left text-sm font-medium
-                       text-emerald-700 hover:text-emerald-800"
+                       text-emerald-700 transition
+                       hover:text-emerald-800"
             >
                 Reset filters
             </button>
@@ -129,7 +159,10 @@
                     id="per-page"
                     wire:model.live="perPage"
                     class="rounded-lg border border-zinc-300
-                           bg-white px-3 py-2 text-sm"
+                           bg-white px-3 py-2 text-sm
+                           text-zinc-900 outline-none
+                           focus:border-emerald-500
+                           focus:ring-4 focus:ring-emerald-500/10"
                 >
                     <option value="10">10</option>
                     <option value="15">15</option>
@@ -149,14 +182,23 @@
             <table class="min-w-full divide-y divide-zinc-200">
                 <thead class="bg-zinc-50">
                     <tr>
+                        {{-- User sorting --}}
                         <th class="px-5 py-3 text-left">
                             <button
                                 type="button"
                                 wire:click="sort('name')"
-                                class="text-xs font-semibold uppercase
-                                       tracking-wide text-zinc-600"
+                                class="inline-flex items-center gap-1
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-zinc-600
+                                       transition hover:text-zinc-950"
                             >
                                 User
+
+                                @if ($sortField === 'name')
+                                    <span aria-hidden="true">
+                                        {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    </span>
+                                @endif
                             </button>
                         </th>
 
@@ -168,25 +210,43 @@
                             Role
                         </th>
 
+                        {{-- Status sorting --}}
                         <th class="px-5 py-3 text-left">
                             <button
                                 type="button"
                                 wire:click="sort('is_active')"
-                                class="text-xs font-semibold uppercase
-                                       tracking-wide text-zinc-600"
+                                class="inline-flex items-center gap-1
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-zinc-600
+                                       transition hover:text-zinc-950"
                             >
                                 Status
+
+                                @if ($sortField === 'is_active')
+                                    <span aria-hidden="true">
+                                        {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    </span>
+                                @endif
                             </button>
                         </th>
 
+                        {{-- Last login sorting --}}
                         <th class="px-5 py-3 text-left">
                             <button
                                 type="button"
                                 wire:click="sort('last_login_at')"
-                                class="text-xs font-semibold uppercase
-                                       tracking-wide text-zinc-600"
+                                class="inline-flex items-center gap-1
+                                       text-xs font-semibold uppercase
+                                       tracking-wide text-zinc-600
+                                       transition hover:text-zinc-950"
                             >
                                 Last login
+
+                                @if ($sortField === 'last_login_at')
+                                    <span aria-hidden="true">
+                                        {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    </span>
+                                @endif
                             </button>
                         </th>
 
@@ -214,8 +274,9 @@
 
                         <tr
                             wire:key="user-{{ $user->id }}"
-                            class="hover:bg-zinc-50/70"
+                            class="transition hover:bg-zinc-50/70"
                         >
+                            {{-- User information --}}
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
                                     <div
@@ -228,8 +289,11 @@
                                         {{ $user->initials() }}
                                     </div>
 
-                                    <div>
-                                        <p class="font-semibold text-zinc-900">
+                                    <div class="min-w-0">
+                                        <p
+                                            class="truncate font-semibold
+                                                   text-zinc-900"
+                                        >
                                             {{ $user->name }}
 
                                             @if (auth()->id() === $user->id)
@@ -243,30 +307,37 @@
                                             @endif
                                         </p>
 
-                                        <p class="text-sm text-zinc-500">
+                                        <p
+                                            class="truncate text-sm
+                                                   text-zinc-500"
+                                        >
                                             {{ $user->email }}
                                         </p>
                                     </div>
                                 </div>
                             </td>
 
+                            {{-- Roles --}}
                             <td class="px-5 py-4">
-                                @forelse ($user->roles as $assignedRole)
-                                    <span
-                                        class="inline-flex rounded-full
-                                               bg-blue-50 px-2.5 py-1
-                                               text-xs font-semibold
-                                               text-blue-700"
-                                    >
-                                        {{ $assignedRole->name }}
-                                    </span>
-                                @empty
-                                    <span class="text-sm text-red-600">
-                                        No role assigned
-                                    </span>
-                                @endforelse
+                                <div class="flex flex-wrap gap-1">
+                                    @forelse ($user->roles as $assignedRole)
+                                        <span
+                                            class="inline-flex rounded-full
+                                                   bg-blue-50 px-2.5 py-1
+                                                   text-xs font-semibold
+                                                   text-blue-700"
+                                        >
+                                            {{ $assignedRole->name }}
+                                        </span>
+                                    @empty
+                                        <span class="text-sm text-red-600">
+                                            No role assigned
+                                        </span>
+                                    @endforelse
+                                </div>
                             </td>
 
+                            {{-- Account status --}}
                             <td class="px-5 py-4">
                                 <x-admin.status-badge
                                     :status="$user->is_active
@@ -275,6 +346,7 @@
                                 />
                             </td>
 
+                            {{-- Last login --}}
                             <td class="px-5 py-4">
                                 @if ($user->last_login_at)
                                     <p class="text-sm text-zinc-700">
@@ -282,7 +354,8 @@
                                     </p>
 
                                     <p class="text-xs text-zinc-400">
-                                        {{ $user->last_login_ip }}
+                                        {{ $user->last_login_ip
+                                            ?? 'IP unavailable' }}
                                     </p>
                                 @else
                                     <span class="text-sm text-zinc-400">
@@ -291,33 +364,74 @@
                                 @endif
                             </td>
 
+                            {{-- Actions --}}
                             <td class="px-5 py-4 text-right">
-                                @can('users.update')
-                                    @if (
-                                        $canManage
-                                        && auth()->id() !== $user->id
-                                    )
-                                        <button
-                                            type="button"
-                                            wire:click="toggleActive({{ $user->id }})"
-                                            wire:confirm="Are you sure you want to {{ $user->is_active ? 'disable' : 'activate' }} this account?"
-                                            class="rounded-lg border px-3 py-2
-                                                   text-xs font-semibold
-                                                   transition
-                                                   {{ $user->is_active
-                                                        ? 'border-red-200 text-red-700 hover:bg-red-50'
-                                                        : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' }}"
-                                        >
-                                            {{ $user->is_active
-                                                ? 'Disable'
-                                                : 'Activate' }}
-                                        </button>
-                                    @else
-                                        <span class="text-xs text-zinc-400">
-                                            Protected
-                                        </span>
-                                    @endif
-                                @endcan
+                                <div
+                                    class="flex items-center justify-end gap-2"
+                                >
+                                    @can('users.update')
+                                        @if ($canManage)
+                                            <a
+                                                href="{{ route(
+                                                    'admin.users.edit',
+                                                    ['user' => $user->id],
+                                                ) }}"
+                                                wire:navigate
+                                                class="rounded-lg border
+                                                       border-zinc-300
+                                                       bg-white px-3 py-2
+                                                       text-xs font-semibold
+                                                       text-zinc-700
+                                                       transition
+                                                       hover:bg-zinc-100"
+                                            >
+                                                Edit
+                                            </a>
+                                        @endif
+                                    @endcan
+
+                                    @can('users.update')
+                                        @if (
+                                            $canManage
+                                            && auth()->id() !== $user->id
+                                        )
+                                            <button
+                                                type="button"
+                                                wire:click="toggleActive({{ $user->id }})"
+                                                wire:loading.attr="disabled"
+                                                wire:target="toggleActive({{ $user->id }})"
+                                                wire:confirm="Are you sure you want to {{ $user->is_active ? 'disable' : 'activate' }} this account?"
+                                                class="rounded-lg border
+                                                       px-3 py-2
+                                                       text-xs font-semibold
+                                                       transition
+                                                       disabled:cursor-not-allowed
+                                                       disabled:opacity-60
+                                                       {{ $user->is_active
+                                                           ? 'border-red-200 text-red-700 hover:bg-red-50'
+                                                           : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' }}"
+                                            >
+                                                {{ $user->is_active
+                                                    ? 'Disable'
+                                                    : 'Activate' }}
+                                            </button>
+                                        @elseif (! $canManage)
+                                            <span
+                                                class="self-center text-xs
+                                                       text-zinc-400"
+                                            >
+                                                Protected
+                                            </span>
+                                        @elseif (auth()->id() === $user->id)
+                                            <span
+                                                class="self-center text-xs
+                                                       text-zinc-400"
+                                            >
+                                                Current account
+                                            </span>
+                                        @endif
+                                    @endcan
+                                </div>
                             </td>
                         </tr>
                     @empty
@@ -333,6 +447,16 @@
                                 <p class="mt-1 text-sm text-zinc-500">
                                     Change or reset the current filters.
                                 </p>
+
+                                <button
+                                    type="button"
+                                    wire:click="resetFilters"
+                                    class="mt-4 text-sm font-semibold
+                                           text-emerald-700
+                                           hover:text-emerald-800"
+                                >
+                                    Reset filters
+                                </button>
                             </td>
                         </tr>
                     @endforelse
@@ -340,6 +464,7 @@
             </table>
         </div>
 
+        {{-- Pagination --}}
         @if ($users->hasPages())
             <div class="border-t border-zinc-200 px-5 py-4">
                 {{ $users->links() }}

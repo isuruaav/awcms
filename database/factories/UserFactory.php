@@ -15,7 +15,7 @@ class UserFactory extends Factory
     /**
      * The current password being used by the factory.
      */
-    protected static ?string $password;
+    protected static ?string $password = null;
 
     /**
      * Define the model's default state.
@@ -26,35 +26,102 @@ class UserFactory extends Factory
     {
         return [
             'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
+
+            'email' => fake()
+                ->unique()
+                ->safeEmail(),
+
             'email_verified_at' => now(),
+
+            'is_active' => true,
+
             'password' => static::$password ??= Hash::make('password'),
+
             'remember_token' => Str::random(10),
+
+            'last_login_at' => null,
+
+            'last_login_ip' => null,
+
+            'created_by' => null,
+
+            'updated_by' => null,
+
             'two_factor_secret' => null,
+
             'two_factor_recovery_codes' => null,
+
             'two_factor_confirmed_at' => null,
         ];
     }
 
     /**
-     * Indicate that the model's email address should be unverified.
+     * Indicate that the user's email address is unverified.
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
+        return $this->state(
+            fn (array $attributes): array => [
+                'email_verified_at' => null,
+            ],
+        );
     }
 
     /**
-     * Indicate that the model has two-factor authentication configured.
+     * Indicate that the user account is active.
+     */
+    public function active(): static
+    {
+        return $this->state(
+            fn (array $attributes): array => [
+                'is_active' => true,
+            ],
+        );
+    }
+
+    /**
+     * Indicate that the user account is disabled.
+     */
+    public function disabled(): static
+    {
+        return $this->state(
+            fn (array $attributes): array => [
+                'is_active' => false,
+            ],
+        );
+    }
+
+    /**
+     * Indicate that the user has previously logged in.
+     */
+    public function withLastLogin(): static
+    {
+        return $this->state(
+            fn (array $attributes): array => [
+                'last_login_at' => now(),
+                'last_login_ip' => '127.0.0.1',
+            ],
+        );
+    }
+
+    /**
+     * Indicate that the user has two-factor authentication configured.
      */
     public function withTwoFactor(): static
     {
-        return $this->state(fn (array $attributes) => [
-            'two_factor_secret' => encrypt('secret'),
-            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
-            'two_factor_confirmed_at' => now(),
-        ]);
+        return $this->state(
+            fn (array $attributes): array => [
+                'two_factor_secret' => encrypt('secret'),
+
+                'two_factor_recovery_codes' => encrypt(
+                    json_encode(
+                        ['recovery-code-1'],
+                        JSON_THROW_ON_ERROR,
+                    ),
+                ),
+
+                'two_factor_confirmed_at' => now(),
+            ],
+        );
     }
 }

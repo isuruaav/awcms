@@ -21,6 +21,8 @@ class RolesAndPermissionsSeeder extends Seeder
             'users.create',
             'users.update',
             'users.delete',
+            'users.assign-role',
+            'users.reset-password',
 
             'roles.manage',
 
@@ -77,6 +79,8 @@ class RolesAndPermissionsSeeder extends Seeder
                 'pages.update',
                 'pages.delete',
                 'pages.publish',
+                'users.assign-role',
+                'users.reset-password',
 
                 'news.view',
                 'news.create',
