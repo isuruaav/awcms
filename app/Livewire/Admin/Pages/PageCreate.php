@@ -7,6 +7,7 @@ use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
+use App\Services\PageRevisionService;
 use App\Support\PageSlugger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -108,9 +109,10 @@ final class PageCreate extends Component
 
                 app(AuditLogger::class)->log(
                     event: 'pages.created',
-                    description: 'Website page created as a draft.',
+                    description: 'Draft website page created.',
                     actor: $actor,
                     subject: $page,
+                    oldValues: [],
                     newValues: [
                         'title' => $page->title,
                         'slug' => $page->slug,
@@ -118,6 +120,12 @@ final class PageCreate extends Component
                         'excerpt_present' => $page->excerpt !== null,
                         'content_present' => $page->content !== null,
                     ],
+                );
+
+                app(PageRevisionService::class)->capture(
+                    page: $page,
+                    actor: $actor,
+                    summary: 'Initial draft created.',
                 );
 
                 return $page;

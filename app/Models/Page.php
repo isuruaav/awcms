@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 final class Page extends Model
@@ -38,6 +39,18 @@ final class Page extends Model
             'published_at' => 'immutable_datetime',
             'archived_at' => 'immutable_datetime',
         ];
+    }
+
+    /**
+     * @return HasMany<PageRevision, $this>
+     */
+    public function revisions(): HasMany
+    {
+        return $this->hasMany(
+            PageRevision::class,
+        )->orderByDesc(
+            'revision_number',
+        );
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
+use App\Services\PageRevisionService;
 use App\Support\PageSlugger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -201,6 +202,12 @@ final class PageEdit extends Component
                 subject: $page,
                 oldValues: $oldValues,
                 newValues: $newValues,
+            );
+
+            app(PageRevisionService::class)->capture(
+                page: $page,
+                actor: $actor,
+                summary: 'Draft page content updated.',
             );
         });
 

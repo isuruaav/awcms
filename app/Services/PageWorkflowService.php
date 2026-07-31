@@ -132,6 +132,16 @@ final class PageWorkflowService
                     ],
                 );
 
+                app(PageRevisionService::class)->capture(
+                    page: $lockedPage,
+                    actor: $actor,
+                    summary: sprintf(
+                        'Workflow changed from %s to %s.',
+                        $currentStatus->label(),
+                        $targetStatus->label(),
+                    ),
+                );
+
                 return $lockedPage->refresh();
             },
         );

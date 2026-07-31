@@ -54,6 +54,8 @@ final class RolesAndPermissionsSeeder extends Seeder
             'pages.approve',
             'pages.publish',
             'pages.archive',
+            'pages.revisions.view',
+            'pages.revisions.restore',
 
             /*
              * News
@@ -116,7 +118,7 @@ final class RolesAndPermissionsSeeder extends Seeder
              * Full system access.
              *
              * Gate::before may already grant Super Administrator
-             * unrestricted access, but synchronising all permissions
+             * unrestricted access. Synchronising all permissions
              * keeps the database role definition complete.
              */
             'Super Administrator' => $permissions,
@@ -125,6 +127,9 @@ final class RolesAndPermissionsSeeder extends Seeder
              * Manages one independently deployed AWCMS website.
              */
             'Site Administrator' => [
+                /*
+                 * Administration
+                 */
                 'admin.access',
                 'dashboard.view',
 
@@ -148,6 +153,8 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.approve',
                 'pages.publish',
                 'pages.archive',
+                'pages.revisions.view',
+                'pages.revisions.restore',
 
                 /*
                  * News
@@ -199,6 +206,9 @@ final class RolesAndPermissionsSeeder extends Seeder
              * Reviews, approves and publishes public content.
              */
             'Publisher' => [
+                /*
+                 * Administration
+                 */
                 'admin.access',
                 'dashboard.view',
 
@@ -212,6 +222,8 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.approve',
                 'pages.publish',
                 'pages.archive',
+                'pages.revisions.view',
+                'pages.revisions.restore',
 
                 /*
                  * News
@@ -248,6 +260,9 @@ final class RolesAndPermissionsSeeder extends Seeder
              * Creates and edits content, then submits it for review.
              */
             'Content Editor' => [
+                /*
+                 * Administration
+                 */
                 'admin.access',
                 'dashboard.view',
 
@@ -258,6 +273,8 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.create',
                 'pages.update',
                 'pages.submit',
+                'pages.revisions.view',
+                'pages.revisions.restore',
 
                 /*
                  * News
@@ -291,6 +308,9 @@ final class RolesAndPermissionsSeeder extends Seeder
              * Uploads and manages media, galleries and documents.
              */
             'Media Operator' => [
+                /*
+                 * Administration
+                 */
                 'admin.access',
                 'dashboard.view',
 
@@ -319,15 +339,25 @@ final class RolesAndPermissionsSeeder extends Seeder
              * Read-only inspection access.
              */
             'Auditor' => [
+                /*
+                 * Administration
+                 */
                 'admin.access',
                 'dashboard.view',
 
+                /*
+                 * Read-only access
+                 */
                 'users.view',
+
                 'pages.view',
+                'pages.revisions.view',
+
                 'news.view',
                 'galleries.view',
                 'documents.view',
                 'media.view',
+
                 'audit.view',
             ],
         ];
@@ -344,8 +374,8 @@ final class RolesAndPermissionsSeeder extends Seeder
         }
 
         /*
-         * Clear the cache again so the new role assignments become
-         * available immediately.
+         * Clear the cache again so the new role assignments
+         * become available immediately.
          */
         app(PermissionRegistrar::class)
             ->forgetCachedPermissions();
