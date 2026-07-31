@@ -1,10 +1,28 @@
 <?php
 
+use App\Http\Controllers\Admin\PagePreviewController;
+use App\Http\Controllers\PublicPageController;
 use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'welcome')
     ->name('home');
 
+/*
+ * Public published pages
+ */
+Route::get(
+    '/pages/{slug}',
+    PublicPageController::class,
+)
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name('pages.show');
+
+/*
+ * Authenticated administration
+ */
 Route::middleware([
     'auth',
     'active',
@@ -64,10 +82,19 @@ Route::middleware([
                 ->middleware('can:pages.create')
                 ->name('pages.create');
 
+            Route::get(
+                '/pages/{page}/preview',
+                PagePreviewController::class,
+            )
+                ->whereNumber('page')
+                ->middleware('can:pages.view')
+                ->name('pages.preview');
+
             Route::livewire(
                 '/pages/{page}/edit',
                 'admin.pages.page-edit',
             )
+                ->whereNumber('page')
                 ->middleware('can:pages.update')
                 ->name('pages.edit');
 

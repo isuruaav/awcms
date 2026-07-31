@@ -305,11 +305,20 @@
                                             </span>
                                         @endcan
                                     @else
+                                        @can('pages.view')
+                                            <a href="{{ route('admin.pages.preview', $page) }}"
+                                                target="_blank" rel="noopener noreferrer"
+                                                class="inline-flex rounded-lg border
+               border-blue-200 bg-blue-50
+               px-3 py-2 text-xs font-semibold
+               text-blue-700 hover:bg-blue-100">
+                                                Preview
+                                            </a>
+                                        @endcan
                                         {{-- Draft --}}
                                         @if ($page->status === \App\Enums\PageStatus::Draft)
                                             @can('pages.update')
-                                                <a href="{{ route('admin.pages.edit', $page) }}"
-                                                    wire:navigate
+                                                <a href="{{ route('admin.pages.edit', $page) }}" wire:navigate
                                                     class="inline-flex rounded-lg border
                                border-zinc-300 bg-white
                                px-3 py-2 text-xs font-semibold
