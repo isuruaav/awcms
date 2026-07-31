@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PageStatus;
+use App\Services\ContentSanitizer;
 use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,9 @@ final class Page extends Model
         'id',
     ];
 
+    /**
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -67,6 +71,41 @@ final class Page extends Model
             User::class,
             'approved_by',
         );
+    }
+
+    public function setExcerptAttribute(mixed $value): void
+    {
+        $rawExcerpt = is_string($value)
+            ? $value
+            : null;
+
+        $excerpt = app(
+            ContentSanitizer::class,
+        )->plainText(
+            $rawExcerpt,
+            500,
+        );
+
+        $this->attributes['excerpt'] = $excerpt !== ''
+            ? $excerpt
+            : null;
+    }
+
+    public function setContentAttribute(mixed $value): void
+    {
+        $rawContent = is_string($value)
+            ? $value
+            : null;
+
+        $content = app(
+            ContentSanitizer::class,
+        )->sanitize(
+            $rawContent,
+        );
+
+        $this->attributes['content'] = $content !== ''
+            ? $content
+            : null;
     }
 
     /**

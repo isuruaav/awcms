@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\PageStatus;
 use App\Models\Page;
+use App\Services\ContentSanitizer;
 use App\Support\PageMeta;
 use Illuminate\Contracts\View\View;
 
@@ -29,6 +30,12 @@ final class PublicPageController extends Controller
             'pages.show',
             [
                 'page' => $page,
+
+                'safeContent' => app(
+                    ContentSanitizer::class,
+                )->sanitize(
+                    $page->content,
+                ),
 
                 'pageTitle' => sprintf(
                     '%s | %s',

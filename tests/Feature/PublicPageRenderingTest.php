@@ -71,15 +71,17 @@ test('soft deleted published page is not publicly accessible', function (): void
         route('pages.show', $page->slug),
     )->assertNotFound();
 });
-
-test('page content html is escaped on the public page', function (): void {
+test('sanitized page html is rendered publicly', function (): void {
     $page = Page::factory()
         ->published()
         ->create([
-            'slug' => 'safe-content-page',
+            'slug' => 'formatted-content-page',
 
-            'content' => '<script>alert("unsafe")</script>'
-                .'<h2>Heading</h2>',
+            'content' => '<h2>Public heading</h2>'
+                .'<p onclick="alert(\'unsafe-click\')">'
+                .'This is <strong>important</strong>.'
+                .'</p>'
+                .'<script>alert("unsafe-script")</script>',
         ]);
 
     $this->get(
@@ -87,15 +89,23 @@ test('page content html is escaped on the public page', function (): void {
     )
         ->assertOk()
         ->assertSee(
-            '&lt;script&gt;',
+            '<h2>Public heading</h2>',
+            false,
+        )
+        ->assertSee(
+            '<strong>important</strong>',
             false,
         )
         ->assertDontSee(
-            '<script>',
+            'unsafe-script',
             false,
         )
         ->assertDontSee(
-            '<h2>',
+            'unsafe-click',
+            false,
+        )
+        ->assertDontSee(
+            'onclick=',
             false,
         );
 });

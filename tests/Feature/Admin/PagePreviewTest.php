@@ -87,12 +87,14 @@ test('trashed page cannot be previewed', function (): void {
         ->assertNotFound();
 });
 
-test('admin preview content is safely escaped', function (): void {
+test('admin preview renders only sanitized html', function (): void {
     $editor = User::factory()->create();
     $editor->assignRole('Content Editor');
 
     $page = Page::factory()->create([
-        'content' => '<script>alert("unsafe")</script>',
+        'content' => '<h2>Preview heading</h2>'
+            .'<p onclick="alert(\'unsafe-click\')">Safe text</p>'
+            .'<script>alert("unsafe-script")</script>',
     ]);
 
     $this->actingAs($editor)
@@ -104,11 +106,23 @@ test('admin preview content is safely escaped', function (): void {
         )
         ->assertOk()
         ->assertSee(
-            '&lt;script&gt;',
+            '<h2>Preview heading</h2>',
+            false,
+        )
+        ->assertSee(
+            '<p>Safe text</p>',
             false,
         )
         ->assertDontSee(
-            '<script>',
+            'unsafe-script',
+            false,
+        )
+        ->assertDontSee(
+            'unsafe-click',
+            false,
+        )
+        ->assertDontSee(
+            'onclick=',
             false,
         )
         ->assertSee(

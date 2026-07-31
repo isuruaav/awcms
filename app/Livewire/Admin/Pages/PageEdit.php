@@ -6,6 +6,7 @@ use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\ContentSanitizer;
 use App\Support\PageSlugger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -314,9 +315,25 @@ final class PageEdit extends Component
 
     private function normaliseInput(): void
     {
-        $this->title = trim($this->title);
-        $this->slug = Str::slug(trim($this->slug));
-        $this->excerpt = trim($this->excerpt);
-        $this->content = trim($this->content);
+        $sanitizer = app(
+            ContentSanitizer::class,
+        );
+
+        $this->title = trim(
+            $this->title,
+        );
+
+        $this->slug = Str::slug(
+            trim($this->slug),
+        );
+
+        $this->excerpt = $sanitizer->plainText(
+            $this->excerpt,
+            500,
+        );
+
+        $this->content = $sanitizer->sanitize(
+            $this->content,
+        );
     }
 }

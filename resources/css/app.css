@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
-
+@import "trix/dist/trix.css";
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -68,4 +68,128 @@ select:focus[data-flux-control] {
 
 [x-cloak] {
     display: none !important;
+}
+
+
+/*
+ * AWCMS Rich Text Editor
+ */
+trix-editor.awcms-editor {
+    min-height: 22rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgb(212 212 216);
+    background: white;
+    padding: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.75;
+    color: rgb(63 63 70);
+}
+
+trix-editor.awcms-editor:focus {
+    border-color: rgb(16 185 129);
+    outline: none;
+    box-shadow: 0 0 0 4px rgb(16 185 129 / 0.1);
+}
+
+trix-toolbar .trix-button-row {
+    flex-wrap: wrap;
+}
+
+trix-toolbar .trix-button-group {
+    margin-bottom: 0.5rem;
+}
+
+/*
+ * Attachments are disabled until the Media Library
+ * integration is implemented.
+ */
+trix-toolbar .trix-button--icon-attach {
+    display: none;
+}
+
+/*
+ * Sanitized public content styling
+ */
+.awcms-content {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: rgb(63 63 70);
+}
+
+.awcms-content > * + * {
+    margin-top: 1.25rem;
+}
+
+.awcms-content h2 {
+    margin-top: 2.25rem;
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.25;
+    color: rgb(24 24 27);
+}
+
+.awcms-content h3 {
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: rgb(24 24 27);
+}
+
+.awcms-content h4 {
+    margin-top: 1.75rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: rgb(24 24 27);
+}
+
+.awcms-content ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+}
+
+.awcms-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+}
+
+.awcms-content li + li {
+    margin-top: 0.4rem;
+}
+
+.awcms-content blockquote {
+    border-left: 4px solid rgb(16 185 129);
+    background: rgb(240 253 250);
+    padding: 1rem 1.25rem;
+    color: rgb(63 63 70);
+}
+
+.awcms-content a {
+    font-weight: 600;
+    color: rgb(4 120 87);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.awcms-content pre {
+    overflow-x: auto;
+    border-radius: 0.75rem;
+    background: rgb(24 24 27);
+    padding: 1rem;
+    color: rgb(244 244 245);
+}
+
+.awcms-content code {
+    border-radius: 0.25rem;
+    background: rgb(244 244 245);
+    padding: 0.1rem 0.3rem;
+    font-family: ui-monospace, monospace;
+    font-size: 0.9em;
+}
+
+.awcms-content pre code {
+    background: transparent;
+    padding: 0;
+    color: inherit;
 }

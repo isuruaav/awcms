@@ -3,46 +3,34 @@
 namespace App\Support;
 
 use App\Models\Page;
-use Illuminate\Support\Str;
+use App\Services\ContentSanitizer;
 
 final class PageMeta
 {
     public static function description(Page $page): string
     {
         $source = is_string($page->excerpt)
-            ? $page->excerpt
-            : '';
+            && $page->excerpt !== ''
+                ? $page->excerpt
+                : $page->content;
 
-        if ($source === '') {
-            $source = is_string($page->content)
-                ? $page->content
-                : '';
-        }
-
-        $plainText = strip_tags($source);
-
-        $normalised = preg_replace(
-            '/\s+/u',
-            ' ',
-            trim($plainText),
-        );
-
-        if (! is_string($normalised)) {
-            $normalised = '';
-        }
-
-        if ($normalised === '') {
-            $appName = config('app.name');
-
-            $normalised = is_string($appName)
-                ? $appName
-                : 'Website';
-        }
-
-        return Str::limit(
-            $normalised,
+        $description = app(
+            ContentSanitizer::class,
+        )->plainText(
+            is_string($source)
+                ? $source
+                : null,
             160,
-            '',
         );
+
+        if ($description !== '') {
+            return $description;
+        }
+
+        $appName = config('app.name');
+
+        return is_string($appName)
+            ? $appName
+            : 'Website';
     }
 }

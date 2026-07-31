@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
+use App\Services\ContentSanitizer;
 use App\Support\PageMeta;
 use Illuminate\Contracts\View\View;
 
@@ -16,6 +17,12 @@ final class PagePreviewController extends Controller
             [
                 'page' => $page,
 
+                'safeContent' => app(
+                    ContentSanitizer::class,
+                )->sanitize(
+                    $page->content,
+                ),
+
                 'pageTitle' => sprintf(
                     'Preview: %s',
                     $page->title,
@@ -23,10 +30,6 @@ final class PagePreviewController extends Controller
 
                 'metaDescription' => PageMeta::description($page),
 
-                /*
-                 * Search engines must never index
-                 * administrative previews.
-                 */
                 'robots' => 'noindex,nofollow',
 
                 'canonicalUrl' => null,
