@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Pages;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
+use App\Services\PageDeletionService;
 use App\Services\PageWorkflowService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,6 +52,9 @@ final class PageIndex extends Component
     #[Url(as: 'direction', except: 'desc')]
     public string $sortDirection = 'desc';
 
+    #[Url(as: 'records', except: 'active')]
+    public string $recordState = 'active';
+
     public int $perPage = 15;
 
     public function mount(): void
@@ -71,6 +75,12 @@ final class PageIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedRecordState(): void
+    {
+        $this->normaliseRecordState();
+        $this->resetPage();
+    }
+
     public function updatedPerPage(): void
     {
         $this->normalisePerPage();
@@ -83,6 +93,7 @@ final class PageIndex extends Component
         $this->status = 'all';
         $this->sortField = 'updated_at';
         $this->sortDirection = 'desc';
+        $this->recordState = 'active';
         $this->perPage = 15;
 
         $this->resetPage();
@@ -185,16 +196,55 @@ final class PageIndex extends Component
         );
     }
 
+    public function deletePage(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+        $title = $page->title;
+
+        app(PageDeletionService::class)->delete(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$title} was moved to Trash.",
+        );
+    }
+
+    public function restorePage(int $pageId): void
+    {
+        $page = Page::withTrashed()
+            ->findOrFail($pageId);
+
+        $title = $page->title;
+
+        app(PageDeletionService::class)->restore(
+            $pageId,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$title} was restored successfully.",
+        );
+    }
+
     public function render(): View
     {
         $this->normaliseQueryParameters();
 
-        $query = Page::query()
-            ->with([
-                'creator:id,name',
-                'updater:id,name',
-                'approver:id,name',
-            ]);
+        $query = Page::query();
+
+        if ($this->recordState === 'trashed') {
+            $query->onlyTrashed();
+        }
+
+        $query->with([
+            'creator:id,name',
+            'updater:id,name',
+            'approver:id,name',
+        ]);
 
         $search = trim($this->search);
 
@@ -257,6 +307,7 @@ final class PageIndex extends Component
         $this->sortDirection = $this->normalisedSortDirection();
 
         $this->normaliseStatus();
+        $this->normaliseRecordState();
         $this->normalisePerPage();
     }
 
@@ -273,6 +324,22 @@ final class PageIndex extends Component
 
         if (! in_array($this->status, $validStatuses, true)) {
             $this->status = 'all';
+        }
+    }
+
+    private function normaliseRecordState(): void
+    {
+        if (
+            ! in_array(
+                $this->recordState,
+                [
+                    'active',
+                    'trashed',
+                ],
+                true,
+            )
+        ) {
+            $this->recordState = 'active';
         }
     }
 

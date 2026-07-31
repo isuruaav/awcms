@@ -44,7 +44,7 @@
     {{-- Filters --}}
     <section class="rounded-2xl border border-zinc-200
                bg-white p-5 shadow-sm">
-        <div class="grid gap-4 md:grid-cols-3">
+        <div class="grid gap-4 md:grid-cols-4">
             <div class="md:col-span-2">
                 <label for="page-search" class="mb-2 block text-sm font-medium text-zinc-700">
                     Search pages
@@ -80,6 +80,26 @@
                     @endforeach
                 </select>
             </div>
+        </div>
+
+        <div>
+            <label for="page-record-state" class="mb-2 block text-sm font-medium text-zinc-700">
+                Records
+            </label>
+
+            <select id="page-record-state" wire:model.live="recordState"
+                class="w-full rounded-xl border border-zinc-300
+               bg-white px-4 py-2.5 text-sm outline-none
+               focus:border-emerald-500
+               focus:ring-4 focus:ring-emerald-500/10">
+                <option value="active">
+                    Active pages
+                </option>
+
+                <option value="trashed">
+                    Trash
+                </option>
+            </select>
         </div>
 
         <div
@@ -266,123 +286,205 @@
 
                             <td class="px-5 py-4">
                                 <div class="flex min-w-48 flex-wrap justify-end gap-2">
-                                    {{-- Draft actions --}}
-                                    @if ($page->status === \App\Enums\PageStatus::Draft)
-                                        @can('pages.update')
-                                            <a href="{{ route('admin.pages.edit', $page) }}" wire:navigate
-                                                class="inline-flex rounded-lg border
-                           border-zinc-300 bg-white px-3 py-2
-                           text-xs font-semibold text-zinc-700
-                           hover:bg-zinc-100">
-                                                Edit
-                                            </a>
-                                        @endcan
-
-                                        @can('pages.submit')
-                                            <button type="button" wire:click="submitPage({{ $page->id }})"
-                                                wire:loading.attr="disabled" wire:target="submitPage({{ $page->id }})"
-                                                class="inline-flex rounded-lg bg-blue-700
-                           px-3 py-2 text-xs font-semibold
-                           text-white hover:bg-blue-800
+                                    @if ($recordState === 'trashed')
+                                        @can('pages.delete')
+                                            <button type="button" wire:click="restorePage({{ $page->id }})"
+                                                wire:confirm="Restore this page from Trash?" wire:loading.attr="disabled"
+                                                wire:target="restorePage({{ $page->id }})"
+                                                class="inline-flex rounded-lg
+                           bg-emerald-700 px-3 py-2
+                           text-xs font-semibold text-white
+                           hover:bg-emerald-800
                            disabled:cursor-not-allowed
                            disabled:opacity-60">
-                                                Submit
+                                                Restore
                                             </button>
-                                        @endcan
-                                    @endif
-
-                                    {{-- Submitted actions --}}
-                                    @if ($page->status === \App\Enums\PageStatus::Submitted)
-                                        @can('pages.approve')
-                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="returnPageToDraft({{ $page->id }})"
-                                                class="inline-flex rounded-lg border
-                           border-zinc-300 bg-white px-3 py-2
-                           text-xs font-semibold text-zinc-700
-                           hover:bg-zinc-100 disabled:opacity-60">
-                                                Return
-                                            </button>
-
-                                            <button type="button" wire:click="approvePage({{ $page->id }})"
-                                                wire:loading.attr="disabled" wire:target="approvePage({{ $page->id }})"
-                                                class="inline-flex rounded-lg bg-violet-700
-                           px-3 py-2 text-xs font-semibold
-                           text-white hover:bg-violet-800
-                           disabled:opacity-60">
-                                                Approve
-                                            </button>
-                                        @endcan
-                                    @endif
-
-                                    {{-- Approved actions --}}
-                                    @if ($page->status === \App\Enums\PageStatus::Approved)
-                                        @can('pages.approve')
-                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="returnPageToDraft({{ $page->id }})"
-                                                class="inline-flex rounded-lg border
-                           border-zinc-300 bg-white px-3 py-2
-                           text-xs font-semibold text-zinc-700
-                           hover:bg-zinc-100 disabled:opacity-60">
-                                                Return
-                                            </button>
-                                        @endcan
-
-                                        @can('pages.publish')
-                                            <button type="button" wire:click="publishPage({{ $page->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="publishPage({{ $page->id }})"
-                                                class="inline-flex rounded-lg bg-emerald-700
-                           px-3 py-2 text-xs font-semibold
-                           text-white hover:bg-emerald-800
-                           disabled:opacity-60">
-                                                Publish
-                                            </button>
-                                        @endcan
-                                    @endif
-
-                                    {{-- Published actions --}}
-                                    @if ($page->status === \App\Enums\PageStatus::Published)
-                                        @can('pages.publish')
-                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="returnPageToDraft({{ $page->id }})"
-                                                class="inline-flex rounded-lg border
-                           border-amber-300 bg-amber-50
-                           px-3 py-2 text-xs font-semibold
-                           text-amber-800 hover:bg-amber-100
-                           disabled:opacity-60">
-                                                Unpublish
-                                            </button>
-                                        @endcan
-                                    @endif
-
-                                    {{-- Archived actions --}}
-                                    @if ($page->status === \App\Enums\PageStatus::Archived)
-                                        @can('pages.archive')
-                                            <button type="button" wire:click="returnPageToDraft({{ $page->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="returnPageToDraft({{ $page->id }})"
-                                                class="inline-flex rounded-lg border
-                           border-zinc-300 bg-white px-3 py-2
-                           text-xs font-semibold text-zinc-700
-                           hover:bg-zinc-100 disabled:opacity-60">
-                                                Restore Draft
-                                            </button>
+                                        @else
+                                            <span class="text-xs text-zinc-400">
+                                                View only
+                                            </span>
                                         @endcan
                                     @else
-                                        @can('pages.archive')
-                                            <button type="button" wire:click="archivePage({{ $page->id }})"
-                                                wire:loading.attr="disabled"
-                                                wire:target="archivePage({{ $page->id }})"
-                                                class="inline-flex rounded-lg border
-                           border-red-200 bg-red-50 px-3 py-2
-                           text-xs font-semibold text-red-700
-                           hover:bg-red-100 disabled:opacity-60">
-                                                Archive
-                                            </button>
-                                        @endcan
+                                        {{-- Draft --}}
+                                        @if ($page->status === \App\Enums\PageStatus::Draft)
+                                            @can('pages.update')
+                                                <a href="{{ route('admin.pages.edit', $page) }}"
+                                                    wire:navigate
+                                                    class="inline-flex rounded-lg border
+                               border-zinc-300 bg-white
+                               px-3 py-2 text-xs font-semibold
+                               text-zinc-700 hover:bg-zinc-100">
+                                                    Edit
+                                                </a>
+                                            @endcan
+
+                                            @can('pages.submit')
+                                                <button type="button" wire:click="submitPage({{ $page->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="submitPage({{ $page->id }})"
+                                                    class="inline-flex rounded-lg bg-blue-700
+                               px-3 py-2 text-xs font-semibold
+                               text-white hover:bg-blue-800
+                               disabled:opacity-60">
+                                                    Submit
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.archive')
+                                                <button type="button" wire:click="archivePage({{ $page->id }})"
+                                                    wire:confirm="Archive this page?" wire:loading.attr="disabled"
+                                                    wire:target="archivePage({{ $page->id }})"
+                                                    class="inline-flex rounded-lg border
+                               border-amber-200 bg-amber-50
+                               px-3 py-2 text-xs font-semibold
+                               text-amber-700 hover:bg-amber-100
+                               disabled:opacity-60">
+                                                    Archive
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.delete')
+                                                <button type="button" wire:click="deletePage({{ $page->id }})"
+                                                    wire:confirm="Move this draft page to Trash?"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="deletePage({{ $page->id }})"
+                                                    class="inline-flex rounded-lg border
+                               border-red-200 bg-red-50
+                               px-3 py-2 text-xs font-semibold
+                               text-red-700 hover:bg-red-100
+                               disabled:opacity-60">
+                                                    Delete
+                                                </button>
+                                            @endcan
+                                        @endif
+
+                                        {{-- Submitted --}}
+                                        @if ($page->status === \App\Enums\PageStatus::Submitted)
+                                            @can('pages.approve')
+                                                <button type="button"
+                                                    wire:click="returnPageToDraft({{ $page->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="returnPageToDraft({{ $page->id }})"
+                                                    class="inline-flex rounded-lg border
+                               border-zinc-300 bg-white
+                               px-3 py-2 text-xs font-semibold
+                               text-zinc-700 hover:bg-zinc-100">
+                                                    Return
+                                                </button>
+
+                                                <button type="button" wire:click="approvePage({{ $page->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="approvePage({{ $page->id }})"
+                                                    class="inline-flex rounded-lg bg-violet-700
+                               px-3 py-2 text-xs font-semibold
+                               text-white hover:bg-violet-800">
+                                                    Approve
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.archive')
+                                                <button type="button" wire:click="archivePage({{ $page->id }})"
+                                                    wire:confirm="Archive this page?"
+                                                    class="inline-flex rounded-lg border
+                               border-amber-200 bg-amber-50
+                               px-3 py-2 text-xs font-semibold
+                               text-amber-700 hover:bg-amber-100">
+                                                    Archive
+                                                </button>
+                                            @endcan
+                                        @endif
+
+                                        {{-- Approved --}}
+                                        @if ($page->status === \App\Enums\PageStatus::Approved)
+                                            @can('pages.approve')
+                                                <button type="button"
+                                                    wire:click="returnPageToDraft({{ $page->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    class="inline-flex rounded-lg border
+                               border-zinc-300 bg-white
+                               px-3 py-2 text-xs font-semibold
+                               text-zinc-700 hover:bg-zinc-100">
+                                                    Return
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.publish')
+                                                <button type="button" wire:click="publishPage({{ $page->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    class="inline-flex rounded-lg
+                               bg-emerald-700 px-3 py-2
+                               text-xs font-semibold text-white
+                               hover:bg-emerald-800">
+                                                    Publish
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.archive')
+                                                <button type="button" wire:click="archivePage({{ $page->id }})"
+                                                    wire:confirm="Archive this page?"
+                                                    class="inline-flex rounded-lg border
+                               border-amber-200 bg-amber-50
+                               px-3 py-2 text-xs font-semibold
+                               text-amber-700 hover:bg-amber-100">
+                                                    Archive
+                                                </button>
+                                            @endcan
+                                        @endif
+
+                                        {{-- Published --}}
+                                        @if ($page->status === \App\Enums\PageStatus::Published)
+                                            @can('pages.publish')
+                                                <button type="button"
+                                                    wire:click="returnPageToDraft({{ $page->id }})"
+                                                    wire:confirm="Unpublish and return this page to Draft?"
+                                                    wire:loading.attr="disabled"
+                                                    class="inline-flex rounded-lg border
+                               border-amber-300 bg-amber-50
+                               px-3 py-2 text-xs font-semibold
+                               text-amber-800 hover:bg-amber-100">
+                                                    Unpublish
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.archive')
+                                                <button type="button" wire:click="archivePage({{ $page->id }})"
+                                                    wire:confirm="Archive this published page?"
+                                                    class="inline-flex rounded-lg border
+                               border-red-200 bg-red-50
+                               px-3 py-2 text-xs font-semibold
+                               text-red-700 hover:bg-red-100">
+                                                    Archive
+                                                </button>
+                                            @endcan
+                                        @endif
+
+                                        {{-- Archived --}}
+                                        @if ($page->status === \App\Enums\PageStatus::Archived)
+                                            @can('pages.archive')
+                                                <button type="button"
+                                                    wire:click="returnPageToDraft({{ $page->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    class="inline-flex rounded-lg border
+                               border-zinc-300 bg-white
+                               px-3 py-2 text-xs font-semibold
+                               text-zinc-700 hover:bg-zinc-100">
+                                                    Restore Draft
+                                                </button>
+                                            @endcan
+
+                                            @can('pages.delete')
+                                                <button type="button" wire:click="deletePage({{ $page->id }})"
+                                                    wire:confirm="Move this archived page to Trash?"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="deletePage({{ $page->id }})"
+                                                    class="inline-flex rounded-lg border
+                               border-red-200 bg-red-50
+                               px-3 py-2 text-xs font-semibold
+                               text-red-700 hover:bg-red-100">
+                                                    Delete
+                                                </button>
+                                            @endcan
+                                        @endif
                                     @endif
                                 </div>
                             </td>
