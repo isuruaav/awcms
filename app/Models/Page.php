@@ -34,6 +34,7 @@ final class Page extends Model
         return [
             'blocks' => 'array',
             'status' => PageStatus::class,
+            'robots_index' => 'boolean',
             'submitted_at' => 'immutable_datetime',
             'approved_at' => 'immutable_datetime',
             'published_at' => 'immutable_datetime',

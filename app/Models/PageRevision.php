@@ -25,6 +25,7 @@ final class PageRevision extends Model
         return [
             'blocks' => 'array',
             'status' => PageStatus::class,
+            'robots_index' => 'boolean',
             'created_at' => 'immutable_datetime',
         ];
     }

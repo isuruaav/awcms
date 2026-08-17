@@ -78,22 +78,35 @@ final class PageRevisionService
                     ]);
                 }
 
-                $revisionTitle = (string) $lockedRevision->title;
-                $revisionSlug = (string) $lockedRevision->slug;
+                $revisionTitle =
+                    (string) $lockedRevision->title;
+
+                $revisionSlug =
+                    (string) $lockedRevision->slug;
 
                 $restoredSlug = PageSlugger::unique(
                     $revisionSlug,
                     (int) $page->id,
                 );
 
-                $oldTitle = (string) $page->title;
-                $oldSlug = (string) $page->slug;
+                /*
+                 * Current page values.
+                 */
+                $oldTitle =
+                    (string) $page->title;
 
-                $oldExcerpt = is_string($page->excerpt)
+                $oldSlug =
+                    (string) $page->slug;
+
+                $oldExcerpt = is_string(
+                    $page->excerpt,
+                )
                     ? $page->excerpt
                     : '';
 
-                $oldContent = is_string($page->content)
+                $oldContent = is_string(
+                    $page->content,
+                )
                     ? $page->content
                     : '';
 
@@ -101,6 +114,39 @@ final class PageRevisionService
                     $page,
                 );
 
+                $oldSeoTitle = $this->nullableString(
+                    $page->seo_title,
+                );
+
+                $oldMetaDescription =
+                    $this->nullableString(
+                        $page->meta_description,
+                    );
+
+                $oldCanonicalUrl =
+                    $this->nullableString(
+                        $page->canonical_url,
+                    );
+
+                $oldRobotsIndex =
+                    (bool) $page->robots_index;
+
+                $oldOgTitle = $this->nullableString(
+                    $page->og_title,
+                );
+
+                $oldOgDescription =
+                    $this->nullableString(
+                        $page->og_description,
+                    );
+
+                $oldOgImage = $this->nullableString(
+                    $page->og_image,
+                );
+
+                /*
+                 * Selected revision values.
+                 */
                 $revisionExcerpt = is_string(
                     $lockedRevision->excerpt,
                 )
@@ -117,12 +163,62 @@ final class PageRevisionService
                     $lockedRevision,
                 );
 
+                $revisionSeoTitle =
+                    $this->nullableString(
+                        $lockedRevision->seo_title,
+                    );
+
+                $revisionMetaDescription =
+                    $this->nullableString(
+                        $lockedRevision->meta_description,
+                    );
+
+                $revisionCanonicalUrl =
+                    $this->nullableString(
+                        $lockedRevision->canonical_url,
+                    );
+
+                $revisionRobotsIndex =
+                    (bool) $lockedRevision->robots_index;
+
+                $revisionOgTitle =
+                    $this->nullableString(
+                        $lockedRevision->og_title,
+                    );
+
+                $revisionOgDescription =
+                    $this->nullableString(
+                        $lockedRevision->og_description,
+                    );
+
+                $revisionOgImage =
+                    $this->nullableString(
+                        $lockedRevision->og_image,
+                    );
+
+                /*
+                 * Check whether the selected revision differs
+                 * from the current Draft page.
+                 */
                 $hasChanges =
                     $oldTitle !== $revisionTitle
                     || $oldSlug !== $restoredSlug
                     || $oldExcerpt !== $revisionExcerpt
                     || $oldContent !== $revisionContent
-                    || $oldBlocks !== $revisionBlocks;
+                    || $oldBlocks !== $revisionBlocks
+                    || $oldSeoTitle !== $revisionSeoTitle
+                    || $oldMetaDescription
+                    !== $revisionMetaDescription
+                    || $oldCanonicalUrl
+                    !== $revisionCanonicalUrl
+                    || $oldRobotsIndex
+                    !== $revisionRobotsIndex
+                    || $oldOgTitle
+                    !== $revisionOgTitle
+                    || $oldOgDescription
+                    !== $revisionOgDescription
+                    || $oldOgImage
+                    !== $revisionOgImage;
 
                 if (! $hasChanges) {
                     throw ValidationException::withMessages([
@@ -130,6 +226,12 @@ final class PageRevisionService
                     ]);
                 }
 
+                /*
+                 * Restore editable page content and SEO metadata.
+                 *
+                 * Workflow status is intentionally NOT restored.
+                 * The page remains Draft.
+                 */
                 $page->forceFill([
                     'title' => $revisionTitle,
                     'slug' => $restoredSlug,
@@ -143,17 +245,38 @@ final class PageRevisionService
                         : null,
 
                     'blocks' => $revisionBlocks,
+
+                    'seo_title' => $revisionSeoTitle,
+
+                    'meta_description' => $revisionMetaDescription,
+
+                    'canonical_url' => $revisionCanonicalUrl,
+
+                    'robots_index' => $revisionRobotsIndex,
+
+                    'og_title' => $revisionOgTitle,
+
+                    'og_description' => $revisionOgDescription,
+
+                    'og_image' => $revisionOgImage,
+
                     'updated_by' => $actor->id,
                 ])->save();
 
+                /*
+                 * Restoring an old revision itself creates
+                 * a new revision, preserving the full history.
+                 */
                 $newRevision = $this->createSnapshot(
                     page: $page,
                     actor: $actor,
                     summary: sprintf(
                         'Restored from revision #%d.',
-                        (int) $lockedRevision->revision_number,
+                        (int) $lockedRevision
+                            ->revision_number,
                     ),
-                    restoredFromRevisionNumber: (int) $lockedRevision->revision_number,
+                    restoredFromRevisionNumber: (int) $lockedRevision
+                        ->revision_number,
                 );
 
                 app(AuditLogger::class)->log(
@@ -163,25 +286,65 @@ final class PageRevisionService
                     subject: $page,
                     oldValues: [
                         'title' => $oldTitle,
+
                         'slug' => $oldSlug,
 
                         'excerpt_length' => mb_strlen($oldExcerpt),
 
                         'content_length' => mb_strlen($oldContent),
+
+                        'robots_index' => $oldRobotsIndex,
+
+                        'seo_title_present' => $oldSeoTitle !== null,
+
+                        'meta_description_present' => $oldMetaDescription !== null,
+
+                        'canonical_url_present' => $oldCanonicalUrl !== null,
+
+                        'og_title_present' => $oldOgTitle !== null,
+
+                        'og_description_present' => $oldOgDescription !== null,
+
+                        'og_image_present' => $oldOgImage !== null,
                     ],
                     newValues: [
                         'title' => (string) $page->title,
+
                         'slug' => (string) $page->slug,
 
-                        'excerpt_length' => mb_strlen($revisionExcerpt),
+                        'excerpt_length' => mb_strlen(
+                            $revisionExcerpt,
+                        ),
 
-                        'content_length' => mb_strlen($revisionContent),
+                        'content_length' => mb_strlen(
+                            $revisionContent,
+                        ),
 
-                        'restored_from_revision' => (int) $lockedRevision->revision_number,
+                        'robots_index' => $revisionRobotsIndex,
 
-                        'created_revision' => (int) $newRevision->revision_number,
+                        'seo_title_present' => $revisionSeoTitle !== null,
 
-                        'slug_adjusted' => $restoredSlug !== $revisionSlug,
+                        'meta_description_present' => $revisionMetaDescription
+                            !== null,
+
+                        'canonical_url_present' => $revisionCanonicalUrl
+                            !== null,
+
+                        'og_title_present' => $revisionOgTitle !== null,
+
+                        'og_description_present' => $revisionOgDescription
+                            !== null,
+
+                        'og_image_present' => $revisionOgImage !== null,
+
+                        'restored_from_revision' => (int) $lockedRevision
+                            ->revision_number,
+
+                        'created_revision' => (int) $newRevision
+                            ->revision_number,
+
+                        'slug_adjusted' => $restoredSlug
+                            !== $revisionSlug,
                     ],
                 );
 
@@ -210,23 +373,58 @@ final class PageRevisionService
          *     slug: string,
          *     excerpt: string|null,
          *     content: string|null,
+         *     seo_title: string|null,
+         *     meta_description: string|null,
+         *     canonical_url: string|null,
+         *     robots_index: bool,
+         *     og_title: string|null,
+         *     og_description: string|null,
+         *     og_image: string|null,
          *     blocks: array<array-key, mixed>|null,
          *     status: string
          * } $snapshot
          */
         $snapshot = [
             'title' => (string) $page->title,
+
             'slug' => (string) $page->slug,
 
-            'excerpt' => is_string($page->excerpt)
-                ? $page->excerpt
-                : null,
+            'excerpt' => $this->nullableString(
+                $page->excerpt,
+            ),
 
-            'content' => is_string($page->content)
-                ? $page->content
-                : null,
+            'content' => $this->nullableString(
+                $page->content,
+            ),
+
+            'seo_title' => $this->nullableString(
+                $page->seo_title,
+            ),
+
+            'meta_description' => $this->nullableString(
+                $page->meta_description,
+            ),
+
+            'canonical_url' => $this->nullableString(
+                $page->canonical_url,
+            ),
+
+            'robots_index' => (bool) $page->robots_index,
+
+            'og_title' => $this->nullableString(
+                $page->og_title,
+            ),
+
+            'og_description' => $this->nullableString(
+                $page->og_description,
+            ),
+
+            'og_image' => $this->nullableString(
+                $page->og_image,
+            ),
 
             'blocks' => $blocks,
+
             'status' => $status->value,
         ];
 
@@ -247,20 +445,21 @@ final class PageRevisionService
 
         /*
          * Do not create duplicate revisions when
-         * the page snapshot has not changed.
+         * the snapshot has not changed.
          */
         if (
             $latestRevision instanceof PageRevision
             && (string) $latestRevision->snapshot_hash
-                === $snapshotHash
+            === $snapshotHash
         ) {
             return $latestRevision;
         }
 
         $latestRevisionNumber =
             $latestRevision instanceof PageRevision
-                ? (int) $latestRevision->revision_number
-                : 0;
+            ? (int) $latestRevision
+                ->revision_number
+            : 0;
 
         $normalisedSummary = trim(
             $summary,
@@ -272,19 +471,38 @@ final class PageRevisionService
             'revision_number' => $latestRevisionNumber + 1,
 
             'title' => $snapshot['title'],
+
             'slug' => $snapshot['slug'],
+
             'excerpt' => $snapshot['excerpt'],
+
             'content' => $snapshot['content'],
+
+            'seo_title' => $snapshot['seo_title'],
+
+            'meta_description' => $snapshot['meta_description'],
+
+            'canonical_url' => $snapshot['canonical_url'],
+
+            'robots_index' => $snapshot['robots_index'],
+
+            'og_title' => $snapshot['og_title'],
+
+            'og_description' => $snapshot['og_description'],
+
+            'og_image' => $snapshot['og_image'],
+
             'blocks' => $snapshot['blocks'],
+
             'status' => $snapshot['status'],
 
             'change_summary' => $normalisedSummary !== ''
-                    ? Str::limit(
-                        $normalisedSummary,
-                        255,
-                        '',
-                    )
-                    : null,
+                ? Str::limit(
+                    $normalisedSummary,
+                    255,
+                    '',
+                )
+                : null,
 
             'snapshot_hash' => $snapshotHash,
 
@@ -295,8 +513,8 @@ final class PageRevisionService
     }
 
     /**
-     * Read and normalise the JSON blocks attribute without
-     * relying on PHPStan's inferred database property type.
+     * Read and normalise the JSON blocks attribute
+     * without depending on generated model property types.
      *
      * @return array<array-key, mixed>|null
      */
@@ -309,6 +527,14 @@ final class PageRevisionService
 
         return is_array($blocks)
             ? $blocks
+            : null;
+    }
+
+    private function nullableString(
+        mixed $value,
+    ): ?string {
+        return is_string($value)
+            ? $value
             : null;
     }
 
