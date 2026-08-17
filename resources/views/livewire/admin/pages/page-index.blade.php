@@ -306,13 +306,27 @@
                                         @endcan
                                     @else
                                         @can('pages.view')
-                                            <a href="{{ route('admin.pages.preview', $page) }}"
-                                                target="_blank" rel="noopener noreferrer"
+                                            <a href="{{ route('admin.pages.preview', $page) }}" target="_blank"
+                                                rel="noopener noreferrer"
                                                 class="inline-flex rounded-lg border
                border-blue-200 bg-blue-50
                px-3 py-2 text-xs font-semibold
                text-blue-700 hover:bg-blue-100">
                                                 Preview
+                                            </a>
+                                        @endcan
+
+
+                                        @can('pages.revisions.view')
+                                            <a href="{{ route('admin.pages.revisions', $page) }}"
+                                                wire:navigate
+                                                class="inline-flex rounded-lg
+               border border-violet-200
+               bg-violet-50 px-3 py-2
+               text-xs font-semibold
+               text-violet-700
+               hover:bg-violet-100">
+                                                History
                                             </a>
                                         @endcan
                                         {{-- Draft --}}

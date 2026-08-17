@@ -91,6 +91,14 @@ Route::middleware([
                 ->name('pages.preview');
 
             Route::livewire(
+                '/pages/{page}/revisions',
+                'admin.pages.page-revision-history',
+            )
+                ->whereNumber('page')
+                ->middleware('can:pages.revisions.view')
+                ->name('pages.revisions');
+
+            Route::livewire(
                 '/pages/{page}/edit',
                 'admin.pages.page-edit',
             )
