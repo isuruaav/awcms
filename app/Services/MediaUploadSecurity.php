@@ -9,12 +9,10 @@ final class MediaUploadSecurity
     public function uploadsAllowed(
         MediaType $type,
     ): bool {
-        $enabled = config(
+        return config(
             "media.uploads.{$type->value}.enabled",
             false,
-        );
-
-        return $enabled === true;
+        ) === true;
     }
 
     public function maximumKilobytes(
@@ -25,14 +23,70 @@ final class MediaUploadSecurity
             0,
         );
 
-        if (! is_int($value)) {
-            return 0;
+        return is_int($value)
+            ? max(0, $value)
+            : 0;
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    public function mimeExtensionMap(
+        MediaType $type,
+    ): array {
+        $configured = config(
+            "media.uploads.{$type->value}.mime_extensions",
+            [],
+        );
+
+        if (! is_array($configured)) {
+            return [];
         }
 
-        return max(
-            0,
-            $value,
-        );
+        $result = [];
+
+        foreach (
+            $configured as $mimeType => $extensions
+        ) {
+            if (
+                ! is_string($mimeType)
+                || ! is_array($extensions)
+            ) {
+                continue;
+            }
+
+            $normalisedExtensions = [];
+
+            foreach ($extensions as $extension) {
+                if (! is_string($extension)) {
+                    continue;
+                }
+
+                $extension = $this->normaliseExtension(
+                    $extension,
+                );
+
+                if ($extension === '') {
+                    continue;
+                }
+
+                $normalisedExtensions[] = $extension;
+            }
+
+            if ($normalisedExtensions === []) {
+                continue;
+            }
+
+            $result[
+                strtolower(trim($mimeType))
+            ] = array_values(
+                array_unique(
+                    $normalisedExtensions,
+                ),
+            );
+        }
+
+        return $result;
     }
 
     /**
@@ -41,30 +95,10 @@ final class MediaUploadSecurity
     public function allowedMimeTypes(
         MediaType $type,
     ): array {
-        $mimeTypes = config(
-            "media.uploads.{$type->value}.mime_types",
-            [],
-        );
-
-        if (! is_array($mimeTypes)) {
-            return [];
-        }
-
-        $result = [];
-
-        foreach ($mimeTypes as $mimeType) {
-            if (
-                is_string($mimeType)
-                && trim($mimeType) !== ''
-            ) {
-                $result[] = strtolower(
-                    trim($mimeType),
-                );
-            }
-        }
-
-        return array_values(
-            array_unique($result),
+        return array_keys(
+            $this->mimeExtensionMap(
+                $type,
+            ),
         );
     }
 
@@ -72,23 +106,65 @@ final class MediaUploadSecurity
         MediaType $type,
         string $mimeType,
     ): bool {
-        if (
-            ! $this->uploadsAllowed(
-                $type,
-            )
-        ) {
+        if (! $this->uploadsAllowed($type)) {
             return false;
         }
 
-        return in_array(
+        return array_key_exists(
             strtolower(
                 trim($mimeType),
             ),
-            $this->allowedMimeTypes(
+            $this->mimeExtensionMap(
                 $type,
             ),
+        );
+    }
+
+    public function allowsExtensionForMimeType(
+        MediaType $type,
+        string $mimeType,
+        string $extension,
+    ): bool {
+        if (! $this->uploadsAllowed($type)) {
+            return false;
+        }
+
+        $mimeType = strtolower(
+            trim($mimeType),
+        );
+
+        $extension = $this->normaliseExtension(
+            $extension,
+        );
+
+        $extensions = $this
+            ->mimeExtensionMap($type)[$mimeType]
+            ?? [];
+
+        return in_array(
+            $extension,
+            $extensions,
             true,
         );
+    }
+
+    public function preferredExtensionForMimeType(
+        MediaType $type,
+        string $mimeType,
+    ): ?string {
+        $mimeType = strtolower(
+            trim($mimeType),
+        );
+
+        $extensions = $this
+            ->mimeExtensionMap($type)[$mimeType]
+            ?? [];
+
+        if ($extensions === []) {
+            return null;
+        }
+
+        return $extensions[0];
     }
 
     public function isForbiddenExtension(
@@ -103,28 +179,35 @@ final class MediaUploadSecurity
             return true;
         }
 
-        $normalised = strtolower(
-            ltrim(
-                trim($extension),
-                '.',
-            ),
+        $extension = $this->normaliseExtension(
+            $extension,
         );
 
-        if ($normalised === '') {
+        if ($extension === '') {
             return true;
         }
 
         foreach ($forbidden as $value) {
             if (
                 is_string($value)
-                && strtolower(
-                    trim($value),
-                ) === $normalised
+                && $this->normaliseExtension($value)
+                    === $extension
             ) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    private function normaliseExtension(
+        string $extension,
+    ): string {
+        return strtolower(
+            ltrim(
+                trim($extension),
+                '.',
+            ),
+        );
     }
 }

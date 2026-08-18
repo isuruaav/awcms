@@ -2,21 +2,30 @@
 
 return [
     /*
-     * Actual disk selection will be used by
-     * Step 08B Upload Service.
+     * Public files may be served directly by the website.
+     *
+     * Internal and Restricted files must never be stored
+     * on the public filesystem disk.
      */
-    'disk' => env(
-        'MEDIA_DISK',
-        'public',
-    ),
+    'disks' => [
+        'public' => env(
+            'MEDIA_PUBLIC_DISK',
+            'public',
+        ),
+
+        'private' => env(
+            'MEDIA_PRIVATE_DISK',
+            'local',
+        ),
+    ],
 
     'directory' => 'media',
 
     /*
      * Upload allowlists.
      *
-     * SVG and executable/web files are intentionally
-     * not accepted by the first Media Library version.
+     * MIME detection is performed using the actual
+     * temporary file contents, not only browser headers.
      */
     'uploads' => [
         'image' => [
@@ -24,10 +33,19 @@ return [
 
             'max_kb' => 10240,
 
-            'mime_types' => [
-                'image/jpeg',
-                'image/png',
-                'image/webp',
+            'mime_extensions' => [
+                'image/jpeg' => [
+                    'jpg',
+                    'jpeg',
+                ],
+
+                'image/png' => [
+                    'png',
+                ],
+
+                'image/webp' => [
+                    'webp',
+                ],
             ],
         ],
 
@@ -36,21 +54,22 @@ return [
 
             'max_kb' => 20480,
 
-            'mime_types' => [
-                'application/pdf',
+            'mime_extensions' => [
+                'application/pdf' => [
+                    'pdf',
+                ],
             ],
         ],
 
         /*
-         * Initial video support will use trusted
-         * external links rather than direct uploads.
+         * Initial video support uses external links.
          */
         'video' => [
             'enabled' => false,
 
             'max_kb' => 0,
 
-            'mime_types' => [],
+            'mime_extensions' => [],
         ],
 
         'other' => [
@@ -58,10 +77,17 @@ return [
 
             'max_kb' => 0,
 
-            'mime_types' => [],
+            'mime_extensions' => [],
         ],
     ],
 
+    /*
+     * Defense-in-depth denylist.
+     *
+     * Even if upload configuration is accidentally
+     * changed later, these executable / active web
+     * extensions remain forbidden.
+     */
     'forbidden_extensions' => [
         'php',
         'php3',
