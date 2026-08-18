@@ -180,6 +180,9 @@
                 Cancel
             </a>
 
+            <x-forms.page-seo-fields :title="$title" :slug="$slug" :seo-title="$seoTitle" :meta-description="$metaDescription"
+                :canonical-url="$canonicalUrl" :robots-index="$robotsIndex" :og-title="$ogTitle" :og-description="$ogDescription" :og-image="$ogImage" />
+
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
                 class="inline-flex items-center justify-center
                        rounded-xl bg-emerald-700 px-5 py-3

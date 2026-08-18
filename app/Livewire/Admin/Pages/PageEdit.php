@@ -31,29 +31,90 @@ final class PageEdit extends Component
 
     public string $content = '';
 
+    public string $seoTitle = '';
+
+    public string $metaDescription = '';
+
+    public string $canonicalUrl = '';
+
+    public bool $robotsIndex = true;
+
+    public string $ogTitle = '';
+
+    public string $ogDescription = '';
+
+    public string $ogImage = '';
+
     public bool $slugManuallyEdited = true;
 
     public function mount(Page $page): void
     {
-        Gate::authorize('pages.update');
+        Gate::authorize(
+            'pages.update',
+        );
 
-        $this->ensureDraftPage($page);
+        $this->ensureDraftPage(
+            $page,
+        );
 
-        $this->pageId = $page->id;
-        $this->title = (string) $page->title;
-        $this->slug = (string) $page->slug;
+        $this->pageId =
+            (int) $page->id;
 
-        $this->excerpt = is_string($page->excerpt)
-            ? $page->excerpt
-            : '';
+        $this->title =
+            (string) $page->title;
 
-        $this->content = is_string($page->content)
-            ? $page->content
-            : '';
+        $this->slug =
+            (string) $page->slug;
+
+        $this->excerpt =
+            is_string($page->excerpt)
+                ? $page->excerpt
+                : '';
+
+        $this->content =
+            is_string($page->content)
+                ? $page->content
+                : '';
 
         /*
-         * Existing page slugs should not change automatically
-         * when the title is edited.
+         * SEO
+         */
+        $this->seoTitle =
+            is_string($page->seo_title)
+                ? $page->seo_title
+                : '';
+
+        $this->metaDescription =
+            is_string($page->meta_description)
+                ? $page->meta_description
+                : '';
+
+        $this->canonicalUrl =
+            is_string($page->canonical_url)
+                ? $page->canonical_url
+                : '';
+
+        $this->robotsIndex =
+            (bool) $page->robots_index;
+
+        $this->ogTitle =
+            is_string($page->og_title)
+                ? $page->og_title
+                : '';
+
+        $this->ogDescription =
+            is_string($page->og_description)
+                ? $page->og_description
+                : '';
+
+        $this->ogImage =
+            is_string($page->og_image)
+                ? $page->og_image
+                : '';
+
+        /*
+         * Existing page URLs should not automatically
+         * change when its title changes.
          */
         $this->slugManuallyEdited = true;
     }
@@ -64,31 +125,46 @@ final class PageEdit extends Component
             return;
         }
 
-        $this->slug = Str::slug($this->title);
+        $this->slug = Str::slug(
+            $this->title,
+        );
     }
 
     public function updatedSlug(): void
     {
         $this->slugManuallyEdited = true;
-        $this->slug = Str::slug($this->slug);
+
+        $this->slug = Str::slug(
+            $this->slug,
+        );
     }
 
     public function regenerateSlug(): void
     {
         $this->slugManuallyEdited = false;
-        $this->slug = Str::slug($this->title);
 
-        $this->resetValidation('slug');
+        $this->slug = Str::slug(
+            $this->title,
+        );
+
+        $this->resetValidation(
+            'slug',
+        );
     }
 
     public function save(): void
     {
-        Gate::authorize('pages.update');
+        Gate::authorize(
+            'pages.update',
+        );
 
         $actor = $this->actor();
         $page = $this->page();
 
-        $this->ensureDraftPage($page);
+        $this->ensureDraftPage(
+            $page,
+        );
+
         $this->normaliseInput();
         $this->validate();
 
@@ -101,28 +177,112 @@ final class PageEdit extends Component
             $page->id,
         );
 
-        $oldTitle = (string) $page->title;
-        $oldSlug = (string) $page->slug;
+        /*
+         * Existing values.
+         */
+        $oldTitle =
+            (string) $page->title;
 
-        $oldExcerpt = is_string($page->excerpt)
-            ? $page->excerpt
-            : '';
+        $oldSlug =
+            (string) $page->slug;
 
-        $oldContent = is_string($page->content)
-            ? $page->content
-            : '';
+        $oldExcerpt =
+            is_string($page->excerpt)
+                ? $page->excerpt
+                : '';
 
-        $titleChanged = $oldTitle !== $this->title;
-        $slugChanged = $oldSlug !== $uniqueSlug;
-        $excerptChanged = $oldExcerpt !== $this->excerpt;
-        $contentChanged = $oldContent !== $this->content;
+        $oldContent =
+            is_string($page->content)
+                ? $page->content
+                : '';
 
-        if (
-            ! $titleChanged
-            && ! $slugChanged
-            && ! $excerptChanged
-            && ! $contentChanged
-        ) {
+        $oldSeoTitle =
+            $this->stringValue(
+                $page->seo_title,
+            );
+
+        $oldMetaDescription =
+            $this->stringValue(
+                $page->meta_description,
+            );
+
+        $oldCanonicalUrl =
+            $this->stringValue(
+                $page->canonical_url,
+            );
+
+        $oldRobotsIndex =
+            (bool) $page->robots_index;
+
+        $oldOgTitle =
+            $this->stringValue(
+                $page->og_title,
+            );
+
+        $oldOgDescription =
+            $this->stringValue(
+                $page->og_description,
+            );
+
+        $oldOgImage =
+            $this->stringValue(
+                $page->og_image,
+            );
+
+        /*
+         * Change detection.
+         */
+        $titleChanged =
+            $oldTitle !== $this->title;
+
+        $slugChanged =
+            $oldSlug !== $uniqueSlug;
+
+        $excerptChanged =
+            $oldExcerpt !== $this->excerpt;
+
+        $contentChanged =
+            $oldContent !== $this->content;
+
+        $seoTitleChanged =
+            $oldSeoTitle !== $this->seoTitle;
+
+        $metaDescriptionChanged =
+            $oldMetaDescription
+            !== $this->metaDescription;
+
+        $canonicalUrlChanged =
+            $oldCanonicalUrl
+            !== $this->canonicalUrl;
+
+        $robotsIndexChanged =
+            $oldRobotsIndex
+            !== $this->robotsIndex;
+
+        $ogTitleChanged =
+            $oldOgTitle !== $this->ogTitle;
+
+        $ogDescriptionChanged =
+            $oldOgDescription
+            !== $this->ogDescription;
+
+        $ogImageChanged =
+            $oldOgImage !== $this->ogImage;
+
+        $hasChanges =
+            $titleChanged
+            || $slugChanged
+            || $excerptChanged
+            || $contentChanged
+            || $seoTitleChanged
+            || $metaDescriptionChanged
+            || $canonicalUrlChanged
+            || $robotsIndexChanged
+            || $ogTitleChanged
+            || $ogDescriptionChanged
+            || $ogImageChanged;
+
+        if (! $hasChanges) {
             session()->flash(
                 'status',
                 'No page changes were detected.',
@@ -131,85 +291,235 @@ final class PageEdit extends Component
             return;
         }
 
-        DB::transaction(function () use (
-            $actor,
-            $page,
-            $uniqueSlug,
-            $oldTitle,
-            $oldSlug,
-            $oldExcerpt,
-            $oldContent,
-            $titleChanged,
-            $slugChanged,
-            $excerptChanged,
-            $contentChanged,
-        ): void {
-            $page->forceFill([
-                'title' => $this->title,
-                'slug' => $uniqueSlug,
+        DB::transaction(
+            function () use (
+                $actor,
+                $page,
+                $uniqueSlug,
+                $oldTitle,
+                $oldSlug,
+                $oldExcerpt,
+                $oldContent,
+                $oldSeoTitle,
+                $oldMetaDescription,
+                $oldCanonicalUrl,
+                $oldRobotsIndex,
+                $oldOgTitle,
+                $oldOgDescription,
+                $oldOgImage,
+                $titleChanged,
+                $slugChanged,
+                $excerptChanged,
+                $contentChanged,
+                $seoTitleChanged,
+                $metaDescriptionChanged,
+                $canonicalUrlChanged,
+                $robotsIndexChanged,
+                $ogTitleChanged,
+                $ogDescriptionChanged,
+                $ogImageChanged,
+            ): void {
+                $page->forceFill([
+                    'title' => $this->title,
 
-                'excerpt' => $this->excerpt !== ''
-                    ? $this->excerpt
-                    : null,
+                    'slug' => $uniqueSlug,
 
-                'content' => $this->content !== ''
-                    ? $this->content
-                    : null,
+                    'excerpt' => $this->excerpt !== ''
+                            ? $this->excerpt
+                            : null,
 
-                'updated_by' => $actor->id,
-            ])->save();
+                    'content' => $this->content !== ''
+                            ? $this->content
+                            : null,
 
-            /**
-             * @var array<string, mixed> $oldValues
-             */
-            $oldValues = [];
+                    /*
+                     * SEO
+                     */
+                    'seo_title' => $this->seoTitle !== ''
+                            ? $this->seoTitle
+                            : null,
 
-            /**
-             * @var array<string, mixed> $newValues
-             */
-            $newValues = [];
+                    'meta_description' => $this->metaDescription !== ''
+                            ? $this->metaDescription
+                            : null,
 
-            if ($titleChanged) {
-                $oldValues['title'] = $oldTitle;
-                $newValues['title'] = $this->title;
-            }
+                    'canonical_url' => $this->canonicalUrl !== ''
+                            ? $this->canonicalUrl
+                            : null,
 
-            if ($slugChanged) {
-                $oldValues['slug'] = $oldSlug;
-                $newValues['slug'] = $uniqueSlug;
-            }
+                    'robots_index' => $this->robotsIndex,
 
-            /*
-             * Do not write excerpt or page body content into
-             * audit logs. Store only safe change metadata.
-             */
-            if ($excerptChanged) {
-                $oldValues['excerpt_length'] = mb_strlen($oldExcerpt);
-                $newValues['excerpt_length'] = mb_strlen($this->excerpt);
-                $newValues['excerpt_changed'] = true;
-            }
+                    'og_title' => $this->ogTitle !== ''
+                            ? $this->ogTitle
+                            : null,
 
-            if ($contentChanged) {
-                $oldValues['content_length'] = mb_strlen($oldContent);
-                $newValues['content_length'] = mb_strlen($this->content);
-                $newValues['content_changed'] = true;
-            }
+                    'og_description' => $this->ogDescription !== ''
+                            ? $this->ogDescription
+                            : null,
 
-            app(AuditLogger::class)->log(
-                event: 'pages.updated',
-                description: 'Draft website page updated.',
-                actor: $actor,
-                subject: $page,
-                oldValues: $oldValues,
-                newValues: $newValues,
-            );
+                    'og_image' => $this->ogImage !== ''
+                            ? $this->ogImage
+                            : null,
 
-            app(PageRevisionService::class)->capture(
-                page: $page,
-                actor: $actor,
-                summary: 'Draft page content updated.',
-            );
-        });
+                    'updated_by' => $actor->id,
+                ])->save();
+
+                /**
+                 * @var array<string, mixed> $oldValues
+                 */
+                $oldValues = [];
+
+                /**
+                 * @var array<string, mixed> $newValues
+                 */
+                $newValues = [];
+
+                if ($titleChanged) {
+                    $oldValues['title'] =
+                        $oldTitle;
+
+                    $newValues['title'] =
+                        $this->title;
+                }
+
+                if ($slugChanged) {
+                    $oldValues['slug'] =
+                        $oldSlug;
+
+                    $newValues['slug'] =
+                        $uniqueSlug;
+                }
+
+                if ($excerptChanged) {
+                    $oldValues['excerpt_length'] =
+                        mb_strlen($oldExcerpt);
+
+                    $newValues['excerpt_length'] =
+                        mb_strlen(
+                            $this->excerpt,
+                        );
+
+                    $newValues['excerpt_changed'] =
+                        true;
+                }
+
+                if ($contentChanged) {
+                    $oldValues['content_length'] =
+                        mb_strlen($oldContent);
+
+                    $newValues['content_length'] =
+                        mb_strlen(
+                            $this->content,
+                        );
+
+                    $newValues['content_changed'] =
+                        true;
+                }
+
+                /*
+                 * SEO audit values do not store full
+                 * descriptions or page content.
+                 */
+                if ($seoTitleChanged) {
+                    $oldValues['seo_title_present'] =
+                        $oldSeoTitle !== '';
+
+                    $newValues['seo_title_present'] =
+                        $this->seoTitle !== '';
+
+                    $newValues['seo_title_changed'] =
+                        true;
+                }
+
+                if ($metaDescriptionChanged) {
+                    $oldValues[
+                        'meta_description_present'
+                    ] = $oldMetaDescription !== '';
+
+                    $newValues[
+                        'meta_description_present'
+                    ] = $this->metaDescription !== '';
+
+                    $newValues[
+                        'meta_description_changed'
+                    ] = true;
+                }
+
+                if ($canonicalUrlChanged) {
+                    $oldValues[
+                        'canonical_url_present'
+                    ] = $oldCanonicalUrl !== '';
+
+                    $newValues[
+                        'canonical_url_present'
+                    ] = $this->canonicalUrl !== '';
+
+                    $newValues[
+                        'canonical_url_changed'
+                    ] = true;
+                }
+
+                if ($robotsIndexChanged) {
+                    $oldValues['robots_index'] =
+                        $oldRobotsIndex;
+
+                    $newValues['robots_index'] =
+                        $this->robotsIndex;
+                }
+
+                if ($ogTitleChanged) {
+                    $oldValues['og_title_present'] =
+                        $oldOgTitle !== '';
+
+                    $newValues['og_title_present'] =
+                        $this->ogTitle !== '';
+
+                    $newValues['og_title_changed'] =
+                        true;
+                }
+
+                if ($ogDescriptionChanged) {
+                    $oldValues[
+                        'og_description_present'
+                    ] = $oldOgDescription !== '';
+
+                    $newValues[
+                        'og_description_present'
+                    ] = $this->ogDescription !== '';
+
+                    $newValues[
+                        'og_description_changed'
+                    ] = true;
+                }
+
+                if ($ogImageChanged) {
+                    $oldValues['og_image_present'] =
+                        $oldOgImage !== '';
+
+                    $newValues['og_image_present'] =
+                        $this->ogImage !== '';
+
+                    $newValues['og_image_changed'] =
+                        true;
+                }
+
+                app(AuditLogger::class)->log(
+                    event: 'pages.updated',
+                    description: 'Draft website page updated.',
+                    actor: $actor,
+                    subject: $page,
+                    oldValues: $oldValues,
+                    newValues: $newValues,
+                );
+
+                app(PageRevisionService::class)
+                    ->capture(
+                        page: $page,
+                        actor: $actor,
+                        summary: 'Draft page content and metadata updated.',
+                    );
+            },
+        );
 
         session()->flash(
             'status',
@@ -241,12 +551,12 @@ final class PageEdit extends Component
                 'max:255',
                 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
 
-                /*
-                 * PageSlugger also guarantees uniqueness.
-                 * This rule provides immediate form feedback.
-                 */
-                Rule::unique('pages', 'slug')
-                    ->ignore($this->pageId),
+                Rule::unique(
+                    'pages',
+                    'slug',
+                )->ignore(
+                    $this->pageId,
+                ),
             ],
 
             'excerpt' => [
@@ -260,6 +570,51 @@ final class PageEdit extends Component
                 'string',
                 'max:100000',
             ],
+
+            /*
+             * SEO
+             */
+            'seoTitle' => [
+                'nullable',
+                'string',
+                'max:70',
+            ],
+
+            'metaDescription' => [
+                'nullable',
+                'string',
+                'max:160',
+            ],
+
+            'canonicalUrl' => [
+                'nullable',
+                'string',
+                'max:2048',
+                'url:http,https',
+            ],
+
+            'robotsIndex' => [
+                'boolean',
+            ],
+
+            'ogTitle' => [
+                'nullable',
+                'string',
+                'max:95',
+            ],
+
+            'ogDescription' => [
+                'nullable',
+                'string',
+                'max:200',
+            ],
+
+            'ogImage' => [
+                'nullable',
+                'string',
+                'max:2048',
+                'url:http,https',
+            ],
         ];
     }
 
@@ -272,6 +627,10 @@ final class PageEdit extends Component
             'slug.regex' => 'The slug may contain lowercase letters, numbers and hyphens only.',
 
             'slug.unique' => 'This slug is already used by another page.',
+
+            'canonicalUrl.url' => 'The canonical URL must be a valid HTTP or HTTPS URL.',
+
+            'ogImage.url' => 'The Open Graph image must be a valid HTTP or HTTPS URL.',
         ];
     }
 
@@ -304,14 +663,18 @@ final class PageEdit extends Component
 
     private function page(): Page
     {
-        return Page::query()->findOrFail(
-            $this->pageId,
-        );
+        return Page::query()
+            ->findOrFail(
+                $this->pageId,
+            );
     }
 
-    private function ensureDraftPage(Page $page): void
-    {
-        $status = $page->getRawOriginal('status');
+    private function ensureDraftPage(
+        Page $page,
+    ): void {
+        $status = $page->getRawOriginal(
+            'status',
+        );
 
         abort_unless(
             $status === PageStatus::Draft->value,
@@ -342,5 +705,43 @@ final class PageEdit extends Component
         $this->content = $sanitizer->sanitize(
             $this->content,
         );
+
+        $this->seoTitle = $sanitizer->plainText(
+            $this->seoTitle,
+            70,
+        );
+
+        $this->metaDescription =
+            $sanitizer->plainText(
+                $this->metaDescription,
+                160,
+            );
+
+        $this->canonicalUrl = trim(
+            $this->canonicalUrl,
+        );
+
+        $this->ogTitle = $sanitizer->plainText(
+            $this->ogTitle,
+            95,
+        );
+
+        $this->ogDescription =
+            $sanitizer->plainText(
+                $this->ogDescription,
+                200,
+            );
+
+        $this->ogImage = trim(
+            $this->ogImage,
+        );
+    }
+
+    private function stringValue(
+        mixed $value,
+    ): string {
+        return is_string($value)
+            ? $value
+            : '';
     }
 }

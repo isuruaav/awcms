@@ -26,11 +26,27 @@ final class PageCreate extends Component
 
     public string $content = '';
 
+    public string $seoTitle = '';
+
+    public string $metaDescription = '';
+
+    public string $canonicalUrl = '';
+
+    public bool $robotsIndex = true;
+
+    public string $ogTitle = '';
+
+    public string $ogDescription = '';
+
+    public string $ogImage = '';
+
     public bool $slugManuallyEdited = false;
 
     public function mount(): void
     {
-        Gate::authorize('pages.create');
+        Gate::authorize(
+            'pages.create',
+        );
     }
 
     public function updatedTitle(): void
@@ -61,17 +77,20 @@ final class PageCreate extends Component
             $this->title,
         );
 
-        $this->resetValidation('slug');
+        $this->resetValidation(
+            'slug',
+        );
     }
 
     public function save(): void
     {
-        Gate::authorize('pages.create');
+        Gate::authorize(
+            'pages.create',
+        );
 
         $actor = $this->actor();
 
         $this->normaliseInput();
-
         $this->validate();
 
         $slugSource = $this->slug !== ''
@@ -89,22 +108,54 @@ final class PageCreate extends Component
             ): Page {
                 $page = Page::query()->create([
                     'title' => $this->title,
+
                     'slug' => $uniqueSlug,
+
                     'excerpt' => $this->excerpt !== ''
-                        ? $this->excerpt
-                        : null,
+                            ? $this->excerpt
+                            : null,
+
                     'content' => $this->content !== ''
-                        ? $this->content
-                        : null,
-                    'blocks' => null,
+                            ? $this->content
+                            : null,
+
+                    /*
+                     * SEO
+                     */
+                    'seo_title' => $this->seoTitle !== ''
+                            ? $this->seoTitle
+                            : null,
+
+                    'meta_description' => $this->metaDescription !== ''
+                            ? $this->metaDescription
+                            : null,
+
+                    'canonical_url' => $this->canonicalUrl !== ''
+                            ? $this->canonicalUrl
+                            : null,
+
+                    'robots_index' => $this->robotsIndex,
+
+                    'og_title' => $this->ogTitle !== ''
+                            ? $this->ogTitle
+                            : null,
+
+                    'og_description' => $this->ogDescription !== ''
+                            ? $this->ogDescription
+                            : null,
+
+                    'og_image' => $this->ogImage !== ''
+                            ? $this->ogImage
+                            : null,
+
+                    /*
+                     * Workflow
+                     */
                     'status' => PageStatus::Draft->value,
+
                     'created_by' => $actor->id,
+
                     'updated_by' => $actor->id,
-                    'approved_by' => null,
-                    'submitted_at' => null,
-                    'approved_at' => null,
-                    'published_at' => null,
-                    'archived_at' => null,
                 ]);
 
                 app(AuditLogger::class)->log(
@@ -115,18 +166,38 @@ final class PageCreate extends Component
                     oldValues: [],
                     newValues: [
                         'title' => $page->title,
+
                         'slug' => $page->slug,
+
                         'status' => PageStatus::Draft->value,
+
                         'excerpt_present' => $page->excerpt !== null,
+
                         'content_present' => $page->content !== null,
+
+                        'seo_title_present' => $page->seo_title !== null,
+
+                        'meta_description_present' => $page->meta_description
+                            !== null,
+
+                        'canonical_url_present' => $page->canonical_url !== null,
+
+                        'robots_index' => (bool) $page->robots_index,
+
+                        'og_title_present' => $page->og_title !== null,
+
+                        'og_description_present' => $page->og_description !== null,
+
+                        'og_image_present' => $page->og_image !== null,
                     ],
                 );
 
-                app(PageRevisionService::class)->capture(
-                    page: $page,
-                    actor: $actor,
-                    summary: 'Initial draft created.',
-                );
+                app(PageRevisionService::class)
+                    ->capture(
+                        page: $page,
+                        actor: $actor,
+                        summary: 'Initial draft created.',
+                    );
 
                 return $page;
             },
@@ -134,7 +205,7 @@ final class PageCreate extends Component
 
         session()->flash(
             'status',
-            "{$page->title} was created as a draft.",
+            "{$page->title} was created successfully.",
         );
 
         $this->redirectRoute(
@@ -169,14 +240,55 @@ final class PageCreate extends Component
                 'max:500',
             ],
 
-            /*
-             * Plain text content for the foundation stage.
-             * Rich HTML sanitisation will be added with the editor.
-             */
             'content' => [
                 'nullable',
                 'string',
                 'max:100000',
+            ],
+
+            /*
+             * SEO
+             */
+            'seoTitle' => [
+                'nullable',
+                'string',
+                'max:70',
+            ],
+
+            'metaDescription' => [
+                'nullable',
+                'string',
+                'max:160',
+            ],
+
+            'canonicalUrl' => [
+                'nullable',
+                'string',
+                'max:2048',
+                'url:http,https',
+            ],
+
+            'robotsIndex' => [
+                'boolean',
+            ],
+
+            'ogTitle' => [
+                'nullable',
+                'string',
+                'max:95',
+            ],
+
+            'ogDescription' => [
+                'nullable',
+                'string',
+                'max:200',
+            ],
+
+            'ogImage' => [
+                'nullable',
+                'string',
+                'max:2048',
+                'url:http,https',
             ],
         ];
     }
@@ -188,6 +300,10 @@ final class PageCreate extends Component
     {
         return [
             'slug.regex' => 'The slug may contain lowercase letters, numbers and hyphens only.',
+
+            'canonicalUrl.url' => 'The canonical URL must be a valid HTTP or HTTPS URL.',
+
+            'ogImage.url' => 'The Open Graph image must be a valid HTTP or HTTPS URL.',
         ];
     }
 
@@ -201,18 +317,6 @@ final class PageCreate extends Component
                 'title' => 'Create Page',
             ],
         );
-    }
-
-    private function actor(): User
-    {
-        $actor = Auth::user();
-
-        abort_unless(
-            $actor instanceof User,
-            403,
-        );
-
-        return $actor;
     }
 
     private function normaliseInput(): void
@@ -237,5 +341,50 @@ final class PageCreate extends Component
         $this->content = $sanitizer->sanitize(
             $this->content,
         );
+
+        /*
+         * SEO text must remain plain text.
+         */
+        $this->seoTitle = $sanitizer->plainText(
+            $this->seoTitle,
+            70,
+        );
+
+        $this->metaDescription =
+            $sanitizer->plainText(
+                $this->metaDescription,
+                160,
+            );
+
+        $this->canonicalUrl = trim(
+            $this->canonicalUrl,
+        );
+
+        $this->ogTitle = $sanitizer->plainText(
+            $this->ogTitle,
+            95,
+        );
+
+        $this->ogDescription =
+            $sanitizer->plainText(
+                $this->ogDescription,
+                200,
+            );
+
+        $this->ogImage = trim(
+            $this->ogImage,
+        );
+    }
+
+    private function actor(): User
+    {
+        $actor = Auth::user();
+
+        abort_unless(
+            $actor instanceof User,
+            403,
+        );
+
+        return $actor;
     }
 }

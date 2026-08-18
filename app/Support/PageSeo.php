@@ -7,8 +7,9 @@ use App\Services\ContentSanitizer;
 
 final class PageSeo
 {
-    public static function title(Page $page): string
-    {
+    public static function title(
+        Page $page,
+    ): string {
         $seoTitle = self::plain(
             $page->seo_title,
             70,
@@ -24,8 +25,9 @@ final class PageSeo
         );
     }
 
-    public static function description(Page $page): string
-    {
+    public static function description(
+        Page $page,
+    ): string {
         $metaDescription = self::plain(
             $page->meta_description,
             160,
@@ -44,12 +46,8 @@ final class PageSeo
             return $excerpt;
         }
 
-        $content = app(
-            ContentSanitizer::class,
-        )->plainText(
-            is_string($page->content)
-                ? $page->content
-                : null,
+        $content = self::plain(
+            $page->content,
             160,
         );
 
@@ -57,23 +55,26 @@ final class PageSeo
             return $content;
         }
 
-        $appName = config('app.name');
+        $appName = config(
+            'app.name',
+        );
 
         return is_string($appName)
-            ? $appName
+            ? self::plain(
+                $appName,
+                160,
+            )
             : 'Website';
     }
 
     public static function canonicalUrl(
         Page $page,
     ): string {
-        $canonicalUrl = is_string(
+        $canonicalUrl = self::safeUrl(
             $page->canonical_url,
-        )
-            ? trim($page->canonical_url)
-            : '';
+        );
 
-        if ($canonicalUrl !== '') {
+        if ($canonicalUrl !== null) {
             return $canonicalUrl;
         }
 
@@ -83,9 +84,10 @@ final class PageSeo
         );
     }
 
-    public static function robots(Page $page): string
-    {
-        return $page->robots_index
+    public static function robots(
+        Page $page,
+    ): string {
+        return (bool) $page->robots_index
             ? 'index,follow'
             : 'noindex,nofollow';
     }
@@ -98,9 +100,13 @@ final class PageSeo
             95,
         );
 
-        return $ogTitle !== ''
-            ? $ogTitle
-            : self::title($page);
+        if ($ogTitle !== '') {
+            return $ogTitle;
+        }
+
+        return self::title(
+            $page,
+        );
     }
 
     public static function openGraphDescription(
@@ -111,36 +117,118 @@ final class PageSeo
             200,
         );
 
-        return $ogDescription !== ''
-            ? $ogDescription
-            : self::description($page);
+        if ($ogDescription !== '') {
+            return $ogDescription;
+        }
+
+        return self::description(
+            $page,
+        );
     }
 
     public static function openGraphImage(
         Page $page,
     ): ?string {
-        if (! is_string($page->og_image)) {
-            return null;
-        }
-
-        $image = trim($page->og_image);
-
-        return $image !== ''
-            ? $image
-            : null;
+        return self::safeUrl(
+            $page->og_image,
+        );
     }
 
+    /**
+     * Convert potentially unsafe HTML into safe plain text.
+     *
+     * We intentionally sanitize before converting to plain
+     * text so forbidden elements such as script, iframe,
+     * object and embed cannot leak unsafe payload text into
+     * public metadata.
+     */
     private static function plain(
         mixed $value,
         int $maximumLength,
     ): string {
-        return app(
+        if (! is_string($value)) {
+            return '';
+        }
+
+        $value = trim(
+            $value,
+        );
+
+        if ($value === '') {
+            return '';
+        }
+
+        $sanitizer = app(
             ContentSanitizer::class,
-        )->plainText(
-            is_string($value)
-                ? $value
-                : null,
+        );
+
+        /*
+         * First run the value through the HTML purifier.
+         * This removes forbidden active HTML before the
+         * remaining safe markup is converted to text.
+         */
+        $safeHtml = $sanitizer->sanitize(
+            $value,
+        );
+
+        if ($safeHtml === '') {
+            return '';
+        }
+
+        return $sanitizer->plainText(
+            $safeHtml,
             $maximumLength,
         );
+    }
+
+    /**
+     * Only HTTP and HTTPS URLs are allowed in public
+     * SEO metadata.
+     */
+    private static function safeUrl(
+        mixed $value,
+    ): ?string {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $url = trim(
+            $value,
+        );
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (
+            filter_var(
+                $url,
+                FILTER_VALIDATE_URL,
+            ) === false
+        ) {
+            return null;
+        }
+
+        $scheme = parse_url(
+            $url,
+            PHP_URL_SCHEME,
+        );
+
+        if (! is_string($scheme)) {
+            return null;
+        }
+
+        $scheme = strtolower(
+            $scheme,
+        );
+
+        if (
+            $scheme !== 'http'
+            && $scheme !== 'https'
+        ) {
+            return null;
+        }
+
+        return $url;
     }
 }

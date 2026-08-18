@@ -130,3 +130,36 @@ test('admin preview renders only sanitized html', function (): void {
             false,
         );
 });
+
+test('admin preview always uses noindex metadata', function (): void {
+    $editor = User::factory()->create();
+    $editor->assignRole('Content Editor');
+
+    $page = Page::factory()->create([
+        'robots_index' => true,
+
+        'og_title' => 'Should Not Become Preview Metadata',
+    ]);
+
+    $response = $this->actingAs(
+        $editor,
+    )->get(
+        route(
+            'admin.pages.preview',
+            $page,
+        ),
+    );
+
+    $response
+        ->assertOk()
+
+        ->assertSee(
+            'content="noindex,nofollow"',
+            false,
+        )
+
+        ->assertDontSee(
+            'property="og:title"',
+            false,
+        );
+});
