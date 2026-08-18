@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Services\ContentSanitizer;
+use App\Services\PageBlockRenderer;
 use App\Support\PageSeo;
 use Illuminate\Contracts\View\View;
 
@@ -38,6 +39,12 @@ final class PublicPageController extends Controller
             is_string($page->content)
                 ? $page->content
                 : null,
+        );
+
+        $pageBlocks = app(
+            PageBlockRenderer::class,
+        )->forPage(
+            $page,
         );
 
         $seoTitle = PageSeo::title(
@@ -80,6 +87,8 @@ final class PublicPageController extends Controller
 
                 'safeContent' => $safeContent,
 
+                'pageBlocks' => $pageBlocks,
+
                 /*
                  * Browser / Search Engine
                  */
@@ -105,11 +114,11 @@ final class PublicPageController extends Controller
                 'ogImage' => $ogImage,
 
                 /*
-                 * Twitter / X card
+                 * Twitter / X
                  */
                 'twitterCard' => $ogImage !== null
-                    ? 'summary_large_image'
-                    : 'summary',
+                        ? 'summary_large_image'
+                        : 'summary',
 
                 'twitterTitle' => $ogTitle,
 
@@ -117,9 +126,6 @@ final class PublicPageController extends Controller
 
                 'twitterImage' => $ogImage,
 
-                /*
-                 * Public page metadata is enabled.
-                 */
                 'socialMetadata' => true,
             ],
         );

@@ -28,7 +28,7 @@ test('content editor can preview a draft page', function (): void {
             ),
         )
         ->assertOk()
-        ->assertSee('Administrative preview')
+        ->assertSee('Administrator Preview')
         ->assertSee('Draft Preview Page')
         ->assertSee('Draft');
 });

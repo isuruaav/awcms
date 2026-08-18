@@ -190,6 +190,7 @@
                        text-zinc-700 hover:bg-zinc-50">
                 Cancel
             </a>
+            <x-forms.page-builder :blocks="$blocks" />
             <x-forms.page-seo-fields :title="$title" :slug="$slug" :seo-title="$seoTitle" :meta-description="$metaDescription"
                 :canonical-url="$canonicalUrl" :robots-index="$robotsIndex" :og-title="$ogTitle" :og-description="$ogDescription" :og-image="$ogImage" />
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
