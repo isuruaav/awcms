@@ -350,6 +350,7 @@
                            border border-zinc-200
                            bg-white shadow-sm"
                 >
+                    {{-- Preview --}}
                     <div
                         class="flex aspect-[4/3]
                                items-center
@@ -426,6 +427,7 @@
                     </div>
 
                     <div class="p-4">
+                        {{-- Title / Type --}}
                         <div
                             class="flex items-start
                                    justify-between
@@ -468,6 +470,7 @@
                             @endif
                         </div>
 
+                        {{-- Visibility / ID --}}
                         <div
                             class="mt-4 flex
                                    items-center
@@ -481,12 +484,15 @@
                                 <span
                                     @class([
                                         'rounded-full px-2.5 py-1 text-[11px] font-bold',
+
                                         'bg-emerald-100 text-emerald-700'
                                             => $visibility ===
                                                 \App\Enums\MediaVisibility::Public,
+
                                         'bg-amber-100 text-amber-700'
                                             => $visibility ===
                                                 \App\Enums\MediaVisibility::Internal,
+
                                         'bg-red-100 text-red-700'
                                             => $visibility ===
                                                 \App\Enums\MediaVisibility::Restricted,
@@ -504,6 +510,7 @@
                             </span>
                         </div>
 
+                        {{-- Trash Information --}}
                         @if (
                             $view === 'trash'
                             && $asset->deleted_at
@@ -519,6 +526,38 @@
                                 Deleted
                                 {{ $asset->deleted_at->diffForHumans() }}
                             </p>
+                        @endif
+
+                        {{-- Details Action --}}
+                        @if ($view === 'active')
+                            <div
+                                class="mt-4
+                                       border-t
+                                       border-zinc-100
+                                       pt-4"
+                            >
+                                <a
+                                    href="{{ route('admin.media.edit', $asset) }}"
+                                    class="inline-flex
+                                           w-full
+                                           items-center
+                                           justify-center
+                                           rounded-lg
+                                           border
+                                           border-zinc-200
+                                           bg-white
+                                           px-3 py-2
+                                           text-xs
+                                           font-bold
+                                           text-zinc-700
+                                           transition
+                                           hover:border-emerald-300
+                                           hover:bg-emerald-50
+                                           hover:text-emerald-700"
+                                >
+                                    View Details
+                                </a>
+                            </div>
                         @endif
                     </div>
                 </article>
@@ -589,6 +628,16 @@
                             >
                                 Uploaded By
                             </th>
+
+                            <th
+                                class="px-5 py-3
+                                       text-right
+                                       text-xs font-bold
+                                       uppercase tracking-wide
+                                       text-zinc-500"
+                            >
+                                Actions
+                            </th>
                         </tr>
                     </thead>
 
@@ -606,6 +655,7 @@
                                 wire:key="media-list-{{ $asset->id }}"
                                 class="hover:bg-zinc-50"
                             >
+                                {{-- Media --}}
                                 <td class="px-5 py-4">
                                     <p
                                         class="max-w-xs
@@ -625,8 +675,23 @@
                                     >
                                         {{ $asset->original_name }}
                                     </p>
+
+                                    @if (
+                                        $view === 'trash'
+                                        && $asset->deleted_at
+                                    )
+                                        <p
+                                            class="mt-1
+                                                   text-xs
+                                                   text-red-600"
+                                        >
+                                            Deleted
+                                            {{ $asset->deleted_at->diffForHumans() }}
+                                        </p>
+                                    @endif
                                 </td>
 
+                                {{-- Type --}}
                                 <td
                                     class="px-5 py-4
                                            text-sm
@@ -642,15 +707,28 @@
                                     @endif
                                 </td>
 
+                                {{-- Visibility --}}
                                 <td class="px-5 py-4">
                                     @if (
                                         $visibility instanceof
                                         \App\Enums\MediaVisibility
                                     )
                                         <span
-                                            class="text-sm
-                                                   font-semibold
-                                                   text-zinc-700"
+                                            @class([
+                                                'inline-flex rounded-full px-2.5 py-1 text-xs font-semibold',
+
+                                                'bg-emerald-100 text-emerald-700'
+                                                    => $visibility ===
+                                                        \App\Enums\MediaVisibility::Public,
+
+                                                'bg-amber-100 text-amber-700'
+                                                    => $visibility ===
+                                                        \App\Enums\MediaVisibility::Internal,
+
+                                                'bg-red-100 text-red-700'
+                                                    => $visibility ===
+                                                        \App\Enums\MediaVisibility::Restricted,
+                                            ])
                                         >
                                             {{ $visibility->label() }}
                                         </span>
@@ -659,12 +737,16 @@
                                     @endif
                                 </td>
 
+                                {{-- Size --}}
                                 <td
                                     class="px-5 py-4
                                            text-sm
                                            text-zinc-600"
                                 >
-                                    @if ($asset->size_bytes)
+                                    @if (
+                                        is_int($asset->size_bytes)
+                                        && $asset->size_bytes > 0
+                                    )
                                         @if (
                                             $asset->size_bytes
                                             >= 1048576
@@ -692,6 +774,7 @@
                                     @endif
                                 </td>
 
+                                {{-- Uploader --}}
                                 <td
                                     class="px-5 py-4
                                            text-sm
@@ -702,6 +785,42 @@
                                         ?? 'Unknown'
                                     }}
                                 </td>
+
+                                {{-- Actions --}}
+                                <td
+                                    class="px-5 py-4
+                                           text-right"
+                                >
+                                    @if ($view === 'active')
+                                        <a
+                                            href="{{ route('admin.media.edit', $asset) }}"
+                                            class="inline-flex
+                                                   items-center
+                                                   justify-center
+                                                   rounded-lg
+                                                   border
+                                                   border-zinc-200
+                                                   bg-white
+                                                   px-3 py-2
+                                                   text-xs
+                                                   font-bold
+                                                   text-zinc-700
+                                                   transition
+                                                   hover:border-emerald-300
+                                                   hover:bg-emerald-50
+                                                   hover:text-emerald-700"
+                                        >
+                                            View Details
+                                        </a>
+                                    @else
+                                        <span
+                                            class="text-sm
+                                                   text-zinc-400"
+                                        >
+                                            —
+                                        </span>
+                                    @endif
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -710,6 +829,7 @@
         </div>
     @endif
 
+    {{-- Pagination --}}
     @if ($media->hasPages())
         <div>
             {{ $media->links() }}
