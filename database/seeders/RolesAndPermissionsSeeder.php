@@ -89,6 +89,8 @@ final class RolesAndPermissionsSeeder extends Seeder
              */
             'media.view',
             'media.upload',
+            'media.update',
+            'media.replace',
             'media.delete',
 
             /*
@@ -188,6 +190,8 @@ final class RolesAndPermissionsSeeder extends Seeder
                  */
                 'media.view',
                 'media.upload',
+                'media.update',
+                'media.replace',
                 'media.delete',
 
                 /*
@@ -254,6 +258,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                  */
                 'media.view',
                 'media.upload',
+                'media.update',
             ],
 
             /*
@@ -302,6 +307,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                  */
                 'media.view',
                 'media.upload',
+                'media.update',
             ],
 
             /*
@@ -333,6 +339,9 @@ final class RolesAndPermissionsSeeder extends Seeder
                  */
                 'media.view',
                 'media.upload',
+                'media.update',
+                'media.replace',
+                'media.delete',
             ],
 
             /*
