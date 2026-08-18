@@ -8,7 +8,7 @@ use Illuminate\Validation\ValidationException;
 
 final class PageBlockSanitizer
 {
-    private const MAX_BLOCKS = 100;
+    public const MAX_BLOCKS = 100;
 
     public function __construct(
         private readonly ContentSanitizer $contentSanitizer,

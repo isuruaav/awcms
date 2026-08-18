@@ -7,7 +7,9 @@ use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
+use App\Services\PageBlockSanitizer;
 use App\Services\PageRevisionService;
+use App\Support\PageBlockFactory;
 use App\Support\PageSlugger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
@@ -30,6 +33,11 @@ final class PageEdit extends Component
     public string $excerpt = '';
 
     public string $content = '';
+
+    /**
+     * @var list<array<string, mixed>>
+     */
+    public array $blocks = [];
 
     public string $seoTitle = '';
 
@@ -68,54 +76,52 @@ final class PageEdit extends Component
 
         $this->excerpt =
             is_string($page->excerpt)
-                ? $page->excerpt
-                : '';
+            ? $page->excerpt
+            : '';
 
         $this->content =
             is_string($page->content)
-                ? $page->content
-                : '';
+            ? $page->content
+            : '';
 
-        /*
-         * SEO
-         */
+        $this->blocks =
+            $this->pageBlocks(
+                $page,
+            );
+
         $this->seoTitle =
             is_string($page->seo_title)
-                ? $page->seo_title
-                : '';
+            ? $page->seo_title
+            : '';
 
         $this->metaDescription =
             is_string($page->meta_description)
-                ? $page->meta_description
-                : '';
+            ? $page->meta_description
+            : '';
 
         $this->canonicalUrl =
             is_string($page->canonical_url)
-                ? $page->canonical_url
-                : '';
+            ? $page->canonical_url
+            : '';
 
         $this->robotsIndex =
             (bool) $page->robots_index;
 
         $this->ogTitle =
             is_string($page->og_title)
-                ? $page->og_title
-                : '';
+            ? $page->og_title
+            : '';
 
         $this->ogDescription =
             is_string($page->og_description)
-                ? $page->og_description
-                : '';
+            ? $page->og_description
+            : '';
 
         $this->ogImage =
             is_string($page->og_image)
-                ? $page->og_image
-                : '';
+            ? $page->og_image
+            : '';
 
-        /*
-         * Existing page URLs should not automatically
-         * change when its title changes.
-         */
         $this->slugManuallyEdited = true;
     }
 
@@ -152,6 +158,94 @@ final class PageEdit extends Component
         );
     }
 
+    public function addBlock(
+        string $type,
+    ): void {
+        $this->authorizeBuilderMutation();
+
+        if (
+            count($this->blocks)
+            >= PageBlockSanitizer::MAX_BLOCKS
+        ) {
+            throw ValidationException::withMessages([
+                'blocks' => sprintf(
+                    'A page may contain a maximum of %d blocks.',
+                    PageBlockSanitizer::MAX_BLOCKS,
+                ),
+            ]);
+        }
+
+        $this->blocks[] = PageBlockFactory::make(
+            $type,
+        );
+
+        $this->resetValidation(
+            'blocks',
+        );
+    }
+
+    public function removeBlock(
+        int $index,
+    ): void {
+        $this->authorizeBuilderMutation();
+
+        if (
+            $index < 0
+            || $index >= count($this->blocks)
+        ) {
+            return;
+        }
+
+        array_splice(
+            $this->blocks,
+            $index,
+            1,
+        );
+
+        $this->resetValidation(
+            'blocks',
+        );
+    }
+
+    public function moveBlockUp(
+        int $index,
+    ): void {
+        $this->authorizeBuilderMutation();
+
+        if (
+            $index <= 0
+            || ! array_key_exists(
+                $index,
+                $this->blocks,
+            )
+        ) {
+            return;
+        }
+
+        $this->swapBlocks(
+            $index,
+            $index - 1,
+        );
+    }
+
+    public function moveBlockDown(
+        int $index,
+    ): void {
+        $this->authorizeBuilderMutation();
+
+        if (
+            $index < 0
+            || $index >= count($this->blocks) - 1
+        ) {
+            return;
+        }
+
+        $this->swapBlocks(
+            $index,
+            $index + 1,
+        );
+    }
+
     public function save(): void
     {
         Gate::authorize(
@@ -174,11 +268,11 @@ final class PageEdit extends Component
 
         $uniqueSlug = PageSlugger::unique(
             $slugSource,
-            $page->id,
+            (int) $page->id,
         );
 
         /*
-         * Existing values.
+         * Current values.
          */
         $oldTitle =
             (string) $page->title;
@@ -188,13 +282,18 @@ final class PageEdit extends Component
 
         $oldExcerpt =
             is_string($page->excerpt)
-                ? $page->excerpt
-                : '';
+            ? $page->excerpt
+            : '';
 
         $oldContent =
             is_string($page->content)
-                ? $page->content
-                : '';
+            ? $page->content
+            : '';
+
+        $oldBlocks =
+            $this->pageBlocks(
+                $page,
+            );
 
         $oldSeoTitle =
             $this->stringValue(
@@ -244,6 +343,9 @@ final class PageEdit extends Component
         $contentChanged =
             $oldContent !== $this->content;
 
+        $blocksChanged =
+            $oldBlocks !== $this->blocks;
+
         $seoTitleChanged =
             $oldSeoTitle !== $this->seoTitle;
 
@@ -274,6 +376,7 @@ final class PageEdit extends Component
             || $slugChanged
             || $excerptChanged
             || $contentChanged
+            || $blocksChanged
             || $seoTitleChanged
             || $metaDescriptionChanged
             || $canonicalUrlChanged
@@ -300,6 +403,7 @@ final class PageEdit extends Component
                 $oldSlug,
                 $oldExcerpt,
                 $oldContent,
+                $oldBlocks,
                 $oldSeoTitle,
                 $oldMetaDescription,
                 $oldCanonicalUrl,
@@ -311,6 +415,7 @@ final class PageEdit extends Component
                 $slugChanged,
                 $excerptChanged,
                 $contentChanged,
+                $blocksChanged,
                 $seoTitleChanged,
                 $metaDescriptionChanged,
                 $canonicalUrlChanged,
@@ -325,41 +430,42 @@ final class PageEdit extends Component
                     'slug' => $uniqueSlug,
 
                     'excerpt' => $this->excerpt !== ''
-                            ? $this->excerpt
-                            : null,
+                        ? $this->excerpt
+                        : null,
 
                     'content' => $this->content !== ''
-                            ? $this->content
-                            : null,
+                        ? $this->content
+                        : null,
 
-                    /*
-                     * SEO
-                     */
+                    'blocks' => $this->blocks !== []
+                        ? $this->blocks
+                        : null,
+
                     'seo_title' => $this->seoTitle !== ''
-                            ? $this->seoTitle
-                            : null,
+                        ? $this->seoTitle
+                        : null,
 
                     'meta_description' => $this->metaDescription !== ''
-                            ? $this->metaDescription
-                            : null,
+                        ? $this->metaDescription
+                        : null,
 
                     'canonical_url' => $this->canonicalUrl !== ''
-                            ? $this->canonicalUrl
-                            : null,
+                        ? $this->canonicalUrl
+                        : null,
 
                     'robots_index' => $this->robotsIndex,
 
                     'og_title' => $this->ogTitle !== ''
-                            ? $this->ogTitle
-                            : null,
+                        ? $this->ogTitle
+                        : null,
 
                     'og_description' => $this->ogDescription !== ''
-                            ? $this->ogDescription
-                            : null,
+                        ? $this->ogDescription
+                        : null,
 
                     'og_image' => $this->ogImage !== ''
-                            ? $this->ogImage
-                            : null,
+                        ? $this->ogImage
+                        : null,
 
                     'updated_by' => $actor->id,
                 ])->save();
@@ -416,10 +522,17 @@ final class PageEdit extends Component
                         true;
                 }
 
-                /*
-                 * SEO audit values do not store full
-                 * descriptions or page content.
-                 */
+                if ($blocksChanged) {
+                    $oldValues['blocks_count'] =
+                        count($oldBlocks);
+
+                    $newValues['blocks_count'] =
+                        count($this->blocks);
+
+                    $newValues['blocks_changed'] =
+                        true;
+                }
+
                 if ($seoTitleChanged) {
                     $oldValues['seo_title_present'] =
                         $oldSeoTitle !== '';
@@ -432,31 +545,19 @@ final class PageEdit extends Component
                 }
 
                 if ($metaDescriptionChanged) {
-                    $oldValues[
-                        'meta_description_present'
-                    ] = $oldMetaDescription !== '';
+                    $oldValues['meta_description_present'] = $oldMetaDescription !== '';
 
-                    $newValues[
-                        'meta_description_present'
-                    ] = $this->metaDescription !== '';
+                    $newValues['meta_description_present'] = $this->metaDescription !== '';
 
-                    $newValues[
-                        'meta_description_changed'
-                    ] = true;
+                    $newValues['meta_description_changed'] = true;
                 }
 
                 if ($canonicalUrlChanged) {
-                    $oldValues[
-                        'canonical_url_present'
-                    ] = $oldCanonicalUrl !== '';
+                    $oldValues['canonical_url_present'] = $oldCanonicalUrl !== '';
 
-                    $newValues[
-                        'canonical_url_present'
-                    ] = $this->canonicalUrl !== '';
+                    $newValues['canonical_url_present'] = $this->canonicalUrl !== '';
 
-                    $newValues[
-                        'canonical_url_changed'
-                    ] = true;
+                    $newValues['canonical_url_changed'] = true;
                 }
 
                 if ($robotsIndexChanged) {
@@ -479,17 +580,11 @@ final class PageEdit extends Component
                 }
 
                 if ($ogDescriptionChanged) {
-                    $oldValues[
-                        'og_description_present'
-                    ] = $oldOgDescription !== '';
+                    $oldValues['og_description_present'] = $oldOgDescription !== '';
 
-                    $newValues[
-                        'og_description_present'
-                    ] = $this->ogDescription !== '';
+                    $newValues['og_description_present'] = $this->ogDescription !== '';
 
-                    $newValues[
-                        'og_description_changed'
-                    ] = true;
+                    $newValues['og_description_changed'] = true;
                 }
 
                 if ($ogImageChanged) {
@@ -516,7 +611,7 @@ final class PageEdit extends Component
                     ->capture(
                         page: $page,
                         actor: $actor,
-                        summary: 'Draft page content and metadata updated.',
+                        summary: 'Draft page content, blocks and metadata updated.',
                     );
             },
         );
@@ -571,9 +666,11 @@ final class PageEdit extends Component
                 'max:100000',
             ],
 
-            /*
-             * SEO
-             */
+            'blocks' => [
+                'array',
+                'max:100',
+            ],
+
             'seoTitle' => [
                 'nullable',
                 'string',
@@ -649,6 +746,112 @@ final class PageEdit extends Component
         );
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function pageBlocks(
+        Page $page,
+    ): array {
+        $blocks = $page->getAttribute(
+            'blocks',
+        );
+
+        if (! is_array($blocks)) {
+            return [];
+        }
+
+        return app(
+            PageBlockSanitizer::class,
+        )->normalize(
+            $blocks,
+        );
+    }
+
+    private function normaliseInput(): void
+    {
+        $sanitizer = app(
+            ContentSanitizer::class,
+        );
+
+        $this->title = trim(
+            $this->title,
+        );
+
+        $this->slug = Str::slug(
+            trim($this->slug),
+        );
+
+        $this->excerpt = $sanitizer->plainText(
+            $this->excerpt,
+            500,
+        );
+
+        $this->content = $sanitizer->sanitize(
+            $this->content,
+        );
+
+        $this->blocks = app(
+            PageBlockSanitizer::class,
+        )->normalize(
+            $this->blocks,
+        );
+
+        $this->seoTitle = $sanitizer->plainText(
+            $this->seoTitle,
+            70,
+        );
+
+        $this->metaDescription =
+            $sanitizer->plainText(
+                $this->metaDescription,
+                160,
+            );
+
+        $this->canonicalUrl = trim(
+            $this->canonicalUrl,
+        );
+
+        $this->ogTitle = $sanitizer->plainText(
+            $this->ogTitle,
+            95,
+        );
+
+        $this->ogDescription =
+            $sanitizer->plainText(
+                $this->ogDescription,
+                200,
+            );
+
+        $this->ogImage = trim(
+            $this->ogImage,
+        );
+    }
+
+    private function swapBlocks(
+        int $firstIndex,
+        int $secondIndex,
+    ): void {
+        $temporary =
+            $this->blocks[$firstIndex];
+
+        $this->blocks[$firstIndex] =
+            $this->blocks[$secondIndex];
+
+        $this->blocks[$secondIndex] =
+            $temporary;
+    }
+
+    private function authorizeBuilderMutation(): void
+    {
+        Gate::authorize(
+            'pages.update',
+        );
+
+        $this->ensureDraftPage(
+            $this->page(),
+        );
+    }
+
     private function actor(): User
     {
         $actor = Auth::user();
@@ -680,60 +883,6 @@ final class PageEdit extends Component
             $status === PageStatus::Draft->value,
             409,
             'Only draft pages may be edited.',
-        );
-    }
-
-    private function normaliseInput(): void
-    {
-        $sanitizer = app(
-            ContentSanitizer::class,
-        );
-
-        $this->title = trim(
-            $this->title,
-        );
-
-        $this->slug = Str::slug(
-            trim($this->slug),
-        );
-
-        $this->excerpt = $sanitizer->plainText(
-            $this->excerpt,
-            500,
-        );
-
-        $this->content = $sanitizer->sanitize(
-            $this->content,
-        );
-
-        $this->seoTitle = $sanitizer->plainText(
-            $this->seoTitle,
-            70,
-        );
-
-        $this->metaDescription =
-            $sanitizer->plainText(
-                $this->metaDescription,
-                160,
-            );
-
-        $this->canonicalUrl = trim(
-            $this->canonicalUrl,
-        );
-
-        $this->ogTitle = $sanitizer->plainText(
-            $this->ogTitle,
-            95,
-        );
-
-        $this->ogDescription =
-            $sanitizer->plainText(
-                $this->ogDescription,
-                200,
-            );
-
-        $this->ogImage = trim(
-            $this->ogImage,
         );
     }
 

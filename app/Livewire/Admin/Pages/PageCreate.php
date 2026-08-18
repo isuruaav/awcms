@@ -7,13 +7,16 @@ use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
+use App\Services\PageBlockSanitizer;
 use App\Services\PageRevisionService;
+use App\Support\PageBlockFactory;
 use App\Support\PageSlugger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 final class PageCreate extends Component
@@ -25,6 +28,11 @@ final class PageCreate extends Component
     public string $excerpt = '';
 
     public string $content = '';
+
+    /**
+     * @var list<array<string, mixed>>
+     */
+    public array $blocks = [];
 
     public string $seoTitle = '';
 
@@ -82,6 +90,102 @@ final class PageCreate extends Component
         );
     }
 
+    public function addBlock(
+        string $type,
+    ): void {
+        Gate::authorize(
+            'pages.create',
+        );
+
+        if (
+            count($this->blocks)
+            >= PageBlockSanitizer::MAX_BLOCKS
+        ) {
+            throw ValidationException::withMessages([
+                'blocks' => sprintf(
+                    'A page may contain a maximum of %d blocks.',
+                    PageBlockSanitizer::MAX_BLOCKS,
+                ),
+            ]);
+        }
+
+        $this->blocks[] = PageBlockFactory::make(
+            $type,
+        );
+
+        $this->resetValidation(
+            'blocks',
+        );
+    }
+
+    public function removeBlock(
+        int $index,
+    ): void {
+        Gate::authorize(
+            'pages.create',
+        );
+
+        if (
+            $index < 0
+            || $index >= count($this->blocks)
+        ) {
+            return;
+        }
+
+        array_splice(
+            $this->blocks,
+            $index,
+            1,
+        );
+
+        $this->resetValidation(
+            'blocks',
+        );
+    }
+
+    public function moveBlockUp(
+        int $index,
+    ): void {
+        Gate::authorize(
+            'pages.create',
+        );
+
+        if (
+            $index <= 0
+            || ! array_key_exists(
+                $index,
+                $this->blocks,
+            )
+        ) {
+            return;
+        }
+
+        $this->swapBlocks(
+            $index,
+            $index - 1,
+        );
+    }
+
+    public function moveBlockDown(
+        int $index,
+    ): void {
+        Gate::authorize(
+            'pages.create',
+        );
+
+        if (
+            $index < 0
+            || $index >= count($this->blocks) - 1
+        ) {
+            return;
+        }
+
+        $this->swapBlocks(
+            $index,
+            $index + 1,
+        );
+    }
+
     public function save(): void
     {
         Gate::authorize(
@@ -112,41 +216,45 @@ final class PageCreate extends Component
                     'slug' => $uniqueSlug,
 
                     'excerpt' => $this->excerpt !== ''
-                            ? $this->excerpt
-                            : null,
+                        ? $this->excerpt
+                        : null,
 
                     'content' => $this->content !== ''
-                            ? $this->content
-                            : null,
+                        ? $this->content
+                        : null,
+
+                    'blocks' => $this->blocks !== []
+                        ? $this->blocks
+                        : null,
 
                     /*
                      * SEO
                      */
                     'seo_title' => $this->seoTitle !== ''
-                            ? $this->seoTitle
-                            : null,
+                        ? $this->seoTitle
+                        : null,
 
                     'meta_description' => $this->metaDescription !== ''
-                            ? $this->metaDescription
-                            : null,
+                        ? $this->metaDescription
+                        : null,
 
                     'canonical_url' => $this->canonicalUrl !== ''
-                            ? $this->canonicalUrl
-                            : null,
+                        ? $this->canonicalUrl
+                        : null,
 
                     'robots_index' => $this->robotsIndex,
 
                     'og_title' => $this->ogTitle !== ''
-                            ? $this->ogTitle
-                            : null,
+                        ? $this->ogTitle
+                        : null,
 
                     'og_description' => $this->ogDescription !== ''
-                            ? $this->ogDescription
-                            : null,
+                        ? $this->ogDescription
+                        : null,
 
                     'og_image' => $this->ogImage !== ''
-                            ? $this->ogImage
-                            : null,
+                        ? $this->ogImage
+                        : null,
 
                     /*
                      * Workflow
@@ -174,6 +282,8 @@ final class PageCreate extends Component
                         'excerpt_present' => $page->excerpt !== null,
 
                         'content_present' => $page->content !== null,
+
+                        'blocks_count' => count($this->blocks),
 
                         'seo_title_present' => $page->seo_title !== null,
 
@@ -246,9 +356,11 @@ final class PageCreate extends Component
                 'max:100000',
             ],
 
-            /*
-             * SEO
-             */
+            'blocks' => [
+                'array',
+                'max:100',
+            ],
+
             'seoTitle' => [
                 'nullable',
                 'string',
@@ -342,9 +454,12 @@ final class PageCreate extends Component
             $this->content,
         );
 
-        /*
-         * SEO text must remain plain text.
-         */
+        $this->blocks = app(
+            PageBlockSanitizer::class,
+        )->normalize(
+            $this->blocks,
+        );
+
         $this->seoTitle = $sanitizer->plainText(
             $this->seoTitle,
             70,
@@ -374,6 +489,20 @@ final class PageCreate extends Component
         $this->ogImage = trim(
             $this->ogImage,
         );
+    }
+
+    private function swapBlocks(
+        int $firstIndex,
+        int $secondIndex,
+    ): void {
+        $temporary =
+            $this->blocks[$firstIndex];
+
+        $this->blocks[$firstIndex] =
+            $this->blocks[$secondIndex];
+
+        $this->blocks[$secondIndex] =
+            $temporary;
     }
 
     private function actor(): User
