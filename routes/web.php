@@ -117,6 +117,13 @@ Route::middleware([
                 ->name('audit-logs.index');
 
             Route::livewire(
+                '/media',
+                'admin.media.media-index',
+            )
+                ->middleware('can:media.view')
+                ->name('media.index');
+
+            Route::livewire(
                 '/media/upload',
                 'admin.media.media-upload',
             )
