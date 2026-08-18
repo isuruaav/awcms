@@ -115,6 +115,13 @@ Route::middleware([
             )
                 ->middleware('can:audit.view')
                 ->name('audit-logs.index');
+
+            Route::livewire(
+                '/media/upload',
+                'admin.media.media-upload',
+            )
+                ->middleware('can:media.upload')
+                ->name('media.upload');
         });
 });
 
