@@ -77,9 +77,7 @@ final class MediaUploadSecurity
                 continue;
             }
 
-            $result[
-                strtolower(trim($mimeType))
-            ] = array_values(
+            $result[strtolower(trim($mimeType))] = array_values(
                 array_unique(
                     $normalisedExtensions,
                 ),
@@ -191,7 +189,7 @@ final class MediaUploadSecurity
             if (
                 is_string($value)
                 && $this->normaliseExtension($value)
-                    === $extension
+                === $extension
             ) {
                 return true;
             }
@@ -209,5 +207,48 @@ final class MediaUploadSecurity
                 '.',
             ),
         );
+    }
+
+    public function maximumImageWidth(): int
+    {
+        return $this->positiveIntegerConfig(
+            'media.image_processing.max_width',
+            8000,
+        );
+    }
+
+    public function maximumImageHeight(): int
+    {
+        return $this->positiveIntegerConfig(
+            'media.image_processing.max_height',
+            8000,
+        );
+    }
+
+    public function maximumImagePixels(): int
+    {
+        return $this->positiveIntegerConfig(
+            'media.image_processing.max_pixels',
+            24000000,
+        );
+    }
+
+    private function positiveIntegerConfig(
+        string $key,
+        int $default,
+    ): int {
+        $value = config(
+            $key,
+            $default,
+        );
+
+        if (
+            ! is_int($value)
+            || $value < 1
+        ) {
+            return $default;
+        }
+
+        return $value;
     }
 }

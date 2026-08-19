@@ -21,6 +21,20 @@ return [
 
     'directory' => 'media',
 
+    'image_processing' => [
+        /*
+     * Prevent small compressed files with extremely
+     * large pixel dimensions from exhausting GD memory.
+     */
+        'max_width' => 8000,
+
+        'max_height' => 8000,
+
+        /*
+     * 6000 x 4000 = 24 megapixels.
+     */
+        'max_pixels' => 24000000,
+    ],
     /*
      * Upload allowlists.
      *

@@ -4,11 +4,13 @@ namespace App\Models;
 
 use App\Enums\MediaSource;
 use App\Enums\MediaType;
+use App\Enums\MediaVariantPreset;
 use App\Enums\MediaVisibility;
 use Database\Factories\MediaAssetFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
@@ -78,6 +80,27 @@ final class MediaAsset extends Model
             User::class,
             'uploaded_by',
         );
+    }
+
+    /**
+     * @return HasMany<MediaVariant, $this>
+     */
+    public function variants(): HasMany
+    {
+        return $this->hasMany(
+            MediaVariant::class,
+        );
+    }
+
+    public function variant(
+        MediaVariantPreset $preset,
+    ): ?MediaVariant {
+        return $this->variants()
+            ->where(
+                'name',
+                $preset->value,
+            )
+            ->first();
     }
 
     public function isImage(): bool

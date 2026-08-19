@@ -22,6 +22,7 @@ final class MediaUploadService
     public function __construct(
         private readonly MediaUploadSecurity $security,
         private readonly ContentSanitizer $contentSanitizer,
+        private readonly MediaImageVariantService $imageVariantService,
     ) {}
 
     public function upload(
@@ -79,7 +80,7 @@ final class MediaUploadService
 
         /*
          * Never trust the MIME value submitted by
-         * the browser. Detect it from file contents.
+         * the browser. Detect MIME from file contents.
          */
         $mimeType = $this->detectMimeType(
             $realPath,
@@ -97,9 +98,10 @@ final class MediaUploadService
         }
 
         /*
-         * Client extension is not trusted either,
-         * but checking it against the detected MIME
-         * prevents confusing or deceptive filenames.
+         * The original extension is not trusted either.
+         *
+         * It must match the detected MIME type and must
+         * not appear in the dangerous-extension denylist.
          */
         $originalExtension = strtolower(
             ltrim(
@@ -135,6 +137,10 @@ final class MediaUploadService
             ]);
         }
 
+        /*
+         * Physical storage extension is derived from
+         * trusted server-side MIME configuration.
+         */
         $storageExtension = $this->security
             ->preferredExtensionForMimeType(
                 $type,
@@ -158,6 +164,13 @@ final class MediaUploadService
             );
         }
 
+        /*
+         * Image inspection is performed before permanent
+         * storage and before GD variant processing.
+         *
+         * This also applies the maximum width, height
+         * and total-pixel safeguards.
+         */
         [
             $width,
             $height,
@@ -175,8 +188,8 @@ final class MediaUploadService
         );
 
         /*
-         * Original user filename is NEVER used
-         * as the physical stored filename.
+         * Never use the user-supplied filename as the
+         * physical stored filename.
          */
         $storedName =
             Str::uuid()->toString()
@@ -203,6 +216,19 @@ final class MediaUploadService
             2000,
         );
 
+        /*
+         * Alternative text only applies to images.
+         */
+        if ($type !== MediaType::Image) {
+            $safeAltText = '';
+        }
+
+        /*
+         * First store the physical original.
+         *
+         * If later DB / audit / variant processing fails,
+         * the catch block removes this file.
+         */
         $storedPath = Storage::disk(
             $disk,
         )->putFileAs(
@@ -220,9 +246,18 @@ final class MediaUploadService
             );
         }
 
+        /**
+         * Keep a reference for filesystem cleanup if
+         * the database transaction is rolled back.
+         *
+         * @var MediaAsset|null $createdMedia
+         */
+        $createdMedia = null;
+
         try {
             return DB::transaction(
                 function () use (
+                    &$createdMedia,
                     $actor,
                     $type,
                     $visibility,
@@ -283,20 +318,30 @@ final class MediaUploadService
                         'checksum' => $checksum,
 
                         /*
-                         * Raw EXIF data is intentionally
-                         * not persisted.
+                         * Raw EXIF metadata is intentionally
+                         * not stored in AWCMS.
                          */
                         'metadata' => null,
 
                         'uploaded_by' => $actor->id,
                     ]);
 
-                    app(AuditLogger::class)->log(
+                    $createdMedia =
+                        $media;
+
+                    app(
+                        AuditLogger::class,
+                    )->log(
                         event: 'media.uploaded',
+
                         description: 'A media asset was uploaded.',
+
                         actor: $actor,
+
                         subject: $media,
+
                         oldValues: [],
+
                         newValues: [
                             'type' => $type->value,
 
@@ -316,15 +361,52 @@ final class MediaUploadService
                         ],
                     );
 
-                    return $media;
+                    /*
+                     * Automatically create safe WebP
+                     * thumbnail + medium variants.
+                     *
+                     * Documents intentionally skip this.
+                     */
+                    if (
+                        $type ===
+                        MediaType::Image
+                    ) {
+                        $this
+                            ->imageVariantService
+                            ->generate(
+                                media: $media,
+
+                                actor: $actor,
+                            );
+                    }
+
+                    return $media->refresh();
                 },
             );
         } catch (Throwable $exception) {
             /*
-             * Filesystem and database transactions are
-             * separate systems. If database/audit work
-             * fails after storage, remove the orphaned
-             * physical file before rethrowing.
+             * Variant generation can create physical
+             * files before the outer database transaction
+             * completes.
+             *
+             * Remove them if the upload operation fails.
+             */
+            if (
+                $createdMedia
+                instanceof MediaAsset
+            ) {
+                $this
+                    ->imageVariantService
+                    ->cleanupPhysicalFiles(
+                        $createdMedia,
+                    );
+            }
+
+            /*
+             * Remove the physical original as well.
+             *
+             * Filesystem operations cannot participate
+             * directly in the SQL transaction.
              */
             try {
                 Storage::disk(
@@ -335,7 +417,8 @@ final class MediaUploadService
             } catch (Throwable) {
                 /*
                  * Preserve the original exception.
-                 * Orphan cleanup can later also be
+                 *
+                 * Any remaining orphan can later be
                  * handled by maintenance tooling.
                  */
             }
@@ -355,9 +438,10 @@ final class MediaUploadService
         }
 
         $maximumKilobytes =
-            $this->security->maximumKilobytes(
-                $type,
-            );
+            $this->security
+                ->maximumKilobytes(
+                    $type,
+                );
 
         if ($maximumKilobytes <= 0) {
             throw ValidationException::withMessages([
@@ -366,7 +450,8 @@ final class MediaUploadService
         }
 
         $maximumBytes =
-            $maximumKilobytes * 1024;
+            $maximumKilobytes
+            * 1024;
 
         if ($sizeBytes > $maximumBytes) {
             throw ValidationException::withMessages([
@@ -399,7 +484,9 @@ final class MediaUploadService
         }
 
         return strtolower(
-            trim($mimeType),
+            trim(
+                $mimeType,
+            ),
         );
     }
 
@@ -417,6 +504,11 @@ final class MediaUploadService
             ];
         }
 
+        /*
+         * Suppress native warning output from malformed
+         * images and convert the failure into a controlled
+         * validation exception.
+         */
         $dimensions = @getimagesize(
             $path,
         );
@@ -427,8 +519,11 @@ final class MediaUploadService
             ]);
         }
 
-        $width = $dimensions[0];
-        $height = $dimensions[1];
+        $width =
+            $dimensions[0];
+
+        $height =
+            $dimensions[1];
 
         if (
             $width <= 0
@@ -436,6 +531,57 @@ final class MediaUploadService
         ) {
             throw ValidationException::withMessages([
                 'file' => 'The uploaded image dimensions are invalid.',
+            ]);
+        }
+
+        /*
+         * Maximum individual dimensions.
+         */
+        $maximumWidth =
+            $this->security
+                ->maximumImageWidth();
+
+        $maximumHeight =
+            $this->security
+                ->maximumImageHeight();
+
+        if (
+            $width > $maximumWidth
+            || $height > $maximumHeight
+        ) {
+            throw ValidationException::withMessages([
+                'file' => sprintf(
+                    'The image dimensions may not exceed %d × %d pixels.',
+                    $maximumWidth,
+                    $maximumHeight,
+                ),
+            ]);
+        }
+
+        /*
+         * Maximum total decoded pixels.
+         *
+         * Use division instead of:
+         *
+         *     $width * $height
+         *
+         * to avoid unnecessary integer overflow risk.
+         */
+        $maximumPixels =
+            $this->security
+                ->maximumImagePixels();
+
+        if (
+            $width > intdiv(
+                $maximumPixels,
+                $height,
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'file' => sprintf(
+                    'The image may not exceed %d total pixels.',
+                    $maximumPixels,
+                ),
             ]);
         }
 
@@ -448,7 +594,8 @@ final class MediaUploadService
     private function diskFor(
         MediaVisibility $visibility,
     ): string {
-        $key = $visibility
+        $key =
+            $visibility
             === MediaVisibility::Public
             ? 'media.disks.public'
             : 'media.disks.private';
@@ -481,8 +628,10 @@ final class MediaUploadService
 
         if (
             ! is_string($baseDirectory)
-            || trim($baseDirectory, "/\\ \t\n\r\0\x0B")
-            === ''
+            || trim(
+                $baseDirectory,
+                "/\\ \t\n\r\0\x0B",
+            ) === ''
         ) {
             throw new RuntimeException(
                 'The media storage directory is not configured.',
@@ -507,6 +656,10 @@ final class MediaUploadService
         string $originalName,
         string $fallbackExtension,
     ): string {
+        /*
+         * Normalise Windows path separators so basename()
+         * cannot retain a supplied directory path.
+         */
         $originalName = str_replace(
             '\\',
             '/',
@@ -575,20 +728,21 @@ final class MediaUploadService
         }
 
         /*
-         * Remove forbidden active markup first,
-         * then convert the remaining safe value
-         * to plain text.
+         * Remove active / unsafe HTML first and then
+         * reduce the value to bounded plain text.
          */
-        $safeHtml = $this->contentSanitizer
-            ->sanitize(
-                $value,
-            );
+        $safeHtml =
+            $this->contentSanitizer
+                ->sanitize(
+                    $value,
+                );
 
         if ($safeHtml === '') {
             return '';
         }
 
-        return $this->contentSanitizer
+        return $this
+            ->contentSanitizer
             ->plainText(
                 $safeHtml,
                 $maximumLength,

@@ -57,41 +57,62 @@ final class MediaMetadataService
             $media,
         );
 
+        /*
+         * Alternative text only applies to images.
+         */
         if ($type !== MediaType::Image) {
             $safeAltText = '';
         }
 
-        $oldVisibility =
-            $this->visibilityOf(
-                $media,
-            );
+        $oldVisibility = $this->visibilityOf(
+            $media,
+        );
 
         $source = $this->sourceOf(
             $media,
         );
 
         $oldDisk = $this->nullableString(
-            $media->getAttribute('disk'),
+            $media->getAttribute(
+                'disk',
+            ),
         );
 
         $path = $this->nullableString(
-            $media->getAttribute('path'),
+            $media->getAttribute(
+                'path',
+            ),
         );
 
-        $newDisk = $source === MediaSource::Upload
-            ? $this->diskFor($visibility)
-            : $oldDisk;
+        /*
+         * For external media this value is not used.
+         *
+         * For uploaded media it becomes the authoritative
+         * destination storage disk.
+         */
+        $newDisk =
+            $oldDisk ?? '';
 
-        $copiedToNewDisk = false;
+        /**
+         * Paths copied to the new disk.
+         *
+         * Includes:
+         * - original
+         * - thumbnail
+         * - medium
+         *
+         * @var list<string> $copiedPaths
+         */
+        $copiedPaths = [];
 
-        if (
-            $source === MediaSource::Upload
-            && $oldVisibility !== $visibility
-            && $oldDisk !== $newDisk
-        ) {
+        /**
+         * Original disk used when files are physically moved.
+         */
+        $sourceDiskForMove = null;
+
+        if ($source === MediaSource::Upload) {
             if (
                 $oldDisk === null
-                || $newDisk === null
                 || $path === null
             ) {
                 throw new RuntimeException(
@@ -99,19 +120,44 @@ final class MediaMetadataService
                 );
             }
 
-            $this->copyBetweenDisks(
-                sourceDisk: $oldDisk,
-                destinationDisk: $newDisk,
-                path: $path,
+            $newDisk = $this->diskFor(
+                $visibility,
             );
 
-            $copiedToNewDisk = true;
+            /*
+             * Public <-> Private requires a real
+             * physical storage move.
+             *
+             * Internal <-> Restricted both use the
+             * private disk, so no file copy is needed.
+             */
+            if ($oldDisk !== $newDisk) {
+                $storedPaths =
+                    $this->storedPaths(
+                        media: $media,
+                        originalPath: $path,
+                        expectedDisk: $oldDisk,
+                    );
+
+                $copiedPaths =
+                    $this->copyPathsBetweenDisks(
+                        sourceDisk: $oldDisk,
+                        destinationDisk: $newDisk,
+                        paths: $storedPaths,
+                    );
+
+                $sourceDiskForMove =
+                    $oldDisk;
+            }
         }
 
         $oldValues = [
             'title_length' => mb_strlen(
-                (string) $media->getAttribute(
-                    'title',
+                (string) (
+                    $media->getAttribute(
+                        'title',
+                    )
+                    ?? ''
                 ),
             ),
 
@@ -134,6 +180,8 @@ final class MediaMetadataService
             ),
 
             'visibility' => $oldVisibility->value,
+
+            'disk' => $oldDisk,
         ];
 
         try {
@@ -147,6 +195,7 @@ final class MediaMetadataService
                     $visibility,
                     $source,
                     $newDisk,
+                    $copiedPaths,
                     $oldValues,
                 ): MediaAsset {
                     $attributes = [
@@ -177,12 +226,38 @@ final class MediaMetadataService
 
                     $media->save();
 
-                    app(AuditLogger::class)->log(
+                    /*
+                     * Critical 08D-2 step:
+                     *
+                     * When original + variants were copied
+                     * to another disk, update every variant
+                     * DB record inside the same transaction.
+                     */
+                    if (
+                        $source ===
+                        MediaSource::Upload
+                        && $copiedPaths !== []
+                    ) {
+                        $media
+                            ->variants()
+                            ->update([
+                                'disk' => $newDisk,
+                            ]);
+                    }
+
+                    app(
+                        AuditLogger::class,
+                    )->log(
                         event: 'media.updated',
+
                         description: 'Media metadata was updated.',
+
                         actor: $actor,
+
                         subject: $media,
+
                         oldValues: $oldValues,
+
                         newValues: [
                             'title_length' => mb_strlen(
                                 $safeTitle,
@@ -197,6 +272,15 @@ final class MediaMetadataService
                             ),
 
                             'visibility' => $visibility->value,
+
+                            'disk' => $source ===
+                                MediaSource::Upload
+                                ? $newDisk
+                                : null,
+
+                            'moved_files_count' => count(
+                                $copiedPaths,
+                            ),
                         ],
                     );
 
@@ -204,17 +288,26 @@ final class MediaMetadataService
                 },
             );
         } catch (Throwable $exception) {
-            if ($copiedToNewDisk) {
+            /*
+             * DB update failed.
+             *
+             * Remove the copies from the destination
+             * disk so the original disk remains
+             * authoritative.
+             */
+            foreach (
+                $copiedPaths as $copiedPath
+            ) {
                 try {
                     Storage::disk(
                         $newDisk,
                     )->delete(
-                        $path,
+                        $copiedPath,
                     );
                 } catch (Throwable) {
                     /*
-             * Preserve original exception.
-             */
+                     * Preserve the original exception.
+                     */
                 }
             }
 
@@ -222,39 +315,118 @@ final class MediaMetadataService
         }
 
         /*
-         * Database now points to the new disk.
-         * The old copy can be removed.
+         * Database commit succeeded.
          *
-         * If this cleanup fails, the authoritative
-         * database/file remains valid and only an
-         * orphaned old copy may remain.
+         * The new disk is now authoritative, so remove
+         * original + variant copies from the old disk.
          */
-        if ($copiedToNewDisk) {
-            try {
-                Storage::disk(
-                    $oldDisk,
-                )->delete(
-                    $path,
-                );
-            } catch (Throwable) {
-                /*
-         * The database already points to the
-         * authoritative new copy.
-         *
-         * Any old orphaned copy can be handled
-         * by maintenance tooling later.
-         */
+        if ($sourceDiskForMove !== null) {
+            foreach (
+                $copiedPaths as $copiedPath
+            ) {
+                try {
+                    Storage::disk(
+                        $sourceDiskForMove,
+                    )->delete(
+                        $copiedPath,
+                    );
+                } catch (Throwable) {
+                    /*
+                     * The database and destination copy
+                     * are valid.
+                     *
+                     * Any remaining old orphan can be
+                     * cleaned by maintenance tooling.
+                     */
+                }
             }
         }
 
         return $updatedMedia;
     }
 
-    private function copyBetweenDisks(
+    /**
+     * Build the complete list of stored physical files.
+     *
+     * @return list<string>
+     */
+    private function storedPaths(
+        MediaAsset $media,
+        string $originalPath,
+        string $expectedDisk,
+    ): array {
+        $paths = [
+            $originalPath,
+        ];
+
+        foreach (
+            $media->variants()->get() as $variant
+        ) {
+            $variantDisk =
+                $this->nullableString(
+                    $variant->getAttribute(
+                        'disk',
+                    ),
+                );
+
+            $variantPath =
+                $this->nullableString(
+                    $variant->getAttribute(
+                        'path',
+                    ),
+                );
+
+            if (
+                $variantDisk === null
+                || $variantPath === null
+            ) {
+                throw new RuntimeException(
+                    'A media variant storage location is incomplete.',
+                );
+            }
+
+            /*
+             * A media asset and all its variants must
+             * live on the same storage disk.
+             */
+            if (
+                $variantDisk !==
+                $expectedDisk
+            ) {
+                throw new RuntimeException(
+                    'A media variant is stored on an unexpected disk.',
+                );
+            }
+
+            if (
+                ! in_array(
+                    $variantPath,
+                    $paths,
+                    true,
+                )
+            ) {
+                $paths[] =
+                    $variantPath;
+            }
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Copy original + variants between disks.
+     *
+     * The old copies are NOT removed here.
+     * Removal happens only after the database commit.
+     *
+     * @param  list<string>  $paths
+     * @return list<string>
+     */
+    private function copyPathsBetweenDisks(
         string $sourceDisk,
         string $destinationDisk,
-        string $path,
-    ): void {
+        array $paths,
+    ): array {
         $source = Storage::disk(
             $sourceDisk,
         );
@@ -263,49 +435,99 @@ final class MediaMetadataService
             $destinationDisk,
         );
 
-        if (! $source->exists($path)) {
-            throw new RuntimeException(
-                'The original media file is missing.',
-            );
-        }
-
-        if ($destination->exists($path)) {
-            throw new RuntimeException(
-                'A file already exists at the destination location.',
-            );
-        }
-
-        $stream = $source->readStream(
-            $path,
-        );
-
-        if (! is_resource($stream)) {
-            throw new RuntimeException(
-                'The media file could not be read.',
-            );
-        }
+        /**
+         * @var list<string> $copied
+         */
+        $copied = [];
 
         try {
-            $stored = $destination->put(
-                $path,
-                $stream,
-            );
-        } finally {
-            fclose($stream);
+            foreach ($paths as $path) {
+                if (
+                    ! $source->exists(
+                        $path,
+                    )
+                ) {
+                    throw new RuntimeException(
+                        'A media file required for the storage move is missing.',
+                    );
+                }
+
+                if (
+                    $destination->exists(
+                        $path,
+                    )
+                ) {
+                    throw new RuntimeException(
+                        'A media file already exists at the destination location.',
+                    );
+                }
+
+                $stream =
+                    $source->readStream(
+                        $path,
+                    );
+
+                if (! is_resource($stream)) {
+                    throw new RuntimeException(
+                        'A media file could not be read.',
+                    );
+                }
+
+                try {
+                    $stored =
+                        $destination
+                            ->writeStream(
+                                $path,
+                                $stream,
+                            );
+                } finally {
+                    fclose(
+                        $stream,
+                    );
+                }
+
+                if ($stored !== true) {
+                    throw new RuntimeException(
+                        'A media file could not be copied to the new storage location.',
+                    );
+                }
+
+                $copied[] =
+                    $path;
+            }
+        } catch (Throwable $exception) {
+            /*
+             * A partial copy failed.
+             *
+             * Remove anything already copied to the
+             * destination disk.
+             */
+            foreach (
+                $copied as $copiedPath
+            ) {
+                try {
+                    $destination->delete(
+                        $copiedPath,
+                    );
+                } catch (Throwable) {
+                    /*
+                     * Preserve original exception.
+                     */
+                }
+            }
+
+            throw $exception;
         }
 
-        if ($stored !== true) {
-            throw new RuntimeException(
-                'The media file could not be copied to the new storage location.',
-            );
-        }
+        return $copied;
     }
 
     private function diskFor(
         MediaVisibility $visibility,
     ): string {
-        $configKey = $visibility
-            === MediaVisibility::Public
+        $configKey =
+            $visibility ===
+            MediaVisibility::Public
             ? 'media.disks.public'
             : 'media.disks.private';
 
@@ -322,7 +544,9 @@ final class MediaMetadataService
             );
         }
 
-        return trim($disk);
+        return trim(
+            $disk,
+        );
     }
 
     private function typeOf(
@@ -348,7 +572,10 @@ final class MediaMetadataService
             'source',
         );
 
-        if (! $source instanceof MediaSource) {
+        if (
+            ! $source
+                instanceof MediaSource
+        ) {
             throw new RuntimeException(
                 'The media source is invalid.',
             );
@@ -360,9 +587,10 @@ final class MediaMetadataService
     private function visibilityOf(
         MediaAsset $media,
     ): MediaVisibility {
-        $visibility = $media->getAttribute(
-            'visibility',
-        );
+        $visibility =
+            $media->getAttribute(
+                'visibility',
+            );
 
         if (
             ! $visibility
@@ -383,7 +611,9 @@ final class MediaMetadataService
             return null;
         }
 
-        $value = trim($value);
+        $value = trim(
+            $value,
+        );
 
         return $value !== ''
             ? $value
@@ -398,17 +628,19 @@ final class MediaMetadataService
             return '';
         }
 
-        $value = trim($value);
+        $value = trim(
+            $value,
+        );
 
         if ($value === '') {
             return '';
         }
 
-        $safeHtml = $this
-            ->contentSanitizer
-            ->sanitize(
-                $value,
-            );
+        $safeHtml =
+            $this->contentSanitizer
+                ->sanitize(
+                    $value,
+                );
 
         if ($safeHtml === '') {
             return '';
