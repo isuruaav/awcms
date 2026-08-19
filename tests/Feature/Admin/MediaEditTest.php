@@ -1,14 +1,17 @@
 <?php
 
 use App\Enums\MediaType;
+use App\Enums\MediaVariantPreset;
 use App\Enums\MediaVisibility;
 use App\Livewire\Admin\Media\MediaEdit;
 use App\Models\AuditLog;
 use App\Models\MediaAsset;
 use App\Models\User;
 use App\Services\MediaMetadataService;
+use App\Services\MediaUploadService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 
@@ -49,6 +52,66 @@ test('media operator can open media details screen', function (): void {
         ->assertSee('Training Photograph')
         ->assertSee('File Information')
         ->assertSee('Save Changes');
+});
+
+test('public image details use medium variant preview', function (): void {
+    $operator = User::factory()->create();
+
+    $operator->assignRole(
+        'Media Operator',
+    );
+
+    $media = app(
+        MediaUploadService::class,
+    )->upload(
+        file: UploadedFile::fake()
+            ->image(
+                'preview.jpg',
+                1600,
+                1200,
+            ),
+
+        type: MediaType::Image,
+
+        visibility: MediaVisibility::Public,
+
+        actor: $operator,
+    );
+
+    $medium = $media->variant(
+        MediaVariantPreset::Medium,
+    );
+
+    expect($medium)
+        ->not->toBeNull();
+
+    $mediumPath = (string) $medium?->getAttribute(
+        'path',
+    );
+
+    expect($mediumPath)
+        ->not->toBe('');
+
+    $expectedUrl = Storage::disk(
+        'public',
+    )->url(
+        $mediumPath,
+    );
+
+    $this->actingAs(
+        $operator,
+    )
+        ->get(
+            route(
+                'admin.media.edit',
+                $media,
+            ),
+        )
+        ->assertOk()
+        ->assertSee(
+            $expectedUrl,
+            false,
+        );
 });
 
 test('auditor can view media details in read only mode', function (): void {

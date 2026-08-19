@@ -5,13 +5,12 @@ namespace App\Livewire\Admin\Media;
 use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
 use App\Models\MediaAsset;
+use App\Services\MediaUrlService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Throwable;
 
 final class MediaIndex extends Component
 {
@@ -83,13 +82,16 @@ final class MediaIndex extends Component
             return;
         }
 
-        $this->display = $display;
+        $this->display =
+            $display;
     }
 
     public function clearFilters(): void
     {
         $this->search = '';
+
         $this->typeFilter = '';
+
         $this->visibilityFilter = '';
 
         $this->resetPage();
@@ -97,8 +99,18 @@ final class MediaIndex extends Component
 
     public function render(): View
     {
+        /*
+         * Eager-load uploader and variants.
+         *
+         * Variants are required by MediaUrlService
+         * so the grid can use the optimized thumbnail
+         * without causing N+1 queries.
+         */
         $query = MediaAsset::query()
-            ->with('uploader')
+            ->with([
+                'uploader',
+                'variants',
+            ])
             ->latest('id');
 
         if ($this->view === 'trash') {
@@ -120,11 +132,36 @@ final class MediaIndex extends Component
         $media = $query->paginate(
             12,
         );
+
+        /**
+         * Public preview URLs keyed by media ID.
+         *
+         * Images:
+         * thumbnail WebP -> original fallback
+         *
+         * Documents:
+         * original public URL
+         *
+         * Internal / Restricted:
+         * null
+         *
+         * @var array<int, string|null> $publicUrls
+         */
         $publicUrls = [];
 
-        foreach ($media->items() as $asset) {
-            $publicUrls[(int) $asset->id] = $this->publicUrl(
-                $asset,
+        $mediaUrlService = app(
+            MediaUrlService::class,
+        );
+
+        foreach (
+            $media->items() as $asset
+        ) {
+            $publicUrls[
+                (int) $asset->id
+            ] = $this->previewUrl(
+                media: $asset,
+
+                mediaUrlService: $mediaUrlService,
             );
         }
 
@@ -171,7 +208,8 @@ final class MediaIndex extends Component
             function (
                 Builder $searchQuery,
             ) use ($search): void {
-                $like = '%'.$search.'%';
+                $like =
+                    '%'.$search.'%';
 
                 $searchQuery
                     ->where(
@@ -204,7 +242,9 @@ final class MediaIndex extends Component
     private function applyTypeFilter(
         Builder $query,
     ): void {
-        if ($this->typeFilter === '') {
+        if (
+            $this->typeFilter === ''
+        ) {
             return;
         }
 
@@ -212,7 +252,10 @@ final class MediaIndex extends Component
             $this->typeFilter,
         );
 
-        if (! $type instanceof MediaType) {
+        if (
+            ! $type
+                instanceof MediaType
+        ) {
             return;
         }
 
@@ -252,48 +295,46 @@ final class MediaIndex extends Component
         );
     }
 
-    private function publicUrl(
+    private function previewUrl(
         MediaAsset $media,
+        MediaUrlService $mediaUrlService,
     ): ?string {
-        $visibility =
-            $media->getAttribute(
-                'visibility',
-            );
+        $type = $media->getAttribute(
+            'type',
+        );
 
         if (
-            ! $visibility
-                instanceof MediaVisibility
-            || $visibility
-            !== MediaVisibility::Public
+            ! $type
+                instanceof MediaType
         ) {
             return null;
         }
 
-        $disk = $media->getAttribute(
-            'disk',
-        );
-
-        $path = $media->getAttribute(
-            'path',
-        );
-
-        if (
-            ! is_string($disk)
-            || trim($disk) === ''
-            || ! is_string($path)
-            || trim($path) === ''
-        ) {
-            return null;
+        /*
+         * Images should use the optimized
+         * 480px WebP thumbnail.
+         *
+         * If an old image does not yet have
+         * variants, safely fall back to original.
+         */
+        if ($type === MediaType::Image) {
+            return $mediaUrlService
+                ->thumbnailOrOriginal(
+                    $media,
+                );
         }
 
-        try {
-            return Storage::disk(
-                $disk,
-            )->url(
-                $path,
-            );
-        } catch (Throwable) {
-            return null;
+        /*
+         * Public documents can still use their
+         * original file URL.
+         */
+        if ($type === MediaType::Document) {
+            return $mediaUrlService
+                ->original(
+                    $media,
+                );
         }
+
+        return null;
     }
 }

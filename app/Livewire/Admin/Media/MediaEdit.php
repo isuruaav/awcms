@@ -2,19 +2,17 @@
 
 namespace App\Livewire\Admin\Media;
 
-use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
 use App\Models\MediaAsset;
 use App\Models\User;
 use App\Services\MediaMetadataService;
+use App\Services\MediaUrlService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
-use Throwable;
 
 final class MediaEdit extends Component
 {
@@ -74,17 +72,29 @@ final class MediaEdit extends Component
             MediaMetadataService::class,
         )->update(
             media: $this->mediaAsset(),
+
             actor: $this->actor(),
+
             title: $this->title,
+
             altText: $this->altText !== ''
-                    ? $this->altText
-                    : null,
+                ? $this->altText
+                : null,
+
             caption: $this->caption !== ''
-                    ? $this->caption
-                    : null,
+                ? $this->caption
+                : null,
+
             visibility: $visibility,
         );
 
+        /*
+         * The metadata service may have moved the
+         * original and variants between disks.
+         *
+         * Reload the component state using the latest
+         * persisted media values.
+         */
         $this->loadMedia();
 
         session()->flash(
@@ -133,6 +143,39 @@ final class MediaEdit extends Component
     {
         $media = $this->mediaAsset();
 
+        /*
+         * Variants are needed by MediaUrlService.
+         *
+         * loadMissing avoids unnecessary repeated
+         * database queries during Livewire renders.
+         */
+        $media->loadMissing([
+            'uploader',
+            'variants',
+        ]);
+
+        $publicUrl = null;
+
+        /*
+         * Only images receive an inline image preview.
+         *
+         * Public images:
+         * medium WebP -> original fallback
+         *
+         * Internal / Restricted images:
+         * null
+         *
+         * Documents:
+         * null
+         */
+        if ($media->isImage()) {
+            $publicUrl = app(
+                MediaUrlService::class,
+            )->mediumOrOriginal(
+                $media,
+            );
+        }
+
         return view(
             'livewire.admin.media.media-edit',
             [
@@ -140,9 +183,7 @@ final class MediaEdit extends Component
 
                 'visibilities' => MediaVisibility::cases(),
 
-                'publicUrl' => $this->publicUrl(
-                    $media,
-                ),
+                'publicUrl' => $publicUrl,
 
                 'fileSize' => $this->fileSize(
                     $media,
@@ -163,6 +204,20 @@ final class MediaEdit extends Component
     private function loadMedia(): void
     {
         $media = $this->mediaAsset();
+
+        /*
+         * Clear previously loaded relations so that
+         * visibility/disk/variant changes made by the
+         * metadata service are not represented by stale
+         * relationship data on the next render.
+         */
+        $media->unsetRelation(
+            'variants',
+        );
+
+        $media->unsetRelation(
+            'uploader',
+        );
 
         $this->title = (string) (
             $media->getAttribute(
@@ -192,9 +247,9 @@ final class MediaEdit extends Component
 
         $this->visibility =
             $visibility
-                instanceof MediaVisibility
-                ? $visibility->value
-                : MediaVisibility::Public->value;
+            instanceof MediaVisibility
+            ? $visibility->value
+            : MediaVisibility::Public->value;
     }
 
     private function normaliseInput(): void
@@ -212,14 +267,17 @@ final class MediaEdit extends Component
         );
 
         $this->visibility = strtolower(
-            trim($this->visibility),
+            trim(
+                $this->visibility,
+            ),
         );
     }
 
     private function mediaAsset(): MediaAsset
     {
         abort_unless(
-            $this->media instanceof MediaAsset,
+            $this->media
+                instanceof MediaAsset,
             404,
         );
 
@@ -236,62 +294,6 @@ final class MediaEdit extends Component
         );
 
         return $actor;
-    }
-
-    private function publicUrl(
-        MediaAsset $media,
-    ): ?string {
-        $visibility =
-            $media->getAttribute(
-                'visibility',
-            );
-
-        if (
-            ! $visibility
-                instanceof MediaVisibility
-            || $visibility
-                !== MediaVisibility::Public
-        ) {
-            return null;
-        }
-
-        $type = $media->getAttribute(
-            'type',
-        );
-
-        if (
-            ! $type instanceof MediaType
-            || $type !== MediaType::Image
-        ) {
-            return null;
-        }
-
-        $disk = $media->getAttribute(
-            'disk',
-        );
-
-        $path = $media->getAttribute(
-            'path',
-        );
-
-        if (
-            ! is_string($disk)
-            || trim($disk) === ''
-            || ! is_string($path)
-            || trim($path) === ''
-        ) {
-            return null;
-        }
-
-        try {
-            return Storage::disk(
-                $disk,
-            )->url(
-                $path,
-            );
-        } catch (Throwable) {
-            return null;
-        }
     }
 
     private function fileSize(
