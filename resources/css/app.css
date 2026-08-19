@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
-@import "trix/dist/trix.css";
+@import 'trix/dist/trix.css';
+
 @source '../views';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
@@ -9,7 +10,15 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans:
+        'Instrument Sans',
+        ui-sans-serif,
+        system-ui,
+        sans-serif,
+        'Apple Color Emoji',
+        'Segoe UI Emoji',
+        'Segoe UI Symbol',
+        'Noto Color Emoji';
 
     --color-zinc-50: #fafafa;
     --color-zinc-100: #f5f5f5;
@@ -37,7 +46,6 @@
 }
 
 @layer base {
-
     *,
     ::after,
     ::before,
@@ -47,12 +55,18 @@
     }
 }
 
+/*
+|--------------------------------------------------------------------------
+| Flux
+|--------------------------------------------------------------------------
+*/
+
 [data-flux-field]:not(ui-radio, ui-checkbox) {
     @apply grid gap-2;
 }
 
 [data-flux-label] {
-    @apply  !mb-0 !leading-tight;
+    @apply !mb-0 !leading-tight;
 }
 
 input:focus[data-flux-control],
@@ -61,34 +75,62 @@ select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
 }
 
-/* \[:where(&)\]:size-4 {
-    @apply size-4;
-} */
-
+/*
+|--------------------------------------------------------------------------
+| Alpine
+|--------------------------------------------------------------------------
+*/
 
 [x-cloak] {
     display: none !important;
 }
 
-
 /*
- * AWCMS Rich Text Editor
- */
+|--------------------------------------------------------------------------
+| AWCMS Rich Text Editor
+|--------------------------------------------------------------------------
+|
+| Shared Trix styling for Pages, News and future CMS content forms.
+|
+*/
+
 trix-editor.awcms-editor {
     min-height: 22rem;
-    border-radius: 0.75rem;
+
     border: 1px solid rgb(212 212 216);
-    background: white;
+    border-radius: 0.75rem;
+
+    background: #ffffff;
+
     padding: 1rem;
+
     font-size: 0.95rem;
     line-height: 1.75;
+
     color: rgb(63 63 70);
+
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
 }
 
 trix-editor.awcms-editor:focus {
     border-color: rgb(16 185 129);
+
     outline: none;
-    box-shadow: 0 0 0 4px rgb(16 185 129 / 0.1);
+
+    box-shadow:
+        0 0 0 4px rgb(16 185 129 / 0.1);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Trix Toolbar
+|--------------------------------------------------------------------------
+*/
+
+trix-toolbar {
+    margin-bottom: 0.75rem;
 }
 
 trix-toolbar .trix-button-row {
@@ -100,19 +142,146 @@ trix-toolbar .trix-button-group {
 }
 
 /*
- * Attachments are disabled until the Media Library
- * integration is implemented.
+ * Hide file attachment tools.
+ *
+ * Images and documents must be selected through
+ * the controlled AWCMS Media Library.
  */
 trix-toolbar .trix-button--icon-attach {
     display: none;
 }
 
+trix-toolbar [data-trix-button-group='file-tools'] {
+    display: none;
+}
+
 /*
- * Sanitized public content styling
- */
+|--------------------------------------------------------------------------
+| Trix Editor Content
+|--------------------------------------------------------------------------
+*/
+
+trix-editor.awcms-editor h2 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.35;
+
+    color: rgb(24 24 27);
+}
+
+trix-editor.awcms-editor h3 {
+    margin-top: 1.25rem;
+    margin-bottom: 0.75rem;
+
+    font-size: 1.25rem;
+    font-weight: 700;
+
+    color: rgb(24 24 27);
+}
+
+trix-editor.awcms-editor p {
+    margin-bottom: 1rem;
+}
+
+trix-editor.awcms-editor ul {
+    margin: 1rem 0;
+
+    list-style-type: disc;
+
+    padding-left: 1.5rem;
+}
+
+trix-editor.awcms-editor ol {
+    margin: 1rem 0;
+
+    list-style-type: decimal;
+
+    padding-left: 1.5rem;
+}
+
+trix-editor.awcms-editor li + li {
+    margin-top: 0.35rem;
+}
+
+trix-editor.awcms-editor blockquote {
+    margin: 1rem 0;
+
+    border-left: 4px solid rgb(16 185 129);
+
+    background: rgb(240 253 250);
+
+    padding: 1rem 1.25rem;
+
+    color: rgb(63 63 70);
+}
+
+trix-editor.awcms-editor a {
+    font-weight: 600;
+
+    color: rgb(4 120 87);
+
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+trix-editor.awcms-editor pre {
+    overflow-x: auto;
+
+    margin: 1rem 0;
+
+    border-radius: 0.75rem;
+
+    background: rgb(24 24 27);
+
+    padding: 1rem;
+
+    color: rgb(244 244 245);
+}
+
+trix-editor.awcms-editor code {
+    border-radius: 0.25rem;
+
+    background: rgb(244 244 245);
+
+    padding: 0.1rem 0.3rem;
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        'Liberation Mono',
+        'Courier New',
+        monospace;
+
+    font-size: 0.9em;
+}
+
+trix-editor.awcms-editor pre code {
+    background: transparent;
+
+    padding: 0;
+
+    color: inherit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Sanitized Public CMS Content
+|--------------------------------------------------------------------------
+|
+| Used when sanitized Page / News HTML is rendered publicly.
+|
+*/
+
 .awcms-content {
     font-size: 1rem;
     line-height: 1.8;
+
     color: rgb(63 63 70);
 }
 
@@ -122,35 +291,47 @@ trix-toolbar .trix-button--icon-attach {
 
 .awcms-content h2 {
     margin-top: 2.25rem;
+
     font-size: 1.875rem;
     font-weight: 700;
     line-height: 1.25;
+
     color: rgb(24 24 27);
 }
 
 .awcms-content h3 {
     margin-top: 2rem;
+
     font-size: 1.5rem;
     font-weight: 700;
     line-height: 1.35;
+
     color: rgb(24 24 27);
 }
 
 .awcms-content h4 {
     margin-top: 1.75rem;
+
     font-size: 1.25rem;
     font-weight: 700;
     line-height: 1.4;
+
     color: rgb(24 24 27);
+}
+
+.awcms-content p {
+    line-height: 1.8;
 }
 
 .awcms-content ul {
     list-style-type: disc;
+
     padding-left: 1.5rem;
 }
 
 .awcms-content ol {
     list-style-type: decimal;
+
     padding-left: 1.5rem;
 }
 
@@ -160,36 +341,138 @@ trix-toolbar .trix-button--icon-attach {
 
 .awcms-content blockquote {
     border-left: 4px solid rgb(16 185 129);
+
     background: rgb(240 253 250);
+
     padding: 1rem 1.25rem;
+
     color: rgb(63 63 70);
 }
 
 .awcms-content a {
     font-weight: 600;
+
     color: rgb(4 120 87);
+
     text-decoration: underline;
     text-underline-offset: 3px;
 }
 
 .awcms-content pre {
     overflow-x: auto;
+
     border-radius: 0.75rem;
+
     background: rgb(24 24 27);
+
     padding: 1rem;
+
     color: rgb(244 244 245);
 }
 
 .awcms-content code {
     border-radius: 0.25rem;
+
     background: rgb(244 244 245);
+
     padding: 0.1rem 0.3rem;
-    font-family: ui-monospace, monospace;
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        'Liberation Mono',
+        'Courier New',
+        monospace;
+
     font-size: 0.9em;
 }
 
 .awcms-content pre code {
     background: transparent;
+
     padding: 0;
+
     color: inherit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Public Content Images
+|--------------------------------------------------------------------------
+*/
+
+.awcms-content img {
+    display: block;
+
+    max-width: 100%;
+    height: auto;
+
+    border-radius: 0.75rem;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Public Content Tables
+|--------------------------------------------------------------------------
+*/
+
+.awcms-content table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 0.95rem;
+}
+
+.awcms-content th,
+.awcms-content td {
+    border: 1px solid rgb(228 228 231);
+
+    padding: 0.75rem;
+
+    text-align: left;
+    vertical-align: top;
+}
+
+.awcms-content th {
+    background: rgb(250 250 250);
+
+    font-weight: 700;
+
+    color: rgb(39 39 42);
+}
+
+/*
+|--------------------------------------------------------------------------
+| Responsive Rich Text
+|--------------------------------------------------------------------------
+*/
+
+@media (max-width: 640px) {
+    trix-editor.awcms-editor {
+        min-height: 18rem;
+
+        padding: 0.875rem;
+
+        font-size: 0.925rem;
+    }
+
+    .awcms-content {
+        font-size: 0.95rem;
+    }
+
+    .awcms-content h2 {
+        font-size: 1.5rem;
+    }
+
+    .awcms-content h3 {
+        font-size: 1.3rem;
+    }
+
+    .awcms-content h4 {
+        font-size: 1.125rem;
+    }
 }

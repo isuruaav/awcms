@@ -65,6 +65,7 @@ final class RolesAndPermissionsSeeder extends Seeder
             'news.update',
             'news.delete',
             'news.publish',
+            'news.categories.manage',
 
             /*
              * Galleries
@@ -166,6 +167,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.update',
                 'news.delete',
                 'news.publish',
+                'news.categories.manage',
 
                 /*
                  * Galleries
@@ -236,6 +238,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.create',
                 'news.update',
                 'news.publish',
+                'news.categories.manage',
 
                 /*
                  * Galleries

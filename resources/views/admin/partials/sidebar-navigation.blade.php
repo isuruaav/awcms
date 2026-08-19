@@ -1,6 +1,8 @@
 <nav class="space-y-1 px-4 py-6">
 
-    {{-- Dashboard --}}
+    {{-- =====================================================
+         DASHBOARD
+    ====================================================== --}}
     @can('dashboard.view')
         <x-admin.nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
             Dashboard
@@ -8,7 +10,9 @@
     @endcan
 
 
-    {{-- Content Management --}}
+    {{-- =====================================================
+         CONTENT MANAGEMENT
+    ====================================================== --}}
     <div
         class="px-4 pb-2 pt-6
                text-xs font-semibold
@@ -16,6 +20,7 @@
                text-zinc-500">
         Content Management
     </div>
+
 
     {{-- Pages --}}
     @can('pages.view')
@@ -33,9 +38,9 @@
     @endcan
 
 
-    {{-- News - module not completed yet --}}
+    {{-- News --}}
     @can('news.view')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.news.index')" :active="request()->routeIs('admin.news.*')">
             News
         </x-admin.nav-link>
     @endcan
@@ -57,7 +62,9 @@
     @endcan
 
 
-    {{-- Administration --}}
+    {{-- =====================================================
+         ADMINISTRATION
+    ====================================================== --}}
     <div
         class="px-4 pb-2 pt-6
                text-xs font-semibold
@@ -75,7 +82,7 @@
     @endcan
 
 
-    {{-- Roles & Permissions --}}
+    {{-- Roles & Permissions - module not completed yet --}}
     @can('roles.manage')
         <x-admin.nav-link disabled>
             Roles & Permissions
@@ -83,7 +90,7 @@
     @endcan
 
 
-    {{-- Menus --}}
+    {{-- Menus - module not completed yet --}}
     @can('menus.manage')
         <x-admin.nav-link disabled>
             Menus
@@ -91,7 +98,7 @@
     @endcan
 
 
-    {{-- Site Settings --}}
+    {{-- Site Settings - module not completed yet --}}
     @can('settings.manage')
         <x-admin.nav-link disabled>
             Site Settings

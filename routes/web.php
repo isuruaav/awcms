@@ -107,6 +107,63 @@ Route::middleware([
                 ->name('pages.edit');
 
             /*
+ * News
+ */
+            Route::livewire(
+                '/news',
+                'admin.news.news-index',
+            )
+                ->middleware(
+                    'can:news.view',
+                )
+                ->name(
+                    'news.index',
+                );
+
+            Route::livewire(
+                '/news/create',
+                'admin.news.news-create',
+            )
+                ->middleware(
+                    'can:news.create',
+                )
+                ->name(
+                    'news.create',
+                );
+
+            Route::livewire(
+                '/news/categories',
+                'admin.news.news-category-index',
+            )
+                ->middleware(
+                    'can:news.categories.manage',
+                )
+                ->name(
+                    'news.categories.index',
+                );
+
+            Route::livewire(
+                '/news/{news}/edit',
+                'admin.news.news-edit',
+            )
+                ->whereNumber(
+                    'news',
+                )
+                ->middleware(
+                    'can:news.update',
+                )
+                ->name(
+                    'news.edit',
+                );
+
+            Route::livewire(
+                '/news/{news}/revisions',
+                'admin.news.news-revision-history',
+            )
+                ->whereNumber('news')
+                ->middleware('can:news.view')
+                ->name('news.revisions');
+            /*
              * Audit Logs
              */
             Route::livewire(
