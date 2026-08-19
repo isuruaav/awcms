@@ -23,6 +23,7 @@ final class MediaImageVariantService
     public function generate(
         MediaAsset $media,
         ?User $actor = null,
+        bool $deleteOldPhysicalFiles = true,
     ): array {
         $this->assertProcessable(
             $media,
@@ -187,9 +188,7 @@ final class MediaImageVariantService
                 $newPaths[] =
                     $variantPath;
 
-                $generated[
-                    $preset->value
-                ] = [
+                $generated[$preset->value] = [
                     'disk' => $disk,
 
                     'path' => $variantPath,
@@ -229,9 +228,7 @@ final class MediaImageVariantService
                         MediaVariantPreset::cases() as $preset
                     ) {
                         $data =
-                            $generated[
-                                $preset->value
-                            ];
+                            $generated[$preset->value];
 
                         $variant =
                             MediaVariant::query()
@@ -246,25 +243,17 @@ final class MediaImageVariantService
 
                                         'path' => $data['path'],
 
-                                        'mime_type' => $data[
-                                                'mime_type'
-                                            ],
+                                        'mime_type' => $data['mime_type'],
 
-                                        'extension' => $data[
-                                                'extension'
-                                            ],
+                                        'extension' => $data['extension'],
 
                                         'width' => $data['width'],
 
                                         'height' => $data['height'],
 
-                                        'size_bytes' => $data[
-                                                'size_bytes'
-                                            ],
+                                        'size_bytes' => $data['size_bytes'],
 
-                                        'checksum' => $data[
-                                                'checksum'
-                                            ],
+                                        'checksum' => $data['checksum'],
 
                                         'generated_at' => now(),
                                     ],
@@ -332,9 +321,18 @@ final class MediaImageVariantService
         }
 
         /*
-         * New DB records are now authoritative.
-         * Previous physical variant files can be removed.
-         */
+ * Some callers, such as MediaReplacementService,
+ * manage old physical file cleanup only after
+ * their outer database transaction commits.
+ */
+        if (! $deleteOldPhysicalFiles) {
+            return $variants;
+        }
+
+        /*
+ * New DB records are now authoritative.
+ * Previous physical variant files can be removed.
+ */
         foreach (
             $oldVariants as $oldVariant
         ) {
