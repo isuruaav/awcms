@@ -1,4 +1,5 @@
 <div class="mx-auto max-w-7xl space-y-6">
+
     {{-- Header --}}
     <div
         class="flex flex-col gap-4
@@ -42,6 +43,20 @@
         @endcan
     </div>
 
+    {{-- Status Message --}}
+    @if (session('status'))
+        <div
+            class="rounded-xl
+                   border border-emerald-200
+                   bg-emerald-50
+                   px-4 py-3
+                   text-sm font-semibold
+                   text-emerald-800"
+        >
+            {{ session('status') }}
+        </div>
+    @endif
+
     {{-- Active / Trash --}}
     <div
         class="grid gap-4
@@ -52,8 +67,10 @@
             wire:click="$set('view', 'active')"
             @class([
                 'rounded-2xl border p-5 text-left transition',
+
                 'border-emerald-300 bg-emerald-50'
                     => $view === 'active',
+
                 'border-zinc-200 bg-white hover:bg-zinc-50'
                     => $view !== 'active',
             ])
@@ -80,8 +97,10 @@
             wire:click="$set('view', 'trash')"
             @class([
                 'rounded-2xl border p-5 text-left transition',
+
                 'border-red-300 bg-red-50'
                     => $view === 'trash',
+
                 'border-zinc-200 bg-white hover:bg-zinc-50'
                     => $view !== 'trash',
             ])
@@ -115,6 +134,7 @@
             class="grid gap-4
                    lg:grid-cols-[minmax(0,1fr)_200px_220px_auto]"
         >
+            {{-- Search --}}
             <div>
                 <label
                     for="media-search"
@@ -138,6 +158,7 @@
                 >
             </div>
 
+            {{-- Type Filter --}}
             <div>
                 <label
                     for="media-type-filter"
@@ -171,6 +192,7 @@
                 </select>
             </div>
 
+            {{-- Visibility Filter --}}
             <div>
                 <label
                     for="media-visibility-filter"
@@ -204,6 +226,7 @@
                 </select>
             </div>
 
+            {{-- Clear Filters --}}
             <div class="flex items-end">
                 <button
                     type="button"
@@ -233,17 +256,23 @@
                    text-zinc-600"
         >
             Showing
+
             <strong>
                 {{ $media->firstItem() ?? 0 }}
             </strong>
+
             –
+
             <strong>
                 {{ $media->lastItem() ?? 0 }}
             </strong>
+
             of
+
             <strong>
                 {{ $media->total() }}
             </strong>
+
             items
         </p>
 
@@ -258,8 +287,10 @@
                 wire:click="setDisplay('grid')"
                 @class([
                     'rounded-lg px-4 py-2 text-sm font-semibold',
+
                     'bg-zinc-900 text-white'
                         => $display === 'grid',
+
                     'text-zinc-600 hover:bg-zinc-100'
                         => $display !== 'grid',
                 ])
@@ -272,8 +303,10 @@
                 wire:click="setDisplay('list')"
                 @class([
                     'rounded-lg px-4 py-2 text-sm font-semibold',
+
                     'bg-zinc-900 text-white'
                         => $display === 'list',
+
                     'text-zinc-600 hover:bg-zinc-100'
                         => $display !== 'list',
                 ])
@@ -283,6 +316,7 @@
         </div>
     </div>
 
+    {{-- Empty State --}}
     @if ($media->isEmpty())
         <div
             class="rounded-2xl
@@ -328,7 +362,9 @@
                 </a>
             @endif
         </div>
+
     @elseif ($display === 'grid')
+
         {{-- Grid View --}}
         <div
             class="grid gap-5
@@ -339,8 +375,15 @@
             @foreach ($media as $asset)
                 @php
                     $type = $asset->getAttribute('type');
-                    $visibility = $asset->getAttribute('visibility');
-                    $url = $publicUrls[(int) $asset->id] ?? null;
+
+                    $visibility = $asset->getAttribute(
+                        'visibility',
+                    );
+
+                    $url =
+                        $publicUrls[
+                            (int) $asset->id
+                        ] ?? null;
                 @endphp
 
                 <article
@@ -359,18 +402,22 @@
                                bg-zinc-100"
                     >
                         @if (
-                            $type === \App\Enums\MediaType::Image
+                            $type ===
+                                \App\Enums\MediaType::Image
                             && $url
                         )
                             <img
                                 src="{{ $url }}"
                                 alt="{{ $asset->alt_text ?? '' }}"
                                 loading="lazy"
+                                decoding="async"
                                 class="h-full w-full
                                        object-cover"
                             >
+
                         @elseif (
-                            $type === \App\Enums\MediaType::Document
+                            $type ===
+                                \App\Enums\MediaType::Document
                         )
                             <div class="text-center">
                                 <div
@@ -395,9 +442,10 @@
                                     Document
                                 </p>
                             </div>
+
                         @elseif (
                             $visibility !==
-                            \App\Enums\MediaVisibility::Public
+                                \App\Enums\MediaVisibility::Public
                         )
                             <div class="text-center">
                                 <div
@@ -415,6 +463,7 @@
                                     Private Media
                                 </p>
                             </div>
+
                         @else
                             <div
                                 class="text-center
@@ -427,6 +476,7 @@
                     </div>
 
                     <div class="p-4">
+
                         {{-- Title / Type --}}
                         <div
                             class="flex items-start
@@ -454,7 +504,7 @@
 
                             @if (
                                 $type instanceof
-                                \App\Enums\MediaType
+                                    \App\Enums\MediaType
                             )
                                 <span
                                     class="shrink-0
@@ -479,7 +529,7 @@
                         >
                             @if (
                                 $visibility instanceof
-                                \App\Enums\MediaVisibility
+                                    \App\Enums\MediaVisibility
                             )
                                 <span
                                     @class([
@@ -528,42 +578,111 @@
                             </p>
                         @endif
 
-                        {{-- Details Action --}}
-                        @if ($view === 'active')
-                            <div
-                                class="mt-4
-                                       border-t
-                                       border-zinc-100
-                                       pt-4"
-                            >
+                        {{-- Grid Actions --}}
+                        <div
+                            class="mt-4 flex
+                                   flex-wrap gap-2
+                                   border-t
+                                   border-zinc-100
+                                   pt-4"
+                        >
+                            @if ($view === 'active')
+
                                 <a
-                                    href="{{ route('admin.media.edit', $asset) }}"
+                                    href="{{ route(
+                                        'admin.media.edit',
+                                        $asset,
+                                    ) }}"
                                     class="inline-flex
-                                           w-full
                                            items-center
                                            justify-center
                                            rounded-lg
-                                           border
-                                           border-zinc-200
+                                           border border-zinc-300
                                            bg-white
                                            px-3 py-2
-                                           text-xs
-                                           font-bold
+                                           text-xs font-bold
                                            text-zinc-700
-                                           transition
-                                           hover:border-emerald-300
-                                           hover:bg-emerald-50
-                                           hover:text-emerald-700"
+                                           hover:bg-zinc-50"
                                 >
                                     View Details
                                 </a>
-                            </div>
-                        @endif
+
+                                @can('media.delete')
+                                    <button
+                                        type="button"
+                                        wire:click="deleteMedia({{ $asset->id }})"
+                                        wire:confirm="Move this media asset to trash?"
+                                        wire:loading.attr="disabled"
+                                        wire:target="deleteMedia({{ $asset->id }})"
+                                        class="inline-flex
+                                               items-center
+                                               justify-center
+                                               rounded-lg
+                                               border border-red-200
+                                               bg-red-50
+                                               px-3 py-2
+                                               text-xs font-bold
+                                               text-red-700
+                                               hover:bg-red-100
+                                               disabled:opacity-50"
+                                    >
+                                        Move to Trash
+                                    </button>
+                                @endcan
+
+                            @else
+
+                                @can('media.delete')
+                                    <button
+                                        type="button"
+                                        wire:click="restoreMedia({{ $asset->id }})"
+                                        wire:loading.attr="disabled"
+                                        wire:target="restoreMedia({{ $asset->id }})"
+                                        class="inline-flex
+                                               items-center
+                                               justify-center
+                                               rounded-lg
+                                               border border-emerald-200
+                                               bg-emerald-50
+                                               px-3 py-2
+                                               text-xs font-bold
+                                               text-emerald-700
+                                               hover:bg-emerald-100
+                                               disabled:opacity-50"
+                                    >
+                                        Restore
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        wire:click="forceDeleteMedia({{ $asset->id }})"
+                                        wire:confirm="Permanently delete this media asset? This action cannot be undone."
+                                        wire:loading.attr="disabled"
+                                        wire:target="forceDeleteMedia({{ $asset->id }})"
+                                        class="inline-flex
+                                               items-center
+                                               justify-center
+                                               rounded-lg
+                                               bg-red-700
+                                               px-3 py-2
+                                               text-xs font-bold
+                                               text-white
+                                               hover:bg-red-800
+                                               disabled:opacity-50"
+                                    >
+                                        Delete Permanently
+                                    </button>
+                                @endcan
+
+                            @endif
+                        </div>
                     </div>
                 </article>
             @endforeach
         </div>
+
     @else
+
         {{-- List View --}}
         <div
             class="overflow-hidden
@@ -647,8 +766,15 @@
                     >
                         @foreach ($media as $asset)
                             @php
-                                $type = $asset->getAttribute('type');
-                                $visibility = $asset->getAttribute('visibility');
+                                $type =
+                                    $asset->getAttribute(
+                                        'type',
+                                    );
+
+                                $visibility =
+                                    $asset->getAttribute(
+                                        'visibility',
+                                    );
                             @endphp
 
                             <tr
@@ -699,7 +825,7 @@
                                 >
                                     @if (
                                         $type instanceof
-                                        \App\Enums\MediaType
+                                            \App\Enums\MediaType
                                     )
                                         {{ $type->label() }}
                                     @else
@@ -711,7 +837,7 @@
                                 <td class="px-5 py-4">
                                     @if (
                                         $visibility instanceof
-                                        \App\Enums\MediaVisibility
+                                            \App\Enums\MediaVisibility
                                     )
                                         <span
                                             @class([
@@ -791,35 +917,101 @@
                                     class="px-5 py-4
                                            text-right"
                                 >
-                                    @if ($view === 'active')
-                                        <a
-                                            href="{{ route('admin.media.edit', $asset) }}"
-                                            class="inline-flex
-                                                   items-center
-                                                   justify-center
-                                                   rounded-lg
-                                                   border
-                                                   border-zinc-200
-                                                   bg-white
-                                                   px-3 py-2
-                                                   text-xs
-                                                   font-bold
-                                                   text-zinc-700
-                                                   transition
-                                                   hover:border-emerald-300
-                                                   hover:bg-emerald-50
-                                                   hover:text-emerald-700"
-                                        >
-                                            View Details
-                                        </a>
-                                    @else
-                                        <span
-                                            class="text-sm
-                                                   text-zinc-400"
-                                        >
-                                            —
-                                        </span>
-                                    @endif
+                                    <div
+                                        class="flex flex-wrap
+                                               justify-end
+                                               gap-2"
+                                    >
+                                        @if ($view === 'active')
+
+                                            <a
+                                                href="{{ route(
+                                                    'admin.media.edit',
+                                                    $asset,
+                                                ) }}"
+                                                class="inline-flex
+                                                       items-center
+                                                       justify-center
+                                                       rounded-lg
+                                                       border border-zinc-300
+                                                       bg-white
+                                                       px-3 py-2
+                                                       text-xs font-bold
+                                                       text-zinc-700
+                                                       hover:bg-zinc-50"
+                                            >
+                                                View
+                                            </a>
+
+                                            @can('media.delete')
+                                                <button
+                                                    type="button"
+                                                    wire:click="deleteMedia({{ $asset->id }})"
+                                                    wire:confirm="Move this media asset to trash?"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="deleteMedia({{ $asset->id }})"
+                                                    class="inline-flex
+                                                           items-center
+                                                           justify-center
+                                                           rounded-lg
+                                                           border border-red-200
+                                                           bg-red-50
+                                                           px-3 py-2
+                                                           text-xs font-bold
+                                                           text-red-700
+                                                           hover:bg-red-100
+                                                           disabled:opacity-50"
+                                                >
+                                                    Trash
+                                                </button>
+                                            @endcan
+
+                                        @else
+
+                                            @can('media.delete')
+                                                <button
+                                                    type="button"
+                                                    wire:click="restoreMedia({{ $asset->id }})"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="restoreMedia({{ $asset->id }})"
+                                                    class="inline-flex
+                                                           items-center
+                                                           justify-center
+                                                           rounded-lg
+                                                           border border-emerald-200
+                                                           bg-emerald-50
+                                                           px-3 py-2
+                                                           text-xs font-bold
+                                                           text-emerald-700
+                                                           hover:bg-emerald-100
+                                                           disabled:opacity-50"
+                                                >
+                                                    Restore
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    wire:click="forceDeleteMedia({{ $asset->id }})"
+                                                    wire:confirm="Permanently delete this media asset? This action cannot be undone."
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="forceDeleteMedia({{ $asset->id }})"
+                                                    class="inline-flex
+                                                           items-center
+                                                           justify-center
+                                                           rounded-lg
+                                                           bg-red-700
+                                                           px-3 py-2
+                                                           text-xs font-bold
+                                                           text-white
+                                                           hover:bg-red-800
+                                                           disabled:opacity-50"
+                                                >
+                                                    Delete
+                                                </button>
+                                            @endcan
+
+                                        @endif
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -827,6 +1019,7 @@
                 </table>
             </div>
         </div>
+
     @endif
 
     {{-- Pagination --}}

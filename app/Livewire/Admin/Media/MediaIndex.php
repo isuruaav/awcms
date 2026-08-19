@@ -5,9 +5,12 @@ namespace App\Livewire\Admin\Media;
 use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
 use App\Models\MediaAsset;
+use App\Models\User;
+use App\Services\MediaDeletionService;
 use App\Services\MediaUrlService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -82,8 +85,7 @@ final class MediaIndex extends Component
             return;
         }
 
-        $this->display =
-            $display;
+        $this->display = $display;
     }
 
     public function clearFilters(): void
@@ -97,15 +99,89 @@ final class MediaIndex extends Component
         $this->resetPage();
     }
 
+    public function deleteMedia(
+        int $mediaId,
+    ): void {
+        Gate::authorize(
+            'media.delete',
+        );
+
+        $media = MediaAsset::query()
+            ->findOrFail(
+                $mediaId,
+            );
+
+        app(
+            MediaDeletionService::class,
+        )->delete(
+            media: $media,
+            actor: $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            'Media asset was moved to trash.',
+        );
+
+        $this->resetPage();
+    }
+
+    public function restoreMedia(
+        int $mediaId,
+    ): void {
+        Gate::authorize(
+            'media.delete',
+        );
+
+        $media = MediaAsset::onlyTrashed()
+            ->findOrFail(
+                $mediaId,
+            );
+
+        app(
+            MediaDeletionService::class,
+        )->restore(
+            media: $media,
+            actor: $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            'Media asset was restored successfully.',
+        );
+
+        $this->resetPage();
+    }
+
+    public function forceDeleteMedia(
+        int $mediaId,
+    ): void {
+        Gate::authorize(
+            'media.delete',
+        );
+
+        $media = MediaAsset::onlyTrashed()
+            ->findOrFail(
+                $mediaId,
+            );
+
+        app(
+            MediaDeletionService::class,
+        )->forceDelete(
+            media: $media,
+            actor: $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            'Media asset was permanently deleted.',
+        );
+
+        $this->resetPage();
+    }
+
     public function render(): View
     {
-        /*
-         * Eager-load uploader and variants.
-         *
-         * Variants are required by MediaUrlService
-         * so the grid can use the optimized thumbnail
-         * without causing N+1 queries.
-         */
         $query = MediaAsset::query()
             ->with([
                 'uploader',
@@ -134,17 +210,6 @@ final class MediaIndex extends Component
         );
 
         /**
-         * Public preview URLs keyed by media ID.
-         *
-         * Images:
-         * thumbnail WebP -> original fallback
-         *
-         * Documents:
-         * original public URL
-         *
-         * Internal / Restricted:
-         * null
-         *
          * @var array<int, string|null> $publicUrls
          */
         $publicUrls = [];
@@ -160,7 +225,6 @@ final class MediaIndex extends Component
                 (int) $asset->id
             ] = $this->previewUrl(
                 media: $asset,
-
                 mediaUrlService: $mediaUrlService,
             );
         }
@@ -311,11 +375,11 @@ final class MediaIndex extends Component
         }
 
         /*
-         * Images should use the optimized
-         * 480px WebP thumbnail.
+         * Media Library grid images use the
+         * optimized thumbnail WebP.
          *
-         * If an old image does not yet have
-         * variants, safely fall back to original.
+         * Older images without a thumbnail
+         * safely fall back to the original.
          */
         if ($type === MediaType::Image) {
             return $mediaUrlService
@@ -325,8 +389,8 @@ final class MediaIndex extends Component
         }
 
         /*
-         * Public documents can still use their
-         * original file URL.
+         * Public documents may use their
+         * original URL when required.
          */
         if ($type === MediaType::Document) {
             return $mediaUrlService
@@ -336,5 +400,17 @@ final class MediaIndex extends Component
         }
 
         return null;
+    }
+
+    private function actor(): User
+    {
+        $actor = Auth::user();
+
+        abort_unless(
+            $actor instanceof User,
+            403,
+        );
+
+        return $actor;
     }
 }
