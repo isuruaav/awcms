@@ -12,9 +12,11 @@ final class RolesAndPermissionsSeeder extends Seeder
     public function run(): void
     {
         /*
-         * Clear cached permissions before creating or updating
-         * permissions and roles.
-         */
+        |--------------------------------------------------------------------------
+        | Clear Permission Cache
+        |--------------------------------------------------------------------------
+        */
+
         app(PermissionRegistrar::class)
             ->forgetCachedPermissions();
 
@@ -22,15 +24,22 @@ final class RolesAndPermissionsSeeder extends Seeder
          * @var list<string> $permissions
          */
         $permissions = [
+
             /*
-             * Administration
-             */
+            |--------------------------------------------------------------------------
+            | Administration
+            |--------------------------------------------------------------------------
+            */
+
             'admin.access',
             'dashboard.view',
 
             /*
-             * User Management
-             */
+            |--------------------------------------------------------------------------
+            | User Management
+            |--------------------------------------------------------------------------
+            */
+
             'users.view',
             'users.create',
             'users.update',
@@ -39,46 +48,76 @@ final class RolesAndPermissionsSeeder extends Seeder
             'users.reset-password',
 
             /*
-             * Roles and Permissions
-             */
+            |--------------------------------------------------------------------------
+            | Roles and Permissions
+            |--------------------------------------------------------------------------
+            */
+
             'roles.manage',
 
             /*
-             * Pages
-             */
+            |--------------------------------------------------------------------------
+            | Pages
+            |--------------------------------------------------------------------------
+            */
+
             'pages.view',
             'pages.create',
             'pages.update',
             'pages.delete',
+
             'pages.submit',
             'pages.approve',
             'pages.publish',
             'pages.archive',
+
             'pages.revisions.view',
             'pages.revisions.restore',
 
             /*
-             * News
-             */
+            |--------------------------------------------------------------------------
+            | News
+            |--------------------------------------------------------------------------
+            */
+
             'news.view',
             'news.create',
             'news.update',
             'news.delete',
+
+            /*
+             * News workflow permissions.
+             */
+            'news.submit',
+            'news.request-changes',
+            'news.approve',
             'news.publish',
+            'news.archive',
+
+            /*
+             * News administration.
+             */
             'news.categories.manage',
 
             /*
-             * Galleries
-             */
+            |--------------------------------------------------------------------------
+            | Galleries
+            |--------------------------------------------------------------------------
+            */
+
             'galleries.view',
             'galleries.create',
             'galleries.update',
             'galleries.delete',
             'galleries.publish',
+            'galleries.archive',
 
             /*
-             * Documents
-             */
+            |--------------------------------------------------------------------------
+            | Documents
+            |--------------------------------------------------------------------------
+            */
+
             'documents.view',
             'documents.create',
             'documents.update',
@@ -86,8 +125,11 @@ final class RolesAndPermissionsSeeder extends Seeder
             'documents.publish',
 
             /*
-             * Media Library
-             */
+            |--------------------------------------------------------------------------
+            | Media Library
+            |--------------------------------------------------------------------------
+            */
+
             'media.view',
             'media.upload',
             'media.update',
@@ -95,16 +137,28 @@ final class RolesAndPermissionsSeeder extends Seeder
             'media.delete',
 
             /*
-             * Site Management
-             */
+            |--------------------------------------------------------------------------
+            | Site Management
+            |--------------------------------------------------------------------------
+            */
+
             'menus.manage',
             'settings.manage',
 
             /*
-             * Audit Logs
-             */
+            |--------------------------------------------------------------------------
+            | Audit Logs
+            |--------------------------------------------------------------------------
+            */
+
             'audit.view',
         ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Create / Update Permissions
+        |--------------------------------------------------------------------------
+        */
 
         foreach ($permissions as $permissionName) {
             Permission::findOrCreate(
@@ -117,19 +171,33 @@ final class RolesAndPermissionsSeeder extends Seeder
          * @var array<string, list<string>> $roles
          */
         $roles = [
+
             /*
-             * Full system access.
-             *
-             * Gate::before may already grant Super Administrator
-             * unrestricted access. Synchronising all permissions
-             * keeps the database role definition complete.
-             */
+            |--------------------------------------------------------------------------
+            | Super Administrator
+            |--------------------------------------------------------------------------
+            |
+            | Full CMS access.
+            |
+            | Gate::before may already allow this role unrestricted
+            | access, but syncing every permission keeps the database
+            | role definition complete and auditable.
+            |
+            */
+
             'Super Administrator' => $permissions,
 
             /*
-             * Manages one independently deployed AWCMS website.
-             */
+            |--------------------------------------------------------------------------
+            | Site Administrator
+            |--------------------------------------------------------------------------
+            |
+            | Manages one independently deployed AWCMS website.
+            |
+            */
+
             'Site Administrator' => [
+
                 /*
                  * Administration
                  */
@@ -152,10 +220,12 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.create',
                 'pages.update',
                 'pages.delete',
+
                 'pages.submit',
                 'pages.approve',
                 'pages.publish',
                 'pages.archive',
+
                 'pages.revisions.view',
                 'pages.revisions.restore',
 
@@ -166,7 +236,13 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.create',
                 'news.update',
                 'news.delete',
+
+                'news.submit',
+                'news.request-changes',
+                'news.approve',
                 'news.publish',
+                'news.archive',
+
                 'news.categories.manage',
 
                 /*
@@ -177,6 +253,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'galleries.update',
                 'galleries.delete',
                 'galleries.publish',
+                'galleries.archive',
 
                 /*
                  * Documents
@@ -209,9 +286,16 @@ final class RolesAndPermissionsSeeder extends Seeder
             ],
 
             /*
-             * Reviews, approves and publishes public content.
-             */
+            |--------------------------------------------------------------------------
+            | Publisher
+            |--------------------------------------------------------------------------
+            |
+            | Reviews, approves, publishes and archives public content.
+            |
+            */
+
             'Publisher' => [
+
                 /*
                  * Administration
                  */
@@ -224,10 +308,12 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.view',
                 'pages.create',
                 'pages.update',
+
                 'pages.submit',
                 'pages.approve',
                 'pages.publish',
                 'pages.archive',
+
                 'pages.revisions.view',
                 'pages.revisions.restore',
 
@@ -237,7 +323,13 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.view',
                 'news.create',
                 'news.update',
+
+                'news.submit',
+                'news.request-changes',
+                'news.approve',
                 'news.publish',
+                'news.archive',
+
                 'news.categories.manage',
 
                 /*
@@ -247,6 +339,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'galleries.create',
                 'galleries.update',
                 'galleries.publish',
+                'galleries.archive',
 
                 /*
                  * Documents
@@ -265,9 +358,18 @@ final class RolesAndPermissionsSeeder extends Seeder
             ],
 
             /*
-             * Creates and edits content, then submits it for review.
-             */
+            |--------------------------------------------------------------------------
+            | Content Editor
+            |--------------------------------------------------------------------------
+            |
+            | Creates and edits content and submits it for review.
+            |
+            | Cannot approve, publish, archive or request changes.
+            |
+            */
+
             'Content Editor' => [
+
                 /*
                  * Administration
                  */
@@ -281,6 +383,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.create',
                 'pages.update',
                 'pages.submit',
+
                 'pages.revisions.view',
                 'pages.revisions.restore',
 
@@ -290,6 +393,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.view',
                 'news.create',
                 'news.update',
+                'news.submit',
 
                 /*
                  * Galleries
@@ -314,9 +418,16 @@ final class RolesAndPermissionsSeeder extends Seeder
             ],
 
             /*
-             * Uploads and manages media, galleries and documents.
-             */
+            |--------------------------------------------------------------------------
+            | Media Operator
+            |--------------------------------------------------------------------------
+            |
+            | Uploads and manages media, galleries and documents.
+            |
+            */
+
             'Media Operator' => [
+
                 /*
                  * Administration
                  */
@@ -348,9 +459,16 @@ final class RolesAndPermissionsSeeder extends Seeder
             ],
 
             /*
-             * Read-only inspection access.
-             */
+            |--------------------------------------------------------------------------
+            | Auditor
+            |--------------------------------------------------------------------------
+            |
+            | Read-only administrative inspection access.
+            |
+            */
+
             'Auditor' => [
+
                 /*
                  * Administration
                  */
@@ -358,21 +476,48 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'dashboard.view',
 
                 /*
-                 * Read-only access
+                 * User Management
                  */
                 'users.view',
 
+                /*
+                 * Pages
+                 */
                 'pages.view',
                 'pages.revisions.view',
 
+                /*
+                 * News
+                 */
                 'news.view',
+
+                /*
+                 * Galleries
+                 */
                 'galleries.view',
+
+                /*
+                 * Documents
+                 */
                 'documents.view',
+
+                /*
+                 * Media Library
+                 */
                 'media.view',
 
+                /*
+                 * Audit Logs
+                 */
                 'audit.view',
             ],
         ];
+
+        /*
+        |--------------------------------------------------------------------------
+        | Synchronise Roles
+        |--------------------------------------------------------------------------
+        */
 
         foreach ($roles as $roleName => $rolePermissions) {
             $role = Role::findOrCreate(
@@ -386,8 +531,8 @@ final class RolesAndPermissionsSeeder extends Seeder
         }
 
         /*
-         * Clear the cache again so the new role assignments
-         * become available immediately.
+         * Clear the permission cache again so the updated
+         * assignments become available immediately.
          */
         app(PermissionRegistrar::class)
             ->forgetCachedPermissions();

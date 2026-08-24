@@ -10,6 +10,7 @@ use App\Models\News;
 use App\Models\NewsCategory;
 use App\Models\User;
 use App\Services\NewsArticleService;
+use App\Services\NewsWorkflowService;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\View\View;
@@ -44,6 +45,20 @@ final class NewsEdit extends Component
 
     public string $seoDescription = '';
 
+    /*
+    |--------------------------------------------------------------------------
+    | Workflow
+    |--------------------------------------------------------------------------
+    */
+
+    public string $changeRequestNote = '';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mount
+    |--------------------------------------------------------------------------
+    */
+
     public function mount(
         News $news,
     ): void {
@@ -65,73 +80,259 @@ final class NewsEdit extends Component
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Save Article
+    |--------------------------------------------------------------------------
+    */
+
     public function save(): void
     {
         Gate::authorize(
             'news.update',
         );
 
-        $this->normaliseInput();
+        $news =
+            $this->news();
 
-        $this->validate();
+        $status =
+            $this->status(
+                $news,
+            );
+
+        if (! $status->isEditable()) {
+            throw ValidationException::withMessages([
+                'workflow' => 'This news article is currently locked for editing.',
+            ]);
+        }
+
+        $updated =
+            $this->persistArticle(
+                $news,
+            );
+
+        session()->flash(
+            'status',
+            'News article was updated successfully.',
+        );
+
+        $this->redirectToArticle(
+            $updated,
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Submit for Review
+    |--------------------------------------------------------------------------
+    */
+
+    public function submitForReview(): void
+    {
+        Gate::authorize(
+            'news.submit',
+        );
 
         $news =
             $this->news();
 
-        $category = NewsCategory::query()
-            ->findOrFail(
-                (int) $this->categoryId,
+        $status =
+            $this->status(
+                $news,
             );
 
-        $updated = app(
-            NewsArticleService::class,
-        )->update(
-            news: $news,
+        if (
+            ! in_array(
+                $status,
+                [
+                    NewsStatus::Draft,
+                    NewsStatus::ChangesRequested,
+                ],
+                true,
+            )
+        ) {
+            throw ValidationException::withMessages([
+                'workflow' => 'Only Draft or Changes Requested news can be submitted for review.',
+            ]);
+        }
 
-            actor: $this->actor(),
+        /*
+         * Save the current form first.
+         *
+         * This ensures the version submitted for review is the
+         * version currently visible in the editor.
+         */
+        $news =
+            $this->persistArticle(
+                $news,
+            );
 
-            category: $category,
-
-            title: $this->title,
-
-            content: $this->content,
-
-            summary: $this->nullable(
-                $this->summary,
-            ),
-
-            slug: $this->nullable(
-                $this->slug,
-            ),
-
-            featuredImage: $this->featuredImage(),
-
-            isFeatured: $this->isFeatured,
-
-            publishedAt: $this->publicationDate(),
-
-            seoTitle: $this->nullable(
-                $this->seoTitle,
-            ),
-
-            seoDescription: $this->nullable(
-                $this->seoDescription,
-            ),
-        );
+        $news =
+            app(
+                NewsWorkflowService::class,
+            )->submit(
+                news: $news,
+                actor: $this->actor(),
+            );
 
         session()->flash(
             'status',
-            'News draft was updated successfully.',
+            'News article was submitted for review successfully.',
         );
 
-        $this->redirectRoute(
-            'admin.news.edit',
-            [
-                'news' => $updated->id,
-            ],
-            navigate: true,
+        $this->redirectToArticle(
+            $news,
         );
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Request Changes
+    |--------------------------------------------------------------------------
+    */
+
+    public function requestChanges(): void
+    {
+        Gate::authorize(
+            'news.request-changes',
+        );
+
+        $this->changeRequestNote =
+            trim(
+                $this->changeRequestNote,
+            );
+
+        $this->validate(
+            [
+                'changeRequestNote' => [
+                    'required',
+                    'string',
+                    'max:1000',
+                ],
+            ],
+            [
+                'changeRequestNote.required' => 'Please explain the changes required.',
+
+                'changeRequestNote.max' => 'The change request note may not exceed 1000 characters.',
+            ],
+        );
+
+        $news =
+            app(
+                NewsWorkflowService::class,
+            )->requestChanges(
+                news: $this->news(),
+                actor: $this->actor(),
+                note: $this->changeRequestNote,
+            );
+
+        $this->changeRequestNote = '';
+
+        session()->flash(
+            'status',
+            'Changes were requested successfully.',
+        );
+
+        $this->redirectToArticle(
+            $news,
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Approve
+    |--------------------------------------------------------------------------
+    */
+
+    public function approve(): void
+    {
+        Gate::authorize(
+            'news.approve',
+        );
+
+        $news =
+            app(
+                NewsWorkflowService::class,
+            )->approve(
+                news: $this->news(),
+                actor: $this->actor(),
+            );
+
+        session()->flash(
+            'status',
+            'News article was approved successfully.',
+        );
+
+        $this->redirectToArticle(
+            $news,
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Publish
+    |--------------------------------------------------------------------------
+    */
+
+    public function publish(): void
+    {
+        Gate::authorize(
+            'news.publish',
+        );
+
+        $news =
+            app(
+                NewsWorkflowService::class,
+            )->publish(
+                news: $this->news(),
+                actor: $this->actor(),
+            );
+
+        session()->flash(
+            'status',
+            'News article was published successfully.',
+        );
+
+        $this->redirectToArticle(
+            $news,
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Archive
+    |--------------------------------------------------------------------------
+    */
+
+    public function archive(): void
+    {
+        Gate::authorize(
+            'news.archive',
+        );
+
+        $news =
+            app(
+                NewsWorkflowService::class,
+            )->archive(
+                news: $this->news(),
+                actor: $this->actor(),
+            );
+
+        session()->flash(
+            'status',
+            'News article was archived successfully.',
+        );
+
+        $this->redirectToArticle(
+            $news,
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Validation
+    |--------------------------------------------------------------------------
+    */
 
     /**
      * @return array<string, list<mixed>>
@@ -198,6 +399,12 @@ final class NewsEdit extends Component
         ];
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Render
+    |--------------------------------------------------------------------------
+    */
+
     public function render(): View
     {
         Gate::authorize(
@@ -208,31 +415,52 @@ final class NewsEdit extends Component
             $this->news();
 
         $status =
-            $news->getAttribute(
-                'status',
+            $this->status(
+                $news,
             );
 
-        $categories = NewsCategory::query()
-            ->active()
-            ->ordered()
-            ->get();
+        $categories =
+            NewsCategory::query()
+                ->active()
+                ->ordered()
+                ->get();
 
-        $images = MediaAsset::query()
-            ->where(
-                'type',
-                MediaType::Image->value,
+        /*
+         * If an old/current category was later disabled,
+         * keep it visible in the form for context.
+         */
+        $currentCategory =
+            $news->category;
+
+        if (
+            $currentCategory instanceof NewsCategory
+            && ! $categories->contains(
+                'id',
+                $currentCategory->id,
             )
-            ->where(
-                'visibility',
-                MediaVisibility::Public->value,
-            )
-            ->orderByDesc(
-                'created_at',
-            )
-            ->limit(
-                100,
-            )
-            ->get();
+        ) {
+            $categories->prepend(
+                $currentCategory,
+            );
+        }
+
+        $images =
+            MediaAsset::query()
+                ->where(
+                    'type',
+                    MediaType::Image->value,
+                )
+                ->where(
+                    'visibility',
+                    MediaVisibility::Public->value,
+                )
+                ->orderByDesc(
+                    'created_at',
+                )
+                ->limit(
+                    100,
+                )
+                ->get();
 
         return view(
             'livewire.admin.news.news-edit',
@@ -243,12 +471,51 @@ final class NewsEdit extends Component
 
                 'images' => $images,
 
-                'status' => $status instanceof NewsStatus
-                    ? $status
-                    : NewsStatus::Draft,
+                'status' => $status,
 
-                'editable' => $status instanceof NewsStatus
-                    && $status->isEditable(),
+                'editable' => $status->isEditable()
+                    && Gate::allows(
+                        'news.update',
+                    ),
+
+                /*
+                 * Workflow action visibility.
+                 */
+                'canSubmit' => Gate::allows(
+                    'news.submit',
+                )
+                    && in_array(
+                        $status,
+                        [
+                            NewsStatus::Draft,
+                            NewsStatus::ChangesRequested,
+                        ],
+                        true,
+                    ),
+
+                'canRequestChanges' => Gate::allows(
+                    'news.request-changes',
+                )
+                    && $status ===
+                        NewsStatus::Submitted,
+
+                'canApprove' => Gate::allows(
+                    'news.approve',
+                )
+                    && $status ===
+                        NewsStatus::Submitted,
+
+                'canPublish' => Gate::allows(
+                    'news.publish',
+                )
+                    && $status ===
+                        NewsStatus::Approved,
+
+                'canArchive' => Gate::allows(
+                    'news.archive',
+                )
+                    && $status ===
+                        NewsStatus::Published,
             ],
         )->layout(
             'components.layouts.admin',
@@ -258,36 +525,119 @@ final class NewsEdit extends Component
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Persist Editor Data
+    |--------------------------------------------------------------------------
+    */
+
+    private function persistArticle(
+        News $news,
+    ): News {
+        Gate::authorize(
+            'news.update',
+        );
+
+        $status =
+            $this->status(
+                $news,
+            );
+
+        if (! $status->isEditable()) {
+            throw ValidationException::withMessages([
+                'workflow' => 'This workflow state cannot be edited.',
+            ]);
+        }
+
+        $this->normaliseInput();
+
+        $this->validate(
+            $this->rules(),
+        );
+
+        $category =
+            NewsCategory::query()
+                ->findOrFail(
+                    (int) $this->categoryId,
+                );
+
+        return app(
+            NewsArticleService::class,
+        )->update(
+            news: $news,
+
+            actor: $this->actor(),
+
+            category: $category,
+
+            title: $this->title,
+
+            content: $this->content,
+
+            summary: $this->nullable(
+                $this->summary,
+            ),
+
+            slug: $this->nullable(
+                $this->slug,
+            ),
+
+            featuredImage: $this->featuredImage(),
+
+            isFeatured: $this->isFeatured,
+
+            publishedAt: $this->publicationDate(),
+
+            seoTitle: $this->nullable(
+                $this->seoTitle,
+            ),
+
+            seoDescription: $this->nullable(
+                $this->seoDescription,
+            ),
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Load Article Into Editor
+    |--------------------------------------------------------------------------
+    */
+
     private function loadNews(
         News $news,
     ): void {
-        $this->title = (string) (
-            $news->getAttribute(
-                'title',
-            )
-            ?? ''
-        );
+        $this->title =
+            (string) (
+                $news->getAttribute(
+                    'title',
+                )
+                ?? ''
+            );
 
-        $this->slug = (string) (
-            $news->getAttribute(
-                'slug',
-            )
-            ?? ''
-        );
+        $this->slug =
+            (string) (
+                $news->getAttribute(
+                    'slug',
+                )
+                ?? ''
+            );
 
-        $this->summary = (string) (
-            $news->getAttribute(
-                'summary',
-            )
-            ?? ''
-        );
+        $this->summary =
+            (string) (
+                $news->getAttribute(
+                    'summary',
+                )
+                ?? ''
+            );
 
-        $this->content = (string) (
-            $news->getAttribute(
-                'content',
-            )
-            ?? ''
-        );
+        $this->content =
+            (string) (
+                $news->getAttribute(
+                    'content',
+                )
+                ?? ''
+            );
 
         $categoryId =
             $news->getAttribute(
@@ -295,7 +645,9 @@ final class NewsEdit extends Component
             );
 
         $this->categoryId =
-            is_numeric($categoryId)
+            is_numeric(
+                $categoryId,
+            )
                 ? (string) $categoryId
                 : '';
 
@@ -305,7 +657,9 @@ final class NewsEdit extends Component
             );
 
         $this->featuredImageId =
-            is_numeric($featuredImageId)
+            is_numeric(
+                $featuredImageId,
+            )
                 ? (string) $featuredImageId
                 : '';
 
@@ -326,27 +680,76 @@ final class NewsEdit extends Component
                 )
                 : '';
 
-        $this->seoTitle = (string) (
-            $news->getAttribute(
-                'seo_title',
-            )
-            ?? ''
-        );
+        $this->seoTitle =
+            (string) (
+                $news->getAttribute(
+                    'seo_title',
+                )
+                ?? ''
+            );
 
-        $this->seoDescription = (string) (
+        $this->seoDescription =
+            (string) (
+                $news->getAttribute(
+                    'seo_description',
+                )
+                ?? ''
+            );
+
+        $changeRequestNote =
             $news->getAttribute(
-                'seo_description',
+                'change_request_note',
+            );
+
+        $this->changeRequestNote =
+            is_string(
+                $changeRequestNote,
             )
-            ?? ''
-        );
+                ? $changeRequestNote
+                : '';
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Model Helpers
+    |--------------------------------------------------------------------------
+    */
 
     private function news(): News
     {
-        return News::query()
-            ->findOrFail(
-                $this->newsId,
+        $news =
+            News::query()
+                ->with([
+                    'category',
+                ])
+                ->findOrFail(
+                    $this->newsId,
+                );
+
+        if ($news->trashed()) {
+            abort(
+                404,
             );
+        }
+
+        return $news;
+    }
+
+    private function status(
+        News $news,
+    ): NewsStatus {
+        $status =
+            $news->getAttribute(
+                'status',
+            );
+
+        if (! $status instanceof NewsStatus) {
+            throw ValidationException::withMessages([
+                'workflow' => 'The news article has an invalid workflow status.',
+            ]);
+        }
+
+        return $status;
     }
 
     private function featuredImage(): ?MediaAsset
@@ -372,56 +775,83 @@ final class NewsEdit extends Component
         );
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Input Helpers
+    |--------------------------------------------------------------------------
+    */
+
     private function normaliseInput(): void
     {
-        $this->title = trim(
-            $this->title,
-        );
+        $this->title =
+            trim(
+                $this->title,
+            );
 
-        $this->slug = trim(
-            $this->slug,
-        );
+        $this->slug =
+            trim(
+                $this->slug,
+            );
 
-        $this->summary = trim(
-            $this->summary,
-        );
+        $this->summary =
+            trim(
+                $this->summary,
+            );
 
-        $this->content = trim(
-            $this->content,
-        );
+        $this->content =
+            trim(
+                $this->content,
+            );
 
-        $this->categoryId = trim(
-            $this->categoryId,
-        );
+        $this->categoryId =
+            trim(
+                $this->categoryId,
+            );
 
-        $this->featuredImageId = trim(
-            $this->featuredImageId,
-        );
+        $this->featuredImageId =
+            trim(
+                $this->featuredImageId,
+            );
 
-        $this->publishedAt = trim(
-            $this->publishedAt,
-        );
+        $this->publishedAt =
+            trim(
+                $this->publishedAt,
+            );
 
-        $this->seoTitle = trim(
-            $this->seoTitle,
-        );
+        $this->seoTitle =
+            trim(
+                $this->seoTitle,
+            );
 
-        $this->seoDescription = trim(
-            $this->seoDescription,
-        );
+        $this->seoDescription =
+            trim(
+                $this->seoDescription,
+            );
+
+        $this->changeRequestNote =
+            trim(
+                $this->changeRequestNote,
+            );
     }
 
     private function nullable(
         string $value,
     ): ?string {
-        $value = trim(
-            $value,
-        );
+        $value =
+            trim(
+                $value,
+            );
 
         return $value !== ''
             ? $value
             : null;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication
+    |--------------------------------------------------------------------------
+    */
 
     private function actor(): User
     {
@@ -435,5 +865,23 @@ final class NewsEdit extends Component
         }
 
         return $actor;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Redirect
+    |--------------------------------------------------------------------------
+    */
+
+    private function redirectToArticle(
+        News $news,
+    ): void {
+        $this->redirectRoute(
+            'admin.news.edit',
+            [
+                'news' => (int) $news->getKey(),
+            ],
+            navigate: true,
+        );
     }
 }

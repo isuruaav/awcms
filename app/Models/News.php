@@ -76,6 +76,8 @@ final class News extends Model
             'approved_at' => 'datetime',
 
             'archived_at' => 'datetime',
+
+            'changes_requested_at' => 'datetime',
         ];
     }
 
@@ -187,6 +189,17 @@ final class News extends Model
                 '<=',
                 now(),
             );
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function changesRequestedBy(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'changes_requested_by',
+        );
     }
 
     /**

@@ -2,10 +2,15 @@
 
 namespace App\Livewire\Admin\News;
 
+use App\Enums\NewsStatus;
 use App\Models\News;
 use App\Models\NewsRevision;
+use App\Models\User;
+use App\Services\NewsRevisionService;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -54,12 +59,65 @@ final class NewsRevisionHistory extends Component
 
         $this->selectedRevisionId =
             (int) $revision->getKey();
+
+        $this->resetValidation();
     }
 
     public function clearSelection(): void
     {
         $this->selectedRevisionId =
             null;
+
+        $this->resetValidation();
+    }
+
+    public function restoreSelectedRevision(): void
+    {
+        Gate::authorize(
+            'news.update',
+        );
+
+        if ($this->selectedRevisionId === null) {
+            throw ValidationException::withMessages([
+                'revision' => 'Please select a revision to restore.',
+            ]);
+        }
+
+        $news =
+            $this->news();
+
+        $revision = NewsRevision::query()
+            ->where(
+                'news_id',
+                $news->id,
+            )
+            ->findOrFail(
+                $this->selectedRevisionId,
+            );
+
+        app(
+            NewsRevisionService::class,
+        )->restore(
+            news: $news,
+            revision: $revision,
+            actor: $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            sprintf(
+                'Revision %d was restored successfully. The previous current version was saved as a backup revision.',
+                (int) $revision->revision_number,
+            ),
+        );
+
+        $this->redirectRoute(
+            'admin.news.edit',
+            [
+                'news' => $news->id,
+            ],
+            navigate: true,
+        );
     }
 
     public function render(): View
@@ -68,13 +126,12 @@ final class NewsRevisionHistory extends Component
             'news.view',
         );
 
-        $news = News::query()
-            ->with([
-                'category',
-                'creator',
-            ])
-            ->findOrFail(
-                $this->newsId,
+        $news =
+            $this->news();
+
+        $status =
+            $news->getAttribute(
+                'status',
             );
 
         $revisions = NewsRevision::query()
@@ -104,6 +161,12 @@ final class NewsRevisionHistory extends Component
                 'revisions' => $revisions,
 
                 'selectedRevision' => $selectedRevision,
+
+                'canRestore' => Gate::allows(
+                    'news.update',
+                )
+                    && $status instanceof NewsStatus
+                    && $status->isEditable(),
             ],
         )->layout(
             'components.layouts.admin',
@@ -111,6 +174,18 @@ final class NewsRevisionHistory extends Component
                 'title' => 'News Revision History',
             ],
         );
+    }
+
+    private function news(): News
+    {
+        return News::query()
+            ->with([
+                'category',
+                'creator',
+            ])
+            ->findOrFail(
+                $this->newsId,
+            );
     }
 
     private function selectedRevision(): ?NewsRevision
@@ -132,5 +207,19 @@ final class NewsRevisionHistory extends Component
             ->findOrFail(
                 $this->selectedRevisionId,
             );
+    }
+
+    private function actor(): User
+    {
+        $actor =
+            Auth::user();
+
+        if (! $actor instanceof User) {
+            throw ValidationException::withMessages([
+                'authorization' => 'An authenticated administrator is required.',
+            ]);
+        }
+
+        return $actor;
     }
 }

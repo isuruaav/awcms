@@ -48,7 +48,7 @@
 
     {{-- Galleries - module not completed yet --}}
     @can('galleries.view')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.galleries.index')" :active="request()->routeIs('admin.galleries.*')">
             Galleries
         </x-admin.nav-link>
     @endcan

@@ -2,15 +2,9 @@
 
 namespace App\Enums;
 
-enum NewsStatus: string
+enum GalleryStatus: string
 {
     case Draft = 'draft';
-
-    case Submitted = 'submitted';
-
-    case ChangesRequested = 'changes_requested';
-
-    case Approved = 'approved';
 
     case Published = 'published';
 
@@ -21,12 +15,6 @@ enum NewsStatus: string
         return match ($this) {
             self::Draft => 'Draft',
 
-            self::Submitted => 'Submitted for Review',
-
-            self::ChangesRequested => 'Changes Requested',
-
-            self::Approved => 'Approved',
-
             self::Published => 'Published',
 
             self::Archived => 'Archived',
@@ -35,14 +23,7 @@ enum NewsStatus: string
 
     public function isEditable(): bool
     {
-        return in_array(
-            $this,
-            [
-                self::Draft,
-                self::ChangesRequested,
-            ],
-            true,
-        );
+        return $this === self::Draft;
     }
 
     public function isPublic(): bool

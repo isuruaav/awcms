@@ -10,18 +10,34 @@
                lg:justify-between"
     >
         <div>
-            <a
-                href="{{ route(
-                    'admin.news.edit',
-                    ['news' => $news->id]
-                ) }}"
-                wire:navigate
-                class="text-sm font-semibold
-                       text-emerald-700
-                       hover:text-emerald-800"
-            >
-                ← Back to Article
-            </a>
+            @can('news.update')
+                <a
+                    href="{{ route(
+                        'admin.news.edit',
+                        [
+                            'news' => $news->id,
+                        ]
+                    ) }}"
+                    wire:navigate
+                    class="text-sm font-semibold
+                           text-emerald-700
+                           transition
+                           hover:text-emerald-800"
+                >
+                    ← Back to Article
+                </a>
+            @else
+                <a
+                    href="{{ route('admin.news.index') }}"
+                    wire:navigate
+                    class="text-sm font-semibold
+                           text-emerald-700
+                           transition
+                           hover:text-emerald-800"
+                >
+                    ← Back to News
+                </a>
+            @endcan
 
             <h1
                 class="mt-2 text-2xl
@@ -37,6 +53,7 @@
                        text-zinc-600"
             >
                 Previous saved versions of
+
                 <span class="font-semibold text-zinc-800">
                     {{ $news->title }}
                 </span>
@@ -45,11 +62,10 @@
 
         <div class="flex flex-wrap gap-2">
             <a
-                href="{{ route(
-                    'admin.news.index'
-                ) }}"
+                href="{{ route('admin.news.index') }}"
                 wire:navigate
                 class="inline-flex items-center
+                       justify-center
                        rounded-xl
                        border border-zinc-300
                        bg-white
@@ -67,10 +83,13 @@
                 <a
                     href="{{ route(
                         'admin.news.edit',
-                        ['news' => $news->id]
+                        [
+                            'news' => $news->id,
+                        ]
                     ) }}"
                     wire:navigate
                     class="inline-flex items-center
+                           justify-center
                            rounded-xl
                            bg-emerald-700
                            px-4 py-2.5
@@ -101,6 +120,7 @@
                    sm:grid-cols-2
                    xl:grid-cols-4"
         >
+            {{-- Current Article --}}
             <div>
                 <p
                     class="text-xs font-bold
@@ -119,6 +139,7 @@
                 </p>
             </div>
 
+            {{-- Current Status --}}
             <div>
                 <p
                     class="text-xs font-bold
@@ -128,15 +149,38 @@
                     Current Status
                 </p>
 
-                <p
-                    class="mt-1 text-sm
-                           font-semibold
-                           text-zinc-900"
-                >
-                    {{ $news->status->label() }}
-                </p>
+                <div class="mt-2">
+                    <span
+                        @class([
+                            'inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide',
+
+                            'bg-zinc-100 text-zinc-700' =>
+                                $news->status ===
+                                \App\Enums\NewsStatus::Draft,
+
+                            'bg-blue-50 text-blue-700' =>
+                                $news->status ===
+                                \App\Enums\NewsStatus::Submitted,
+
+                            'bg-violet-50 text-violet-700' =>
+                                $news->status ===
+                                \App\Enums\NewsStatus::Approved,
+
+                            'bg-emerald-50 text-emerald-700' =>
+                                $news->status ===
+                                \App\Enums\NewsStatus::Published,
+
+                            'bg-amber-50 text-amber-700' =>
+                                $news->status ===
+                                \App\Enums\NewsStatus::Archived,
+                        ])
+                    >
+                        {{ $news->status->label() }}
+                    </span>
+                </div>
             </div>
 
+            {{-- Category --}}
             <div>
                 <p
                     class="text-xs font-bold
@@ -155,6 +199,7 @@
                 </p>
             </div>
 
+            {{-- Revision Count --}}
             <div>
                 <p
                     class="text-xs font-bold
@@ -177,7 +222,7 @@
 
 
     {{-- =====================================================
-         MAIN GRID
+         MAIN CONTENT
     ====================================================== --}}
     <div
         class="grid gap-6
@@ -225,7 +270,8 @@
                                justify-center
                                rounded-full
                                bg-zinc-100
-                               text-xl"
+                               text-xl
+                               text-zinc-600"
                     >
                         ↻
                     </div>
@@ -235,7 +281,7 @@
                                font-semibold
                                text-zinc-900"
                     >
-                        No revisions yet
+                        No Revisions Yet
                     </h3>
 
                     <p
@@ -245,18 +291,16 @@
                                text-zinc-500"
                     >
                         A revision is created automatically
-                        when an editable news article is
+                        whenever an editable news article is
                         successfully updated.
                     </p>
                 </div>
             @else
-                <div
-                    class="divide-y
-                           divide-zinc-100"
-                >
+                <div class="divide-y divide-zinc-100">
                     @foreach ($revisions as $revision)
                         <button
                             type="button"
+                            wire:key="news-revision-{{ $revision->id }}"
                             wire:click="selectRevision({{ $revision->id }})"
                             @class([
                                 'block w-full px-5 py-4 text-left transition',
@@ -278,7 +322,8 @@
                                 <div class="min-w-0">
                                     <div
                                         class="flex flex-wrap
-                                               items-center gap-2"
+                                               items-center
+                                               gap-2"
                                     >
                                         <span
                                             class="text-sm
@@ -290,15 +335,29 @@
                                         </span>
 
                                         <span
-                                            class="inline-flex
-                                                   rounded-full
-                                                   bg-zinc-100
-                                                   px-2 py-0.5
-                                                   text-[11px]
-                                                   font-bold
-                                                   uppercase
-                                                   tracking-wide
-                                                   text-zinc-600"
+                                            @class([
+                                                'inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide',
+
+                                                'bg-zinc-100 text-zinc-700' =>
+                                                    $revision->status ===
+                                                    \App\Enums\NewsStatus::Draft,
+
+                                                'bg-blue-50 text-blue-700' =>
+                                                    $revision->status ===
+                                                    \App\Enums\NewsStatus::Submitted,
+
+                                                'bg-violet-50 text-violet-700' =>
+                                                    $revision->status ===
+                                                    \App\Enums\NewsStatus::Approved,
+
+                                                'bg-emerald-50 text-emerald-700' =>
+                                                    $revision->status ===
+                                                    \App\Enums\NewsStatus::Published,
+
+                                                'bg-amber-50 text-amber-700' =>
+                                                    $revision->status ===
+                                                    \App\Enums\NewsStatus::Archived,
+                                            ])
                                         >
                                             {{ $revision->status->label() }}
                                         </span>
@@ -330,6 +389,16 @@
                                         {{ $revision->creator?->name
                                             ?? 'Unknown user' }}
                                     </p>
+
+                                    @if ($revision->reason)
+                                        <p
+                                            class="mt-1 truncate
+                                                   text-xs
+                                                   text-zinc-400"
+                                        >
+                                            {{ $revision->reason }}
+                                        </p>
+                                    @endif
                                 </div>
 
                                 <span
@@ -344,8 +413,7 @@
                 </div>
 
                 <div
-                    class="border-t
-                           border-zinc-200
+                    class="border-t border-zinc-200
                            px-5 py-4"
                 >
                     {{ $revisions->links() }}
@@ -365,8 +433,12 @@
                    shadow-sm"
         >
             @if ($selectedRevision)
+
+                {{-- =============================================
+                     REVISION PREVIEW HEADER
+                ============================================== --}}
                 <div
-                    class="flex flex-col gap-3
+                    class="flex flex-col gap-4
                            border-b border-zinc-200
                            px-6 py-4
                            sm:flex-row
@@ -374,13 +446,47 @@
                            sm:justify-between"
                 >
                     <div>
-                        <h2
-                            class="font-bold
-                                   text-zinc-900"
+                        <div
+                            class="flex flex-wrap
+                                   items-center
+                                   gap-2"
                         >
-                            Revision
-                            {{ $selectedRevision->revision_number }}
-                        </h2>
+                            <h2
+                                class="text-lg font-bold
+                                       text-zinc-900"
+                            >
+                                Revision
+                                {{ $selectedRevision->revision_number }}
+                            </h2>
+
+                            <span
+                                @class([
+                                    'inline-flex rounded-full px-2.5 py-1 text-xs font-bold uppercase tracking-wide',
+
+                                    'bg-zinc-100 text-zinc-700' =>
+                                        $selectedRevision->status ===
+                                        \App\Enums\NewsStatus::Draft,
+
+                                    'bg-blue-50 text-blue-700' =>
+                                        $selectedRevision->status ===
+                                        \App\Enums\NewsStatus::Submitted,
+
+                                    'bg-violet-50 text-violet-700' =>
+                                        $selectedRevision->status ===
+                                        \App\Enums\NewsStatus::Approved,
+
+                                    'bg-emerald-50 text-emerald-700' =>
+                                        $selectedRevision->status ===
+                                        \App\Enums\NewsStatus::Published,
+
+                                    'bg-amber-50 text-amber-700' =>
+                                        $selectedRevision->status ===
+                                        \App\Enums\NewsStatus::Archived,
+                                ])
+                            >
+                                {{ $selectedRevision->status->label() }}
+                            </span>
+                        </div>
 
                         <p
                             class="mt-1 text-xs
@@ -390,23 +496,125 @@
                             {{ $selectedRevision->created_at?->format(
                                 'd M Y, H:i'
                             ) }}
+
+                            @if ($selectedRevision->creator)
+                                by
+                                {{ $selectedRevision->creator->name }}
+                            @endif
                         </p>
                     </div>
 
-                    <button
-                        type="button"
-                        wire:click="clearSelection"
-                        class="text-sm
-                               font-semibold
-                               text-zinc-500
-                               hover:text-zinc-800"
+                    <div
+                        class="flex flex-wrap
+                               items-center gap-2"
                     >
-                        Close Preview
-                    </button>
+                        @if ($canRestore)
+                            <button
+                                type="button"
+                                wire:click="restoreSelectedRevision"
+                                wire:confirm="Restore Revision {{ $selectedRevision->revision_number }}? The current article will first be saved as a backup revision."
+                                wire:loading.attr="disabled"
+                                wire:target="restoreSelectedRevision"
+                                class="inline-flex items-center
+                                       justify-center
+                                       rounded-xl
+                                       bg-emerald-700
+                                       px-4 py-2.5
+                                       text-sm font-bold
+                                       text-white
+                                       transition
+                                       hover:bg-emerald-800
+                                       disabled:cursor-not-allowed
+                                       disabled:opacity-60"
+                            >
+                                <span
+                                    wire:loading.remove
+                                    wire:target="restoreSelectedRevision"
+                                >
+                                    Restore Revision
+                                    {{ $selectedRevision->revision_number }}
+                                </span>
+
+                                <span
+                                    wire:loading
+                                    wire:target="restoreSelectedRevision"
+                                >
+                                    Restoring...
+                                </span>
+                            </button>
+                        @endif
+
+                        <button
+                            type="button"
+                            wire:click="clearSelection"
+                            class="inline-flex items-center
+                                   justify-center
+                                   rounded-xl
+                                   border border-zinc-300
+                                   bg-white
+                                   px-4 py-2.5
+                                   text-sm font-semibold
+                                   text-zinc-700
+                                   transition
+                                   hover:bg-zinc-50"
+                        >
+                            Close Preview
+                        </button>
+                    </div>
                 </div>
 
 
-                {{-- Metadata --}}
+                {{-- =============================================
+                     RESTORE ERROR
+                ============================================== --}}
+                @error('revision')
+                    <div
+                        class="mx-6 mt-5
+                               rounded-xl
+                               border border-red-200
+                               bg-red-50
+                               px-4 py-3
+                               text-sm font-medium
+                               text-red-700"
+                    >
+                        {{ $message }}
+                    </div>
+                @enderror
+
+
+                {{-- =============================================
+                     RESTORE INFORMATION
+                ============================================== --}}
+                @if (! $canRestore)
+                    <div
+                        class="mx-6 mt-5
+                               rounded-xl
+                               border border-amber-200
+                               bg-amber-50
+                               px-4 py-3"
+                    >
+                        <p
+                            class="text-sm font-semibold
+                                   text-amber-800"
+                        >
+                            Revision restore is unavailable.
+                        </p>
+
+                        <p
+                            class="mt-1 text-xs
+                                   leading-5
+                                   text-amber-700"
+                        >
+                            Restore requires update permission
+                            and an editable current workflow state.
+                        </p>
+                    </div>
+                @endif
+
+
+                {{-- =============================================
+                     REVISION METADATA
+                ============================================== --}}
                 <div
                     class="grid gap-4
                            border-b border-zinc-200
@@ -415,11 +623,11 @@
                            sm:grid-cols-2
                            lg:grid-cols-3"
                 >
+                    {{-- Status --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Status
@@ -434,11 +642,11 @@
                         </p>
                     </div>
 
+                    {{-- Category --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Category
@@ -454,11 +662,11 @@
                         </p>
                     </div>
 
+                    {{-- Saved By --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Saved By
@@ -474,11 +682,11 @@
                         </p>
                     </div>
 
+                    {{-- Featured --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Featured
@@ -495,11 +703,11 @@
                         </p>
                     </div>
 
+                    {{-- Publication --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Publication
@@ -518,11 +726,11 @@
                         </p>
                     </div>
 
+                    {{-- Revision Reason --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Reason
@@ -540,13 +748,16 @@
                 </div>
 
 
-                {{-- Article --}}
+                {{-- =============================================
+                     ARTICLE SNAPSHOT
+                ============================================== --}}
                 <div class="space-y-6 p-6">
+
+                    {{-- Title --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Title
@@ -555,17 +766,19 @@
                         <h3
                             class="mt-2 text-xl
                                    font-bold
+                                   leading-8
                                    text-zinc-950"
                         >
                             {{ $selectedRevision->title }}
                         </h3>
                     </div>
 
+
+                    {{-- Slug --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Slug
@@ -573,6 +786,8 @@
 
                         <code
                             class="mt-2 inline-block
+                                   max-w-full
+                                   break-all
                                    rounded-lg
                                    bg-zinc-100
                                    px-3 py-2
@@ -583,17 +798,18 @@
                         </code>
                     </div>
 
-                    @if ($selectedRevision->summary)
-                        <div>
-                            <p
-                                class="text-xs font-bold
-                                       uppercase
-                                       tracking-wide
-                                       text-zinc-500"
-                            >
-                                Summary
-                            </p>
 
+                    {{-- Summary --}}
+                    <div>
+                        <p
+                            class="text-xs font-bold
+                                   uppercase tracking-wide
+                                   text-zinc-500"
+                        >
+                            Summary
+                        </p>
+
+                        @if ($selectedRevision->summary)
                             <p
                                 class="mt-2
                                        whitespace-pre-line
@@ -602,14 +818,22 @@
                             >
                                 {{ $selectedRevision->summary }}
                             </p>
-                        </div>
-                    @endif
+                        @else
+                            <p
+                                class="mt-2 text-sm
+                                       italic text-zinc-400"
+                            >
+                                No summary stored in this revision.
+                            </p>
+                        @endif
+                    </div>
 
+
+                    {{-- Article Content --}}
                     <div>
                         <p
                             class="text-xs font-bold
-                                   uppercase
-                                   tracking-wide
+                                   uppercase tracking-wide
                                    text-zinc-500"
                         >
                             Article Content
@@ -628,11 +852,10 @@
                     </div>
 
 
-                    {{-- SEO --}}
-                    @if (
-                        $selectedRevision->seo_title
-                        || $selectedRevision->seo_description
-                    )
+                    {{-- =========================================
+                         FEATURED IMAGE INFORMATION
+                    ========================================== --}}
+                    @if ($selectedRevision->featuredImage)
                         <div
                             class="rounded-xl
                                    border border-zinc-200
@@ -641,41 +864,178 @@
                         >
                             <p
                                 class="text-xs font-bold
-                                       uppercase
-                                       tracking-wide
+                                       uppercase tracking-wide
                                        text-zinc-500"
                             >
-                                SEO Snapshot
+                                Featured Image Snapshot
                             </p>
 
-                            @if ($selectedRevision->seo_title)
-                                <p
-                                    class="mt-3
+                            <p
+                                class="mt-3 text-sm
+                                       font-semibold
+                                       text-zinc-900"
+                            >
+                                {{ $selectedRevision->featuredImage->title }}
+                            </p>
+
+                            <p
+                                class="mt-1 break-all
+                                       text-xs
+                                       text-zinc-500"
+                            >
+                                {{ $selectedRevision->featuredImage->original_name }}
+                            </p>
+
+                            @can('media.view')
+                                <a
+                                    href="{{ route(
+                                        'admin.media.edit',
+                                        [
+                                            'media' =>
+                                                $selectedRevision
+                                                    ->featuredImage
+                                                    ->id,
+                                        ]
+                                    ) }}"
+                                    target="_blank"
+                                    class="mt-3 inline-flex
                                            text-sm font-semibold
+                                           text-emerald-700
+                                           hover:text-emerald-800"
+                                >
+                                    View Media →
+                                </a>
+                            @endcan
+                        </div>
+                    @elseif ($selectedRevision->featured_image_id)
+                        <div
+                            class="rounded-xl
+                                   border border-amber-200
+                                   bg-amber-50
+                                   p-5"
+                        >
+                            <p
+                                class="text-sm font-semibold
+                                       text-amber-800"
+                            >
+                                The featured image referenced by
+                                this revision is no longer available.
+                            </p>
+                        </div>
+                    @endif
+
+
+                    {{-- =========================================
+                         SEO SNAPSHOT
+                    ========================================== --}}
+                    <div
+                        class="rounded-xl
+                               border border-zinc-200
+                               bg-zinc-50
+                               p-5"
+                    >
+                        <p
+                            class="text-xs font-bold
+                                   uppercase tracking-wide
+                                   text-zinc-500"
+                        >
+                            SEO Snapshot
+                        </p>
+
+                        @if ($selectedRevision->seo_title)
+                            <div class="mt-3">
+                                <p
+                                    class="text-xs font-semibold
+                                           text-zinc-500"
+                                >
+                                    SEO Title
+                                </p>
+
+                                <p
+                                    class="mt-1 text-sm
+                                           font-semibold
                                            text-zinc-900"
                                 >
                                     {{ $selectedRevision->seo_title }}
                                 </p>
-                            @endif
+                            </div>
+                        @endif
 
-                            @if ($selectedRevision->seo_description)
+                        @if ($selectedRevision->seo_description)
+                            <div class="mt-4">
                                 <p
-                                    class="mt-2
-                                           text-sm leading-6
+                                    class="text-xs font-semibold
+                                           text-zinc-500"
+                                >
+                                    SEO Description
+                                </p>
+
+                                <p
+                                    class="mt-1 text-sm
+                                           leading-6
                                            text-zinc-600"
                                 >
                                     {{ $selectedRevision->seo_description }}
                                 </p>
-                            @endif
+                            </div>
+                        @endif
+
+                        @if (
+                            ! $selectedRevision->seo_title
+                            && ! $selectedRevision->seo_description
+                        )
+                            <p
+                                class="mt-3 text-sm
+                                       italic text-zinc-400"
+                            >
+                                No SEO metadata stored in this revision.
+                            </p>
+                        @endif
+                    </div>
+
+
+                    {{-- =========================================
+                         REVISION SAFETY NOTE
+                    ========================================== --}}
+                    @if ($canRestore)
+                        <div
+                            class="rounded-xl
+                                   border border-emerald-200
+                                   bg-emerald-50
+                                   p-5"
+                        >
+                            <p
+                                class="text-sm font-semibold
+                                       text-emerald-800"
+                            >
+                                Safe Restore
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs
+                                       leading-5
+                                       text-emerald-700"
+                            >
+                                Restoring this revision first saves
+                                the current article as a new backup
+                                revision. The current workflow status
+                                is preserved.
+                            </p>
                         </div>
                     @endif
                 </div>
+
             @else
+
+                {{-- =============================================
+                     NO REVISION SELECTED
+                ============================================== --}}
                 <div
-                    class="flex min-h-[28rem]
+                    class="flex min-h-[32rem]
                            items-center
                            justify-center
-                           p-8 text-center"
+                           p-8
+                           text-center"
                 >
                     <div class="max-w-md">
                         <div
@@ -704,12 +1064,23 @@
                                    text-sm leading-6
                                    text-zinc-500"
                         >
-                            Choose a revision from the history
-                            list to inspect the article state
-                            stored at that point in time.
+                            Choose a saved revision from the list
+                            to inspect the article content and
+                            metadata stored at that point in time.
                         </p>
+
+                        @if ($revisions->isEmpty())
+                            <p
+                                class="mt-3 text-xs
+                                       text-zinc-400"
+                            >
+                                Revision history will appear after
+                                the article is updated.
+                            </p>
+                        @endif
                     </div>
                 </div>
+
             @endif
         </section>
     </div>

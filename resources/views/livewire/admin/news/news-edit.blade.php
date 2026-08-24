@@ -1,16 +1,18 @@
 <div class="mx-auto max-w-7xl space-y-6">
+
     {{-- =====================================================
          HEADER
     ====================================================== --}}
     <div
         class="flex flex-col gap-4
-               sm:flex-row
-               sm:items-start
-               sm:justify-between">
+               lg:flex-row
+               lg:items-start
+               lg:justify-between">
         <div>
             <a href="{{ route('admin.news.index') }}" wire:navigate
                 class="text-sm font-semibold
                        text-emerald-700
+                       transition
                        hover:text-emerald-800">
                 ← Back to News
             </a>
@@ -21,21 +23,26 @@
                 Edit News Article
             </h1>
 
-            <p class="mt-1 text-sm
+            <p class="mt-1 max-w-3xl
+                       text-sm leading-6
                        text-zinc-600">
-                Update article content, metadata and
-                publication settings.
+                Update article content, review workflow,
+                publication settings and SEO information.
             </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            {{-- Status --}}
+
+            {{-- Current Status --}}
             <span @class([
                 'inline-flex rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide',
             
                 'bg-zinc-100 text-zinc-700' => $status === \App\Enums\NewsStatus::Draft,
             
                 'bg-blue-50 text-blue-700' => $status === \App\Enums\NewsStatus::Submitted,
+            
+                'bg-orange-50 text-orange-700' =>
+                    $status === \App\Enums\NewsStatus::ChangesRequested,
             
                 'bg-violet-50 text-violet-700' =>
                     $status === \App\Enums\NewsStatus::Approved,
@@ -62,6 +69,7 @@
         </div>
     </div>
 
+
     {{-- =====================================================
          FLASH MESSAGE
     ====================================================== --}}
@@ -77,6 +85,66 @@
         </div>
     @endif
 
+
+    {{-- =====================================================
+         WORKFLOW ERROR
+    ====================================================== --}}
+    @error('workflow')
+        <div
+            class="rounded-xl
+                   border border-red-200
+                   bg-red-50
+                   px-5 py-4">
+            <p class="text-sm font-bold text-red-800">
+                Workflow action failed
+            </p>
+
+            <p class="mt-1 text-sm text-red-700">
+                {{ $message }}
+            </p>
+        </div>
+    @enderror
+
+
+    {{-- =====================================================
+         CHANGES REQUESTED NOTICE
+    ====================================================== --}}
+    @if ($status === \App\Enums\NewsStatus::ChangesRequested && $news->change_request_note)
+        <div
+            class="rounded-xl
+                   border border-orange-200
+                   bg-orange-50
+                   px-5 py-4">
+            <div
+                class="flex flex-col gap-2
+                       sm:flex-row
+                       sm:items-start
+                       sm:justify-between">
+                <div>
+                    <p class="text-sm font-bold
+                               text-orange-900">
+                        Changes Requested
+                    </p>
+
+                    <p
+                        class="mt-2 whitespace-pre-line
+                               text-sm leading-6
+                               text-orange-800">
+                        {{ $news->change_request_note }}
+                    </p>
+                </div>
+
+                @if ($news->changes_requested_at)
+                    <span class="shrink-0 text-xs
+                               text-orange-700">
+                        {{ $news->changes_requested_at->format('d M Y, H:i') }}
+                    </span>
+                @endif
+            </div>
+        </div>
+    @endif
+
+
     {{-- =====================================================
          READ ONLY WARNING
     ====================================================== --}}
@@ -87,17 +155,25 @@
                    bg-amber-50
                    px-5 py-4">
             <p class="text-sm font-bold
-                       text-amber-800">
-                This article is read only.
+           text-amber-800">
+                Editing locked
             </p>
 
             <p class="mt-1 text-sm
-                       leading-6 text-amber-700">
-                The current workflow status does not allow
-                normal article editing.
+                       leading-6
+                       text-amber-700">
+                The article cannot be edited while its current
+                workflow status is
+                <span class="font-semibold">
+                    {{ $status->label() }}
+                </span>.
+
+                Workflow actions may still be available below
+                depending on your permissions.
             </p>
         </div>
     @endif
+
 
     {{-- =====================================================
          VALIDATION SUMMARY
@@ -126,11 +202,13 @@
         </div>
     @endif
 
+
     {{-- =====================================================
-         EDIT FORM
+         MAIN FORM
     ====================================================== --}}
     <form wire:submit="save" class="grid gap-6
-               xl:grid-cols-[minmax(0,1fr)_360px]">
+               xl:grid-cols-[minmax(0,1fr)_380px]">
+
         {{-- =================================================
              LEFT COLUMN
         ================================================== --}}
@@ -147,13 +225,11 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-6 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
+                    <h2 class="font-bold text-zinc-900">
                         Article Details
                     </h2>
 
-                    <p class="mt-1 text-xs
-                               text-zinc-500">
+                    <p class="mt-1 text-xs text-zinc-500">
                         Main article information and public URL.
                     </p>
                 </div>
@@ -177,7 +253,8 @@
                             @disabled(!$editable) placeholder="Enter article title"
                             class="w-full rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm text-zinc-900
                                    outline-none transition
                                    placeholder:text-zinc-400
@@ -197,6 +274,7 @@
                             </p>
                         @enderror
                     </div>
+
 
                     {{-- Slug --}}
                     <div>
@@ -228,9 +306,11 @@
                             <input id="news-slug" type="text" maxlength="255" wire:model="slug"
                                 @disabled(!$editable)
                                 class="min-w-0 flex-1
-                                       border-0 bg-white
+                                       border-0
+                                       bg-white
                                        px-4 py-3
-                                       text-sm text-zinc-900
+                                       text-sm
+                                       text-zinc-900
                                        outline-none
                                        focus:ring-0
                                        disabled:cursor-not-allowed
@@ -238,8 +318,10 @@
                                        disabled:text-zinc-500">
                         </div>
 
-                        <p class="mt-2 text-xs
-                                   leading-5 text-zinc-500">
+                        <p
+                            class="mt-2 text-xs
+                                   leading-5
+                                   text-zinc-500">
                             Keep the existing slug unless the
                             public URL must intentionally change.
                         </p>
@@ -254,12 +336,14 @@
                         @enderror
                     </div>
 
+
                     {{-- Summary --}}
                     <div>
                         <div
                             class="mb-2 flex
                                    items-center
-                                   justify-between gap-3">
+                                   justify-between
+                                   gap-3">
                             <label for="news-summary"
                                 class="text-sm font-semibold
                                        text-zinc-800">
@@ -277,7 +361,8 @@
                             class="w-full resize-y
                                    rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm leading-6
                                    text-zinc-900
                                    outline-none transition
@@ -301,6 +386,7 @@
                 </div>
             </section>
 
+
             {{-- =============================================
                  ARTICLE BODY
             ============================================== --}}
@@ -312,8 +398,7 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-6 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
+                    <h2 class="font-bold text-zinc-900">
                         Article Body
                     </h2>
 
@@ -360,8 +445,10 @@
                         </div>
                     @endif
 
-                    <p class="mt-3 text-xs
-                               leading-5 text-zinc-500">
+                    <p
+                        class="mt-3 text-xs
+                               leading-5
+                               text-zinc-500">
                         File attachments are disabled.
                         Images and documents must be managed
                         through the Media Library.
@@ -378,6 +465,7 @@
                 </div>
             </section>
 
+
             {{-- =============================================
                  SEO
             ============================================== --}}
@@ -389,13 +477,11 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-6 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
+                    <h2 class="font-bold text-zinc-900">
                         Search Engine Optimisation
                     </h2>
 
-                    <p class="mt-1 text-xs
-                               text-zinc-500">
+                    <p class="mt-1 text-xs text-zinc-500">
                         Optional search and sharing metadata.
                     </p>
                 </div>
@@ -415,7 +501,8 @@
                             @disabled(!$editable) placeholder="Optional SEO title"
                             class="w-full rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm text-zinc-900
                                    outline-none
                                    focus:border-emerald-500
@@ -435,12 +522,14 @@
                         @enderror
                     </div>
 
+
                     {{-- SEO Description --}}
                     <div>
                         <div
                             class="mb-2 flex
                                    items-center
-                                   justify-between gap-3">
+                                   justify-between
+                                   gap-3">
                             <label for="news-seo-description"
                                 class="text-sm font-semibold
                                        text-zinc-800">
@@ -457,7 +546,8 @@
                             class="w-full resize-y
                                    rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm leading-6
                                    text-zinc-900
                                    outline-none
@@ -481,13 +571,14 @@
             </section>
         </div>
 
+
         {{-- =================================================
              RIGHT COLUMN
         ================================================== --}}
         <aside class="space-y-6">
 
             {{-- =============================================
-                 WORKFLOW INFORMATION
+                 WORKFLOW STATUS
             ============================================== --}}
             <section
                 class="overflow-hidden
@@ -497,13 +588,19 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-5 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
-                        Workflow
+                    <h2 class="font-bold text-zinc-900">
+                        Workflow Status
                     </h2>
+
+                    <p class="mt-1 text-xs
+                               text-zinc-500">
+                        Review and publication progress.
+                    </p>
                 </div>
 
-                <div class="space-y-4 p-5">
+                <div class="space-y-5 p-5">
+
+                    {{-- Current Status --}}
                     <div>
                         <p
                             class="text-xs font-bold
@@ -512,16 +609,107 @@
                             Current Status
                         </p>
 
-                        <p
-                            class="mt-2 text-sm
-                                   font-semibold
-                                   text-zinc-900">
+                        <span @class([
+                            'mt-2 inline-flex rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-wide',
+                        
+                            'bg-zinc-100 text-zinc-700' => $status === \App\Enums\NewsStatus::Draft,
+                        
+                            'bg-blue-50 text-blue-700' => $status === \App\Enums\NewsStatus::Submitted,
+                        
+                            'bg-orange-50 text-orange-700' =>
+                                $status === \App\Enums\NewsStatus::ChangesRequested,
+                        
+                            'bg-violet-50 text-violet-700' =>
+                                $status === \App\Enums\NewsStatus::Approved,
+                        
+                            'bg-emerald-50 text-emerald-700' =>
+                                $status === \App\Enums\NewsStatus::Published,
+                        
+                            'bg-amber-50 text-amber-700' => $status === \App\Enums\NewsStatus::Archived,
+                        ])>
                             {{ $status->label() }}
-                        </p>
+                        </span>
                     </div>
 
+
+                    {{-- Workflow Pipeline --}}
+                    <div
+                        class="rounded-xl
+                               border border-zinc-200
+                               bg-zinc-50
+                               p-4">
+                        <p
+                            class="text-xs font-bold
+                                   uppercase tracking-wide
+                                   text-zinc-500">
+                            Workflow
+                        </p>
+
+                        <div class="mt-3 space-y-2
+                                   text-sm text-zinc-700">
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="h-2 w-2 rounded-full
+                                           bg-zinc-500"></span>
+
+                                Draft
+                            </div>
+
+                            <div class="pl-1 text-zinc-300">
+                                ↓
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="h-2 w-2 rounded-full
+                                           bg-blue-500"></span>
+
+                                Submitted for Review
+                            </div>
+
+                            <div class="pl-1 text-zinc-300">
+                                ↓
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="h-2 w-2 rounded-full
+                                           bg-violet-500"></span>
+
+                                Approved
+                            </div>
+
+                            <div class="pl-1 text-zinc-300">
+                                ↓
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="h-2 w-2 rounded-full
+                                           bg-emerald-500"></span>
+
+                                Published
+                            </div>
+
+                            <div class="pl-1 text-zinc-300">
+                                ↓
+                            </div>
+
+                            <div class="flex items-center gap-2">
+                                <span
+                                    class="h-2 w-2 rounded-full
+                                           bg-amber-500"></span>
+
+                                Archived
+                            </div>
+                        </div>
+                    </div>
+
+
+                    {{-- Submitted --}}
                     @if ($news->submitted_at)
-                        <div>
+                        <div class="border-t border-zinc-100
+                                   pt-4">
                             <p
                                 class="text-xs font-bold
                                        uppercase tracking-wide
@@ -529,15 +717,53 @@
                                 Submitted
                             </p>
 
-                            <p class="mt-1 text-sm
+                            <p
+                                class="mt-1 text-sm
+                                       font-medium
                                        text-zinc-700">
-                                {{ $news->submitted_at->format('d M Y H:i') }}
+                                {{ $news->submitted_at->format('d M Y, H:i') }}
                             </p>
                         </div>
                     @endif
 
+
+                    {{-- Changes Requested --}}
+                    @if ($news->changes_requested_at)
+                        <div class="border-t border-zinc-100
+                                   pt-4">
+                            <p
+                                class="text-xs font-bold
+                                       uppercase tracking-wide
+                                       text-orange-600">
+                                Changes Requested
+                            </p>
+
+                            <p
+                                class="mt-1 text-sm
+                                       font-medium
+                                       text-zinc-700">
+                                {{ $news->changes_requested_at->format('d M Y, H:i') }}
+                            </p>
+
+                            @if ($news->change_request_note)
+                                <p
+                                    class="mt-2 whitespace-pre-line
+                                           rounded-lg
+                                           bg-orange-50
+                                           p-3
+                                           text-xs leading-5
+                                           text-orange-800">
+                                    {{ $news->change_request_note }}
+                                </p>
+                            @endif
+                        </div>
+                    @endif
+
+
+                    {{-- Approved --}}
                     @if ($news->approved_at)
-                        <div>
+                        <div class="border-t border-zinc-100
+                                   pt-4">
                             <p
                                 class="text-xs font-bold
                                        uppercase tracking-wide
@@ -545,15 +771,41 @@
                                 Approved
                             </p>
 
-                            <p class="mt-1 text-sm
+                            <p
+                                class="mt-1 text-sm
+                                       font-medium
                                        text-zinc-700">
-                                {{ $news->approved_at->format('d M Y H:i') }}
+                                {{ $news->approved_at->format('d M Y, H:i') }}
                             </p>
                         </div>
                     @endif
 
+
+                    {{-- Published --}}
+                    @if ($status === \App\Enums\NewsStatus::Published && $news->published_at)
+                        <div class="border-t border-zinc-100
+                                   pt-4">
+                            <p
+                                class="text-xs font-bold
+                                       uppercase tracking-wide
+                                       text-emerald-600">
+                                Published
+                            </p>
+
+                            <p
+                                class="mt-1 text-sm
+                                       font-medium
+                                       text-zinc-700">
+                                {{ $news->published_at->format('d M Y, H:i') }}
+                            </p>
+                        </div>
+                    @endif
+
+
+                    {{-- Archived --}}
                     @if ($news->archived_at)
-                        <div>
+                        <div class="border-t border-zinc-100
+                                   pt-4">
                             <p
                                 class="text-xs font-bold
                                        uppercase tracking-wide
@@ -561,14 +813,374 @@
                                 Archived
                             </p>
 
-                            <p class="mt-1 text-sm
+                            <p
+                                class="mt-1 text-sm
+                                       font-medium
                                        text-zinc-700">
-                                {{ $news->archived_at->format('d M Y H:i') }}
+                                {{ $news->archived_at->format('d M Y, H:i') }}
                             </p>
                         </div>
                     @endif
                 </div>
             </section>
+
+
+            {{-- =============================================
+                 WORKFLOW ACTIONS
+            ============================================== --}}
+            <section
+                class="overflow-hidden
+                       rounded-2xl
+                       border border-zinc-200
+                       bg-white
+                       shadow-sm">
+                <div class="border-b border-zinc-200
+                           px-5 py-4">
+                    <h2 class="font-bold text-zinc-900">
+                        Workflow Actions
+                    </h2>
+
+                    <p class="mt-1 text-xs
+                               text-zinc-500">
+                        Available actions depend on status and
+                        your assigned permissions.
+                    </p>
+                </div>
+
+                <div class="space-y-3 p-5">
+
+                    {{-- =========================================
+                         SAVE
+                    ========================================== --}}
+                    @if ($editable)
+                        <button type="submit" wire:loading.attr="disabled" wire:target="save"
+                            class="inline-flex w-full
+                                   items-center
+                                   justify-center
+                                   rounded-xl
+                                   border border-zinc-300
+                                   bg-white
+                                   px-5 py-3
+                                   text-sm font-bold
+                                   text-zinc-700
+                                   transition
+                                   hover:bg-zinc-50
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-60">
+                            <span wire:loading.remove wire:target="save">
+                                Save Changes
+                            </span>
+
+                            <span wire:loading wire:target="save">
+                                Saving...
+                            </span>
+                        </button>
+                    @endif
+
+
+                    {{-- =========================================
+                         SUBMIT FOR REVIEW
+                    ========================================== --}}
+                    @if ($canSubmit)
+                        <button type="button" wire:click="submitForReview"
+                            wire:confirm="Submit this news article for review? The latest editor changes will be saved first."
+                            wire:loading.attr="disabled" wire:target="submitForReview"
+                            class="inline-flex w-full
+                                   items-center
+                                   justify-center
+                                   rounded-xl
+                                   bg-blue-700
+                                   px-5 py-3
+                                   text-sm font-bold
+                                   text-white
+                                   transition
+                                   hover:bg-blue-800
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-60">
+                            <span wire:loading.remove wire:target="submitForReview">
+                                Submit for Review
+                            </span>
+
+                            <span wire:loading wire:target="submitForReview">
+                                Submitting...
+                            </span>
+                        </button>
+
+                        <p class="text-xs leading-5
+                                   text-zinc-500">
+                            The latest form content will be saved
+                            before submission.
+                        </p>
+                    @endif
+
+
+                    {{-- =========================================
+                         SUBMITTED REVIEW ACTIONS
+                    ========================================== --}}
+                    @if ($canRequestChanges || $canApprove)
+
+                        <div
+                            class="rounded-xl
+                                   border border-blue-200
+                                   bg-blue-50
+                                   p-4">
+                            <p class="text-sm font-bold
+                                       text-blue-900">
+                                Article awaiting review
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs
+                                       leading-5
+                                       text-blue-700">
+                                Review the article content before
+                                approving it or requesting changes.
+                            </p>
+                        </div>
+
+
+                        {{-- Request Changes --}}
+                        @if ($canRequestChanges)
+                            <div
+                                class="rounded-xl
+                                       border border-orange-200
+                                       bg-orange-50
+                                       p-4">
+                                <label for="change-request-note"
+                                    class="block text-sm
+                                           font-bold
+                                           text-orange-900">
+                                    Request Changes
+                                </label>
+
+                                <p
+                                    class="mt-1 text-xs
+                                           leading-5
+                                           text-orange-700">
+                                    Explain clearly what the
+                                    Content Editor must correct.
+                                </p>
+
+                                <textarea id="change-request-note" rows="4" maxlength="1000" wire:model="changeRequestNote"
+                                    placeholder="Describe the required changes..."
+                                    class="mt-3 w-full
+                                           resize-y
+                                           rounded-xl
+                                           border border-orange-300
+                                           bg-white
+                                           px-3 py-2.5
+                                           text-sm
+                                           text-zinc-900
+                                           outline-none
+                                           focus:border-orange-500
+                                           focus:ring-4
+                                           focus:ring-orange-500/10"></textarea>
+
+                                @error('changeRequestNote')
+                                    <p
+                                        class="mt-2
+                                               text-xs font-semibold
+                                               text-red-600">
+                                        {{ $message }}
+                                    </p>
+                                @enderror
+
+                                <button type="button" wire:click="requestChanges"
+                                    wire:confirm="Send this article back for changes?" wire:loading.attr="disabled"
+                                    wire:target="requestChanges"
+                                    class="mt-3 inline-flex
+                                           w-full items-center
+                                           justify-center
+                                           rounded-xl
+                                           bg-orange-600
+                                           px-4 py-2.5
+                                           text-sm font-bold
+                                           text-white
+                                           transition
+                                           hover:bg-orange-700
+                                           disabled:cursor-not-allowed
+                                           disabled:opacity-60">
+                                    <span wire:loading.remove wire:target="requestChanges">
+                                        Request Changes
+                                    </span>
+
+                                    <span wire:loading wire:target="requestChanges">
+                                        Sending...
+                                    </span>
+                                </button>
+                            </div>
+                        @endif
+
+
+                        {{-- Approve --}}
+                        @if ($canApprove)
+                            <button type="button" wire:click="approve"
+                                wire:confirm="Approve this news article for publication?" wire:loading.attr="disabled"
+                                wire:target="approve"
+                                class="inline-flex w-full
+                                       items-center
+                                       justify-center
+                                       rounded-xl
+                                       bg-violet-700
+                                       px-5 py-3
+                                       text-sm font-bold
+                                       text-white
+                                       transition
+                                       hover:bg-violet-800
+                                       disabled:cursor-not-allowed
+                                       disabled:opacity-60">
+                                <span wire:loading.remove wire:target="approve">
+                                    Approve Article
+                                </span>
+
+                                <span wire:loading wire:target="approve">
+                                    Approving...
+                                </span>
+                            </button>
+                        @endif
+                    @endif
+
+
+                    {{-- =========================================
+                         PUBLISH
+                    ========================================== --}}
+                    @if ($canPublish)
+                        <div
+                            class="rounded-xl
+                                   border border-violet-200
+                                   bg-violet-50
+                                   p-4">
+                            <p class="text-sm font-bold
+                                       text-violet-900">
+                                Article approved
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs
+                                       leading-5
+                                       text-violet-700">
+                                The article has passed review and
+                                is ready for publication.
+                            </p>
+                        </div>
+
+                        <button type="button" wire:click="publish" wire:confirm="Publish this news article?"
+                            wire:loading.attr="disabled" wire:target="publish"
+                            class="inline-flex w-full
+                                   items-center
+                                   justify-center
+                                   rounded-xl
+                                   bg-emerald-700
+                                   px-5 py-3
+                                   text-sm font-bold
+                                   text-white
+                                   transition
+                                   hover:bg-emerald-800
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-60">
+                            <span wire:loading.remove wire:target="publish">
+                                Publish Article
+                            </span>
+
+                            <span wire:loading wire:target="publish">
+                                Publishing...
+                            </span>
+                        </button>
+
+                        @if ($news->published_at)
+                            <p class="text-xs leading-5
+                                       text-zinc-500">
+                                Planned publication:
+                                <span class="font-semibold">
+                                    {{ $news->published_at->format('d M Y, H:i') }}
+                                </span>
+                            </p>
+                        @else
+                            <p class="text-xs leading-5
+                                       text-zinc-500">
+                                No planned publication time is set.
+                                Publishing will use the current time.
+                            </p>
+                        @endif
+                    @endif
+
+
+                    {{-- =========================================
+                         ARCHIVE
+                    ========================================== --}}
+                    @if ($canArchive)
+                        <div
+                            class="rounded-xl
+                                   border border-emerald-200
+                                   bg-emerald-50
+                                   p-4">
+                            <p class="text-sm font-bold
+                                       text-emerald-900">
+                                Article is published
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs
+                                       leading-5
+                                       text-emerald-700">
+                                Archiving removes the article from
+                                the active publishing workflow.
+                            </p>
+                        </div>
+
+                        <button type="button" wire:click="archive"
+                            wire:confirm="Archive this published news article?" wire:loading.attr="disabled"
+                            wire:target="archive"
+                            class="inline-flex w-full
+                                   items-center
+                                   justify-center
+                                   rounded-xl
+                                   bg-amber-600
+                                   px-5 py-3
+                                   text-sm font-bold
+                                   text-white
+                                   transition
+                                   hover:bg-amber-700
+                                   disabled:cursor-not-allowed
+                                   disabled:opacity-60">
+                            <span wire:loading.remove wire:target="archive">
+                                Archive Article
+                            </span>
+
+                            <span wire:loading wire:target="archive">
+                                Archiving...
+                            </span>
+                        </button>
+                    @endif
+
+
+                    {{-- =========================================
+                         FINAL / NO ACTION
+                    ========================================== --}}
+                    @if (!$editable && !$canRequestChanges && !$canApprove && !$canPublish && !$canArchive)
+                        <div
+                            class="rounded-xl
+                                   border border-zinc-200
+                                   bg-zinc-50
+                                   p-4">
+                            <p class="text-sm font-semibold
+                                       text-zinc-800">
+                                No workflow action available
+                            </p>
+
+                            <p
+                                class="mt-1 text-xs
+                                       leading-5
+                                       text-zinc-500">
+                                Your current permissions and this
+                                article status do not provide
+                                another workflow action.
+                            </p>
+                        </div>
+                    @endif
+                </div>
+            </section>
+
 
             {{-- =============================================
                  ARTICLE SETTINGS
@@ -581,8 +1193,7 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-5 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
+                    <h2 class="font-bold text-zinc-900">
                         Article Settings
                     </h2>
                 </div>
@@ -605,7 +1216,8 @@
                         <select id="news-category-id" wire:model="categoryId" @disabled(!$editable)
                             class="w-full rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm text-zinc-900
                                    disabled:cursor-not-allowed
                                    disabled:bg-zinc-100
@@ -617,6 +1229,10 @@
                             @foreach ($categories as $categoryOption)
                                 <option value="{{ $categoryOption->id }}">
                                     {{ $categoryOption->name }}
+
+                                    @if (!$categoryOption->is_active)
+                                        (Inactive)
+                                    @endif
                                 </option>
                             @endforeach
                         </select>
@@ -631,7 +1247,8 @@
                         @enderror
                     </div>
 
-                    {{-- Publication Date --}}
+
+                    {{-- Publication --}}
                     <div>
                         <label for="news-published-at"
                             class="mb-2 block
@@ -644,16 +1261,20 @@
                             @disabled(!$editable)
                             class="w-full rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm text-zinc-900
                                    disabled:cursor-not-allowed
                                    disabled:bg-zinc-100
                                    disabled:text-zinc-500">
 
-                        <p class="mt-2 text-xs
-                                   leading-5 text-zinc-500">
-                            Changing this value does not directly
-                            publish the article.
+                        <p
+                            class="mt-2 text-xs
+                                   leading-5
+                                   text-zinc-500">
+                            Setting this value does not bypass
+                            approval. Publication is controlled
+                            through the workflow.
                         </p>
 
                         @error('publishedAt')
@@ -666,10 +1287,11 @@
                         @enderror
                     </div>
 
+
                     {{-- Featured --}}
                     <label
-                        class="flex items-start gap-3
-                               rounded-xl
+                        class="flex items-start
+                               gap-3 rounded-xl
                                border border-zinc-200
                                bg-zinc-50 p-4
                                {{ $editable ? 'cursor-pointer' : 'cursor-not-allowed opacity-70' }}">
@@ -690,13 +1312,14 @@
                                 class="mt-1 block
                                        text-xs leading-5
                                        text-zinc-500">
-                                Allow this article to appear
-                                in featured news sections.
+                                Allow this article to appear in
+                                featured news sections.
                             </span>
                         </span>
                     </label>
                 </div>
             </section>
+
 
             {{-- =============================================
                  FEATURED IMAGE
@@ -709,13 +1332,11 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-5 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
+                    <h2 class="font-bold text-zinc-900">
                         Main Image
                     </h2>
 
-                    <p class="mt-1 text-xs
-                               text-zinc-500">
+                    <p class="mt-1 text-xs text-zinc-500">
                         Public images from the Media Library.
                     </p>
                 </div>
@@ -733,7 +1354,8 @@
                             @disabled(!$editable)
                             class="w-full rounded-xl
                                    border border-zinc-300
-                                   bg-white px-4 py-3
+                                   bg-white
+                                   px-4 py-3
                                    text-sm text-zinc-900
                                    disabled:cursor-not-allowed
                                    disabled:bg-zinc-100
@@ -760,6 +1382,7 @@
                             </p>
                         @enderror
                     </div>
+
 
                     @if ($featuredImageId !== '')
                         @php
@@ -792,16 +1415,18 @@
                                     {{ $selectedImage->original_name }}
                                 </p>
 
-                                <a href="{{ route('admin.media.edit', [
-                                    'media' => $selectedImage->id,
-                                ]) }}"
-                                    target="_blank"
-                                    class="mt-3 inline-flex
-                                           text-xs font-semibold
-                                           text-emerald-700
-                                           hover:text-emerald-800">
-                                    View Media →
-                                </a>
+                                @can('media.view')
+                                    <a href="{{ route('admin.media.edit', [
+                                        'media' => $selectedImage->id,
+                                    ]) }}"
+                                        target="_blank"
+                                        class="mt-3 inline-flex
+                                               text-xs font-semibold
+                                               text-emerald-700
+                                               hover:text-emerald-800">
+                                        View Media →
+                                    </a>
+                                @endcan
                             </div>
                         @else
                             <div
@@ -812,8 +1437,8 @@
                                 <p
                                     class="text-sm font-medium
                                            text-amber-800">
-                                    The currently selected media
-                                    is no longer available in the
+                                    The currently selected media is
+                                    no longer available in the
                                     selectable Public image list.
                                 </p>
                             </div>
@@ -832,6 +1457,7 @@
                 </div>
             </section>
 
+
             {{-- =============================================
                  ARTICLE INFORMATION
             ============================================== --}}
@@ -843,8 +1469,7 @@
                        shadow-sm">
                 <div class="border-b border-zinc-200
                            px-5 py-4">
-                    <h2 class="font-bold
-                               text-zinc-900">
+                    <h2 class="font-bold text-zinc-900">
                         Article Information
                     </h2>
                 </div>
@@ -853,8 +1478,8 @@
                            px-5">
                     <div
                         class="flex items-start
-                               justify-between gap-4
-                               py-4">
+                               justify-between
+                               gap-4 py-4">
                         <span
                             class="text-xs font-bold
                                    uppercase tracking-wide
@@ -870,8 +1495,8 @@
 
                     <div
                         class="flex items-start
-                               justify-between gap-4
-                               py-4">
+                               justify-between
+                               gap-4 py-4">
                         <span
                             class="text-xs font-bold
                                    uppercase tracking-wide
@@ -881,14 +1506,14 @@
 
                         <span class="text-right text-sm
                                    text-zinc-700">
-                            {{ $news->created_at?->format('d M Y H:i') }}
+                            {{ $news->created_at?->format('d M Y, H:i') }}
                         </span>
                     </div>
 
                     <div
                         class="flex items-start
-                               justify-between gap-4
-                               py-4">
+                               justify-between
+                               gap-4 py-4">
                         <span
                             class="text-xs font-bold
                                    uppercase tracking-wide
@@ -898,15 +1523,15 @@
 
                         <span class="text-right text-sm
                                    text-zinc-700">
-                            {{ $news->updated_at?->format('d M Y H:i') }}
+                            {{ $news->updated_at?->format('d M Y, H:i') }}
                         </span>
                     </div>
 
                     @if ($news->published_at)
                         <div
                             class="flex items-start
-                                   justify-between gap-4
-                                   py-4">
+                                   justify-between
+                                   gap-4 py-4">
                             <span
                                 class="text-xs font-bold
                                        uppercase tracking-wide
@@ -916,111 +1541,57 @@
 
                             <span class="text-right text-sm
                                        text-zinc-700">
-                                {{ $news->published_at->format('d M Y H:i') }}
+                                {{ $news->published_at->format('d M Y, H:i') }}
                             </span>
                         </div>
                     @endif
                 </div>
             </section>
 
+
             {{-- =============================================
-                 SAVE ACTIONS
+                 NAVIGATION
             ============================================== --}}
             <section
                 class="rounded-2xl
                        border border-zinc-200
                        bg-white
-                       p-5 shadow-sm">
-                @if ($editable)
-                    <div class="rounded-xl
-                               bg-blue-50 p-4">
-                        <p class="text-sm font-semibold
-                                   text-blue-800">
-                            Editing {{ $status->label() }}
-                        </p>
-
-                        <p
-                            class="mt-1
-                                   text-xs leading-5
-                                   text-blue-700">
-                            Saving changes does not bypass
-                            the News publishing workflow.
-                        </p>
-                    </div>
-
-                    <button type="submit" wire:loading.attr="disabled" wire:target="save"
-                        class="mt-4 inline-flex
-                               w-full items-center
+                       p-5
+                       shadow-sm">
+                <div class="space-y-3">
+                    <a href="{{ route('admin.news.revisions', [
+                        'news' => $news->id,
+                    ]) }}"
+                        wire:navigate
+                        class="inline-flex w-full
+                               items-center
                                justify-center
                                rounded-xl
-                               bg-emerald-700
+                               border border-zinc-300
+                               bg-white
                                px-5 py-3
-                               text-sm font-bold
-                               text-white
+                               text-sm font-semibold
+                               text-zinc-700
                                transition
-                               hover:bg-emerald-800
-                               disabled:cursor-not-allowed
-                               disabled:opacity-60">
-                        <span wire:loading.remove wire:target="save">
-                            Save Changes
-                        </span>
+                               hover:bg-zinc-50">
+                        Revision History
+                    </a>
 
-                        <span wire:loading wire:target="save">
-                            Saving...
-                        </span>
-                    </button>
-                @else
-                    <div
-                        class="rounded-xl
-                               border border-amber-200
-                               bg-amber-50 p-4">
-                        <p class="text-sm font-semibold
-                                   text-amber-800">
-                            Editing locked
-                        </p>
-
-                        <p
-                            class="mt-1
-                                   text-xs leading-5
-                                   text-amber-700">
-                            This workflow state cannot be
-                            changed through the normal
-                            article editor.
-                        </p>
-                    </div>
-                @endif
-
-                <a href="{{ route('admin.news.index') }}" wire:navigate
-                    class="mt-3 inline-flex
-           w-full items-center
-           justify-center
-           rounded-xl
-           border border-zinc-300
-           bg-white px-5 py-3
-           text-sm font-semibold
-           text-zinc-700
-           transition
-           hover:bg-zinc-50">
-                    Back to News
-                </a>
-
-                <a href="{{ route('admin.news.revisions', [
-                    'news' => $news->id,
-                ]) }}"
-                    wire:navigate
-                    class="mt-3 inline-flex
-           w-full items-center
-           justify-center
-           rounded-xl
-           border border-emerald-200
-           bg-emerald-50
-           px-5 py-3
-           text-sm font-semibold
-           text-emerald-700
-           transition
-           hover:bg-emerald-100">
-                    Revision History
-                </a>
+                    <a href="{{ route('admin.news.index') }}" wire:navigate
+                        class="inline-flex w-full
+                               items-center
+                               justify-center
+                               rounded-xl
+                               border border-zinc-300
+                               bg-white
+                               px-5 py-3
+                               text-sm font-semibold
+                               text-zinc-700
+                               transition
+                               hover:bg-zinc-50">
+                        Back to News
+                    </a>
+                </div>
             </section>
         </aside>
     </form>

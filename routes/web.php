@@ -1,15 +1,29 @@
 <?php
 
 use App\Http\Controllers\Admin\PagePreviewController;
+use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')
-    ->name('home');
+/*
+|--------------------------------------------------------------------------
+| Public Home
+|--------------------------------------------------------------------------
+*/
+
+Route::view(
+    '/',
+    'welcome',
+)->name(
+    'home',
+);
 
 /*
- * Public published pages
- */
+|--------------------------------------------------------------------------
+| Public Published Pages
+|--------------------------------------------------------------------------
+*/
+
 Route::get(
     '/pages/{slug}',
     PublicPageController::class,
@@ -18,35 +32,138 @@ Route::get(
         'slug',
         '[a-z0-9]+(?:-[a-z0-9]+)*',
     )
-    ->name('pages.show');
+    ->name(
+        'pages.show',
+    );
 
 /*
- * Authenticated administration
- */
+|--------------------------------------------------------------------------
+| Public News
+|--------------------------------------------------------------------------
+|
+| These routes MUST remain outside the authenticated administration
+| middleware group.
+|
+| PublicNewsController is responsible for allowing only:
+|
+| - Published articles
+| - Articles whose published_at is not null
+| - Articles whose published_at is now or in the past
+| - Non-deleted articles
+|
+*/
+
+Route::get(
+    '/news',
+    [
+        PublicNewsController::class,
+        'index',
+    ],
+)->name(
+    'news.index',
+);
+
+Route::get(
+    '/news/{slug}',
+    [
+        PublicNewsController::class,
+        'show',
+    ],
+)
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'news.show',
+    );
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Administration
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware([
     'auth',
     'active',
     'verified',
 ])->group(function (): void {
-    Route::redirect('/dashboard', '/admin')
-        ->name('dashboard');
 
-    Route::prefix('admin')
-        ->name('admin.')
-        ->middleware('can:admin.access')
+    /*
+    |--------------------------------------------------------------------------
+    | Default Dashboard Redirect
+    |--------------------------------------------------------------------------
+    |
+    | Laravel authentication flows may redirect users to the
+    | "dashboard" named route.
+    |
+    | Do not hard-code "/admin" here because the application may
+    | run from a subdirectory such as /awcms/public.
+    |
+    */
+
+    Route::get(
+        '/dashboard',
+        function () {
+            return to_route(
+                'admin.dashboard',
+            );
+        },
+    )->name(
+        'dashboard',
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Area
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix(
+        'admin',
+    )
+        ->name(
+            'admin.',
+        )
+        ->middleware(
+            'can:admin.access',
+        )
         ->group(function (): void {
-            Route::view('/', 'admin.dashboard')
-                ->name('dashboard');
 
             /*
-             * User Management
-             */
+            |--------------------------------------------------------------------------
+            | Dashboard
+            |--------------------------------------------------------------------------
+            */
+
+            Route::view(
+                '/',
+                'admin.dashboard',
+            )
+                ->middleware(
+                    'can:dashboard.view',
+                )
+                ->name(
+                    'dashboard',
+                );
+
+            /*
+            |--------------------------------------------------------------------------
+            | User Management
+            |--------------------------------------------------------------------------
+            */
+
             Route::livewire(
                 '/users',
                 'admin.users.user-index',
             )
-                ->middleware('can:users.view')
-                ->name('users.index');
+                ->middleware(
+                    'can:users.view',
+                )
+                ->name(
+                    'users.index',
+                );
 
             Route::livewire(
                 '/users/create',
@@ -56,59 +173,100 @@ Route::middleware([
                     'can:users.create',
                     'can:users.assign-role',
                 ])
-                ->name('users.create');
+                ->name(
+                    'users.create',
+                );
 
             Route::livewire(
                 '/users/{user}/edit',
                 'admin.users.user-edit',
             )
-                ->middleware('can:users.update')
-                ->name('users.edit');
+                ->whereNumber(
+                    'user',
+                )
+                ->middleware(
+                    'can:users.update',
+                )
+                ->name(
+                    'users.edit',
+                );
 
             /*
-             * Pages
-             */
+            |--------------------------------------------------------------------------
+            | Pages
+            |--------------------------------------------------------------------------
+            */
+
             Route::livewire(
                 '/pages',
                 'admin.pages.page-index',
             )
-                ->middleware('can:pages.view')
-                ->name('pages.index');
+                ->middleware(
+                    'can:pages.view',
+                )
+                ->name(
+                    'pages.index',
+                );
 
             Route::livewire(
                 '/pages/create',
                 'admin.pages.page-create',
             )
-                ->middleware('can:pages.create')
-                ->name('pages.create');
+                ->middleware(
+                    'can:pages.create',
+                )
+                ->name(
+                    'pages.create',
+                );
 
             Route::get(
                 '/pages/{page}/preview',
                 PagePreviewController::class,
             )
-                ->whereNumber('page')
-                ->middleware('can:pages.view')
-                ->name('pages.preview');
+                ->whereNumber(
+                    'page',
+                )
+                ->middleware(
+                    'can:pages.view',
+                )
+                ->name(
+                    'pages.preview',
+                );
 
             Route::livewire(
                 '/pages/{page}/revisions',
                 'admin.pages.page-revision-history',
             )
-                ->whereNumber('page')
-                ->middleware('can:pages.revisions.view')
-                ->name('pages.revisions');
+                ->whereNumber(
+                    'page',
+                )
+                ->middleware(
+                    'can:pages.revisions.view',
+                )
+                ->name(
+                    'pages.revisions',
+                );
 
             Route::livewire(
                 '/pages/{page}/edit',
                 'admin.pages.page-edit',
             )
-                ->whereNumber('page')
-                ->middleware('can:pages.update')
-                ->name('pages.edit');
+                ->whereNumber(
+                    'page',
+                )
+                ->middleware(
+                    'can:pages.update',
+                )
+                ->name(
+                    'pages.edit',
+                );
 
             /*
- * News
- */
+            |--------------------------------------------------------------------------
+            | News
+            |--------------------------------------------------------------------------
+            */
+
             Route::livewire(
                 '/news',
                 'admin.news.news-index',
@@ -131,6 +289,11 @@ Route::middleware([
                     'news.create',
                 );
 
+            /*
+             * Keep static News routes before parameterised
+             * /news/{news}/... routes.
+             */
+
             Route::livewire(
                 '/news/categories',
                 'admin.news.news-category-index',
@@ -143,62 +306,141 @@ Route::middleware([
                 );
 
             Route::livewire(
+                '/news/{news}/revisions',
+                'admin.news.news-revision-history',
+            )
+                ->whereNumber(
+                    'news',
+                )
+                ->middleware(
+                    'can:news.view',
+                )
+                ->name(
+                    'news.revisions',
+                );
+
+            Route::livewire(
                 '/news/{news}/edit',
                 'admin.news.news-edit',
             )
                 ->whereNumber(
                     'news',
                 )
-                ->middleware(
+                ->middleware([
+                    'can:news.view',
                     'can:news.update',
-                )
+                ])
                 ->name(
                     'news.edit',
                 );
 
-            Route::livewire(
-                '/news/{news}/revisions',
-                'admin.news.news-revision-history',
-            )
-                ->whereNumber('news')
-                ->middleware('can:news.view')
-                ->name('news.revisions');
             /*
-             * Audit Logs
-             */
-            Route::livewire(
-                '/audit-logs',
-                'admin.audit-logs.audit-log-index',
-            )
-                ->middleware('can:audit.view')
-                ->name('audit-logs.index');
-
-            /*
-            * Media
-             */
+            |--------------------------------------------------------------------------
+            | Media Library
+            |--------------------------------------------------------------------------
+            */
 
             Route::livewire(
                 '/media',
                 'admin.media.media-index',
             )
-                ->middleware('can:media.view')
-                ->name('media.index');
+                ->middleware(
+                    'can:media.view',
+                )
+                ->name(
+                    'media.index',
+                );
 
             Route::livewire(
                 '/media/upload',
                 'admin.media.media-upload',
             )
-                ->middleware('can:media.upload')
-                ->name('media.upload');
+                ->middleware(
+                    'can:media.upload',
+                )
+                ->name(
+                    'media.upload',
+                );
 
             Route::livewire(
                 '/media/{media}/edit',
                 'admin.media.media-edit',
             )
-                ->whereNumber('media')
-                ->middleware('can:media.view')
-                ->name('media.edit');
+                ->whereNumber(
+                    'media',
+                )
+                ->middleware(
+                    'can:media.view',
+                )
+                ->name(
+                    'media.edit',
+                );
+
+            /*
+            |--------------------------------------------------------------------------
+            | Galleries
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/galleries',
+                'admin.galleries.gallery-index',
+            )
+                ->middleware(
+                    'can:galleries.view',
+                )
+                ->name(
+                    'galleries.index',
+                );
+
+            Route::livewire(
+                '/galleries/create',
+                'admin.galleries.gallery-create',
+            )
+                ->middleware(
+                    'can:galleries.create',
+                )
+                ->name(
+                    'galleries.create',
+                );
+
+            Route::livewire(
+                '/galleries/{gallery}/edit',
+                'admin.galleries.gallery-edit',
+            )
+                ->whereNumber(
+                    'gallery',
+                )
+                ->middleware([
+                    'can:galleries.view',
+                    'can:galleries.update',
+                ])
+                ->name(
+                    'galleries.edit',
+                );
+            /*
+            |--------------------------------------------------------------------------
+            | Audit Logs
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/audit-logs',
+                'admin.audit-logs.audit-log-index',
+            )
+                ->middleware(
+                    'can:audit.view',
+                )
+                ->name(
+                    'audit-logs.index',
+                );
         });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Account / Profile Settings
+|--------------------------------------------------------------------------
+*/
 
 require __DIR__.'/settings.php';
