@@ -451,11 +451,19 @@ final class GalleryEdit extends Component
                     'visibility',
                     MediaVisibility::Public->value,
                 )
+                ->whereIn(
+                    'id',
+                    GalleryImage::query()
+                        ->select(
+                            'media_asset_id',
+                        )
+                        ->where(
+                            'gallery_id',
+                            $this->galleryId,
+                        ),
+                )
                 ->orderByDesc(
                     'id',
-                )
-                ->limit(
-                    150,
                 )
                 ->get();
 

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\PagePreviewController;
+use App\Http\Controllers\PublicDocumentController;
+use App\Http\Controllers\PublicGalleryController;
 use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
 use Illuminate\Support\Facades\Route;
@@ -76,6 +78,121 @@ Route::get(
     )
     ->name(
         'news.show',
+    );
+
+/*
+|--------------------------------------------------------------------------
+| Public Galleries
+|--------------------------------------------------------------------------
+|
+| These routes MUST remain outside the authenticated administration
+| middleware group.
+|
+| PublicGalleryController is responsible for allowing only:
+|
+| - Published galleries
+| - Galleries whose published_at is not null
+| - Galleries whose published_at is now or in the past
+| - Non-deleted galleries
+|
+*/
+
+Route::get(
+    '/galleries',
+    [
+        PublicGalleryController::class,
+        'index',
+    ],
+)->name(
+    'galleries.index',
+);
+
+Route::get(
+    '/galleries/{slug}',
+    [
+        PublicGalleryController::class,
+        'show',
+    ],
+)
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'galleries.show',
+    );
+
+/*
+|--------------------------------------------------------------------------
+| Public Documents
+|--------------------------------------------------------------------------
+|
+| These routes MUST remain outside the authenticated administration
+| middleware group.
+|
+| PublicDocumentController is responsible for allowing only:
+|
+| - Published documents
+| - Documents whose published_at is not null
+| - Documents whose published_at is now or in the past
+| - Non-deleted documents
+| - Documents with a valid current public PDF version
+|
+*/
+
+Route::get(
+    '/documents',
+    [
+        PublicDocumentController::class,
+        'index',
+    ],
+)->name(
+    'documents.index',
+);
+
+Route::get(
+    '/documents/{slug}/view',
+    [
+        PublicDocumentController::class,
+        'view',
+    ],
+)
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'documents.view',
+    );
+
+Route::get(
+    '/documents/{slug}/download',
+    [
+        PublicDocumentController::class,
+        'download',
+    ],
+)
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'documents.download',
+    );
+
+Route::get(
+    '/documents/{slug}',
+    [
+        PublicDocumentController::class,
+        'show',
+    ],
+)
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'documents.show',
     );
 
 /*
@@ -418,6 +535,61 @@ Route::middleware([
                 ->name(
                     'galleries.edit',
                 );
+
+            /*
+|--------------------------------------------------------------------------
+| Documents
+|--------------------------------------------------------------------------
+*/
+
+            Route::livewire(
+                '/documents',
+                'admin.documents.document-index',
+            )
+                ->middleware(
+                    'can:documents.view',
+                )
+                ->name(
+                    'documents.index',
+                );
+
+            Route::livewire(
+                '/documents/create',
+                'admin.documents.document-create',
+            )
+                ->middleware(
+                    'can:documents.create',
+                )
+                ->name(
+                    'documents.create',
+                );
+
+            Route::livewire(
+                '/documents/categories',
+                'admin.documents.document-category-index',
+            )
+                ->middleware(
+                    'can:documents.categories.manage',
+                )
+                ->name(
+                    'documents.categories.index',
+                );
+
+            Route::livewire(
+                '/documents/{document}/edit',
+                'admin.documents.document-edit',
+            )
+                ->whereNumber(
+                    'document',
+                )
+                ->middleware([
+                    'can:documents.view',
+                    'can:documents.update',
+                ])
+                ->name(
+                    'documents.edit',
+                );
+
             /*
             |--------------------------------------------------------------------------
             | Audit Logs

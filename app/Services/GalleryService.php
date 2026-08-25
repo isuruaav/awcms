@@ -42,10 +42,21 @@ final class GalleryService
             'galleries.create',
         );
 
-        $this->assertMediaAllowed(
-            $coverMedia,
-            'cover_media_id',
-        );
+        /*
+         * A cover may only reference an image already attached to
+         * the gallery. A new gallery has no attached images yet,
+         * so cover selection is intentionally deferred to Edit.
+         */
+        if ($coverMedia instanceof MediaAsset) {
+            $this->assertMediaAllowed(
+                $coverMedia,
+                'cover_media_id',
+            );
+
+            throw ValidationException::withMessages([
+                'cover_media_id' => 'Create the gallery first, attach images, and then select an attached image as the cover.',
+            ]);
+        }
 
         $safeTitle =
             $this->plainText(
@@ -90,11 +101,6 @@ final class GalleryService
                     : $safeTitle,
             );
 
-        $coverMediaId =
-            $coverMedia instanceof MediaAsset
-            ? (int) $coverMedia->getKey()
-            : null;
-
         return DB::transaction(
             function () use (
                 $actor,
@@ -102,7 +108,6 @@ final class GalleryService
                 $safeSlug,
                 $eventDate,
                 $safeDescription,
-                $coverMediaId,
                 $publishedAt,
                 $safeSeoTitle,
                 $safeSeoDescription,
@@ -119,7 +124,7 @@ final class GalleryService
 
                         'description' => $safeDescription,
 
-                        'cover_media_id' => $coverMediaId,
+                        'cover_media_id' => null,
 
                         'status' => GalleryStatus::Draft->value,
 
@@ -169,7 +174,7 @@ final class GalleryService
                             'Y-m-d',
                         ),
 
-                        'cover_media_id' => $coverMediaId,
+                        'cover_media_id' => null,
 
                         'status' => GalleryStatus::Draft->value,
 
@@ -307,6 +312,26 @@ final class GalleryService
                 $this->assertEditable(
                     $gallery,
                 );
+
+                if ($coverMediaId !== null) {
+                    $coverAttached =
+                        GalleryImage::query()
+                            ->where(
+                                'gallery_id',
+                                $galleryId,
+                            )
+                            ->where(
+                                'media_asset_id',
+                                $coverMediaId,
+                            )
+                            ->exists();
+
+                    if (! $coverAttached) {
+                        throw ValidationException::withMessages([
+                            'cover_media_id' => 'The cover image must already be attached to this gallery.',
+                        ]);
+                    }
+                }
 
                 $oldValues = [
                     'title' => $this->stringValue(
@@ -702,6 +727,26 @@ final class GalleryService
                 $mediaId =
                     (int) $galleryImage->media_asset_id;
 
+                $coverMediaId =
+                    $gallery->getAttribute(
+                        'cover_media_id',
+                    );
+
+                $wasCover =
+                    is_numeric(
+                        $coverMediaId,
+                    )
+                    && (int) $coverMediaId ===
+                        $mediaId;
+
+                if ($wasCover) {
+                    $gallery->forceFill([
+                        'cover_media_id' => null,
+
+                        'updated_by' => $actor->id,
+                    ])->save();
+                }
+
                 $galleryImage->delete();
 
                 app(
@@ -719,9 +764,17 @@ final class GalleryService
                         'gallery_image_id' => $galleryImageId,
 
                         'media_asset_id' => $mediaId,
+
+                        'was_cover' => $wasCover,
                     ],
 
-                    newValues: [],
+                    newValues: [
+                        'cover_media_id' => $wasCover
+                            ? null
+                            : $this->integerValue(
+                                $coverMediaId,
+                            ),
+                    ],
                 );
             },
             3,
@@ -922,6 +975,12 @@ final class GalleryService
                             'gallery_id',
                             $galleryId,
                         )
+                        ->orderBy(
+                            'sort_order',
+                        )
+                        ->orderBy(
+                            'id',
+                        )
                         ->lockForUpdate()
                         ->get();
 
@@ -933,11 +992,8 @@ final class GalleryService
 
                 /*
                  * Revalidate every attached image at publication
-                 * time.
-                 *
-                 * A Media Library asset may have been deleted or
-                 * changed from Public visibility after it was
-                 * originally attached to the gallery.
+                 * time. Media visibility or deletion state may have
+                 * changed since the image was attached.
                  */
                 foreach ($galleryImages as $galleryImage) {
                     $mediaId =
@@ -969,19 +1025,19 @@ final class GalleryService
                     );
                 }
 
-                /*
-                 * Revalidate the optional cover image as well.
-                 */
                 $coverMediaId =
                     $gallery->getAttribute(
                         'cover_media_id',
                     );
 
                 if (is_numeric($coverMediaId)) {
+                    $coverMediaId =
+                        (int) $coverMediaId;
+
                     $coverMedia =
                         MediaAsset::withTrashed()
                             ->find(
-                                (int) $coverMediaId,
+                                $coverMediaId,
                             );
 
                     if (! $coverMedia instanceof MediaAsset) {
@@ -994,6 +1050,47 @@ final class GalleryService
                         $coverMedia,
                         'workflow',
                     );
+
+                    $coverAttached = false;
+
+                    foreach ($galleryImages as $galleryImage) {
+                        $imageMediaId =
+                            $galleryImage->getAttribute(
+                                'media_asset_id',
+                            );
+
+                        if (
+                            is_numeric($imageMediaId)
+                            && (int) $imageMediaId ===
+                                $coverMediaId
+                        ) {
+                            $coverAttached = true;
+                            break;
+                        }
+                    }
+
+                    if (! $coverAttached) {
+                        throw ValidationException::withMessages([
+                            'workflow' => 'The gallery cover image is not attached to this gallery.',
+                        ]);
+                    }
+                } else {
+                    $firstImage =
+                        $galleryImages->first();
+
+                    $firstMediaId =
+                        $firstImage->getAttribute(
+                            'media_asset_id',
+                        );
+
+                    if (! is_numeric($firstMediaId)) {
+                        throw ValidationException::withMessages([
+                            'workflow' => 'The first gallery image is invalid.',
+                        ]);
+                    }
+
+                    $coverMediaId =
+                        (int) $firstMediaId;
                 }
 
                 $publishedAt =
@@ -1008,6 +1105,8 @@ final class GalleryService
 
                 $gallery->forceFill([
                     'status' => GalleryStatus::Published->value,
+
+                    'cover_media_id' => $coverMediaId,
 
                     'published_at' => $publishedAt,
 
@@ -1037,6 +1136,8 @@ final class GalleryService
 
                     newValues: [
                         'status' => GalleryStatus::Published->value,
+
+                        'cover_media_id' => $coverMediaId,
 
                         'published_at' => $publishedAt->format(
                             DATE_ATOM,
@@ -1425,18 +1526,20 @@ final class GalleryService
         string $slug,
         ?int $ignoreId,
     ): bool {
-        return Gallery::withTrashed()
-            ->where(
-                'slug',
-                $slug,
-            )
-            ->when(
-                $ignoreId !== null,
-                static fn ($query) => $query->whereKeyNot(
-                    $ignoreId,
-                ),
-            )
-            ->exists();
+        $query =
+            Gallery::withTrashed()
+                ->where(
+                    'slug',
+                    $slug,
+                );
+
+        if ($ignoreId !== null) {
+            $query->whereKeyNot(
+                $ignoreId,
+            );
+        }
+
+        return $query->exists();
     }
 
     /*

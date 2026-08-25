@@ -123,6 +123,12 @@ final class RolesAndPermissionsSeeder extends Seeder
             'documents.update',
             'documents.delete',
             'documents.publish',
+            'documents.archive',
+
+            /*
+             * Document administration.
+             */
+            'documents.categories.manage',
 
             /*
             |--------------------------------------------------------------------------
@@ -263,6 +269,9 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'documents.update',
                 'documents.delete',
                 'documents.publish',
+                'documents.archive',
+
+                'documents.categories.manage',
 
                 /*
                  * Media Library
@@ -348,6 +357,9 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'documents.create',
                 'documents.update',
                 'documents.publish',
+                'documents.archive',
+
+                'documents.categories.manage',
 
                 /*
                  * Media Library

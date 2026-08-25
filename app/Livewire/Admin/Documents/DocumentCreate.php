@@ -1,22 +1,25 @@
 <?php
 
-namespace App\Livewire\Admin\Galleries;
+namespace App\Livewire\Admin\Documents;
 
+use App\Models\DocumentCategory;
 use App\Models\User;
-use App\Services\GalleryService;
+use App\Services\DocumentService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Component;
 
-final class GalleryCreate extends Component
+final class DocumentCreate extends Component
 {
     public string $title = '';
 
     public string $slug = '';
 
-    public string $eventDate = '';
+    public string $categoryId = '';
+
+    public string $documentDate = '';
 
     public string $description = '';
 
@@ -29,39 +32,39 @@ final class GalleryCreate extends Component
     public function mount(): void
     {
         Gate::authorize(
-            'galleries.create',
+            'documents.create',
         );
     }
 
     public function save(): void
     {
         Gate::authorize(
-            'galleries.create',
+            'documents.create',
         );
 
         $this->normaliseInput();
 
         $this->validate();
 
-        $gallery =
+        $document =
             app(
-                GalleryService::class,
+                DocumentService::class,
             )->create(
                 actor: $this->actor(),
 
                 title: $this->title,
 
-                eventDate: $this->eventDate(),
+                category: $this->category(),
 
                 description: $this->nullableString(
                     $this->description,
                 ),
 
+                documentDate: $this->documentDate(),
+
                 slug: $this->nullableString(
                     $this->slug,
                 ),
-
-                coverMedia: null,
 
                 publishedAt: $this->publicationDate(),
 
@@ -76,13 +79,13 @@ final class GalleryCreate extends Component
 
         session()->flash(
             'status',
-            'Gallery created successfully. You can now add images and select a cover image.',
+            'Document created successfully. You can now upload the first PDF version.',
         );
 
         $this->redirectRoute(
-            'admin.galleries.edit',
+            'admin.documents.edit',
             [
-                'gallery' => $gallery->getKey(),
+                'document' => $document->getKey(),
             ],
             navigate: true,
         );
@@ -91,15 +94,24 @@ final class GalleryCreate extends Component
     public function render(): View
     {
         Gate::authorize(
-            'galleries.create',
+            'documents.create',
         );
 
         return view(
-            'livewire.admin.galleries.gallery-create',
+            'livewire.admin.documents.document-create',
+            [
+                'categories' => DocumentCategory::query()
+                    ->active()
+                    ->ordered()
+                    ->get([
+                        'id',
+                        'name',
+                    ]),
+            ],
         )->layout(
             'components.layouts.admin',
             [
-                'title' => 'Create Gallery',
+                'title' => 'Create Document',
             ],
         );
     }
@@ -122,7 +134,13 @@ final class GalleryCreate extends Component
                 'max:255',
             ],
 
-            'eventDate' => [
+            'categoryId' => [
+                'nullable',
+                'integer',
+                'exists:document_categories,id',
+            ],
+
+            'documentDate' => [
                 'nullable',
                 'date',
             ],
@@ -164,9 +182,14 @@ final class GalleryCreate extends Component
                 $this->slug,
             );
 
-        $this->eventDate =
+        $this->categoryId =
             trim(
-                $this->eventDate,
+                $this->categoryId,
+            );
+
+        $this->documentDate =
+            trim(
+                $this->documentDate,
             );
 
         $this->description =
@@ -190,14 +213,26 @@ final class GalleryCreate extends Component
             );
     }
 
-    private function eventDate(): ?CarbonImmutable
+    private function category(): ?DocumentCategory
     {
-        if ($this->eventDate === '') {
+        if ($this->categoryId === '') {
+            return null;
+        }
+
+        return DocumentCategory::query()
+            ->findOrFail(
+                (int) $this->categoryId,
+            );
+    }
+
+    private function documentDate(): ?CarbonImmutable
+    {
+        if ($this->documentDate === '') {
             return null;
         }
 
         return CarbonImmutable::parse(
-            $this->eventDate,
+            $this->documentDate,
         )->startOfDay();
     }
 
