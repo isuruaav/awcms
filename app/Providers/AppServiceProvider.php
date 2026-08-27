@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Models\Menu;
+use App\Models\SiteSetting;
+use App\Models\SocialLink;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
@@ -13,8 +16,11 @@ use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Illuminate\View\View as ViewInstance;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         $this->configureDefaults();
         $this->configureAuthorization();
         $this->configureAuthenticationEvents();
+        $this->configurePublicViewData();
     }
 
     /**
@@ -149,6 +156,36 @@ class AppServiceProvider extends ServiceProvider
                     'guard' => $event->guard,
                 ],
             );
+        });
+    }
+
+    /**
+     * Share site identity and public navigation with the public layout.
+     */
+    protected function configurePublicViewData(): void
+    {
+        View::composer('layouts.public', function (ViewInstance $view): void {
+            $settings = Schema::hasTable('site_settings')
+                ? SiteSetting::query()->first()
+                : null;
+
+            $primaryMenu = Schema::hasTable('menus') && Schema::hasTable('menu_items')
+                ? Menu::query()
+                    ->active()
+                    ->where('location', 'primary')
+                    ->with(['rootItems.children'])
+                    ->first()
+                : null;
+
+            $socialLinks = Schema::hasTable('social_links')
+                ? SocialLink::query()->active()->get()
+                : collect();
+
+            $view->with([
+                'siteSettings' => $settings,
+                'primaryMenu' => $primaryMenu,
+                'publicSocialLinks' => $socialLinks,
+            ]);
         });
     }
 

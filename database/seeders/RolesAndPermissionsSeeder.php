@@ -150,6 +150,8 @@ final class RolesAndPermissionsSeeder extends Seeder
 
             'menus.manage',
             'settings.manage',
+            'contacts.manage',
+            'redirects.manage',
 
             /*
             |--------------------------------------------------------------------------
@@ -287,6 +289,8 @@ final class RolesAndPermissionsSeeder extends Seeder
                  */
                 'menus.manage',
                 'settings.manage',
+                'contacts.manage',
+                'redirects.manage',
 
                 /*
                  * Audit Logs

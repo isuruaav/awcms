@@ -1,10 +1,14 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\PagePreviewController;
+use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\PublicGalleryController;
+use App\Http\Controllers\PublicHomeController;
 use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\PublicRedirectController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -13,9 +17,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::view(
+Route::get(
     '/',
-    'welcome',
+    PublicHomeController::class,
 )->name(
     'home',
 );
@@ -197,6 +201,24 @@ Route::get(
 
 /*
 |--------------------------------------------------------------------------
+| Public Contact
+|--------------------------------------------------------------------------
+*/
+
+Route::get(
+    '/contact',
+    [PublicContactController::class, 'create'],
+)->name('contact.create');
+
+Route::post(
+    '/contact',
+    [PublicContactController::class, 'store'],
+)
+    ->middleware('throttle:5,1')
+    ->name('contact.store');
+
+/*
+|--------------------------------------------------------------------------
 | Authenticated Administration
 |--------------------------------------------------------------------------
 */
@@ -254,9 +276,9 @@ Route::middleware([
             |--------------------------------------------------------------------------
             */
 
-            Route::view(
+            Route::get(
                 '/',
-                'admin.dashboard',
+                DashboardController::class,
             )
                 ->middleware(
                     'can:dashboard.view',
@@ -592,6 +614,71 @@ Route::middleware([
 
             /*
             |--------------------------------------------------------------------------
+            | Roles & Permissions
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/roles',
+                'admin.roles.role-permission-index',
+            )
+                ->middleware('can:roles.manage')
+                ->name('roles.index');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Menu Builder
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/menus',
+                'admin.menus.menu-index',
+            )
+                ->middleware('can:menus.manage')
+                ->name('menus.index');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Site Settings
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/site-settings',
+                'admin.settings.site-settings-index',
+            )
+                ->middleware('can:settings.manage')
+                ->name('site-settings.index');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Contact Messages
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/contact-messages',
+                'admin.contact-messages.contact-message-index',
+            )
+                ->middleware('can:contacts.manage')
+                ->name('contact-messages.index');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Redirect Manager
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/redirects',
+                'admin.redirects.redirect-index',
+            )
+                ->middleware('can:redirects.manage')
+                ->name('redirects.index');
+
+            /*
+            |--------------------------------------------------------------------------
             | Audit Logs
             |--------------------------------------------------------------------------
             */
@@ -616,3 +703,5 @@ Route::middleware([
 */
 
 require __DIR__.'/settings.php';
+
+Route::fallback(PublicRedirectController::class);

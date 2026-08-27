@@ -90,26 +90,42 @@
     @endcan
 
 
-    {{-- Roles & Permissions - module not completed yet --}}
+    {{-- Roles & Permissions --}}
     @can('roles.manage')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.roles.index')" :active="request()->routeIs('admin.roles.*')">
             Roles & Permissions
         </x-admin.nav-link>
     @endcan
 
 
-    {{-- Menus - module not completed yet --}}
+    {{-- Menus --}}
     @can('menus.manage')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.menus.index')" :active="request()->routeIs('admin.menus.*')">
             Menus
         </x-admin.nav-link>
     @endcan
 
 
-    {{-- Site Settings - module not completed yet --}}
+    {{-- Site Settings --}}
     @can('settings.manage')
-        <x-admin.nav-link disabled>
+        <x-admin.nav-link :href="route('admin.site-settings.index')" :active="request()->routeIs('admin.site-settings.*')">
             Site Settings
+        </x-admin.nav-link>
+    @endcan
+
+
+    {{-- Contact Messages --}}
+    @can('contacts.manage')
+        <x-admin.nav-link :href="route('admin.contact-messages.index')" :active="request()->routeIs('admin.contact-messages.*')">
+            Contact Messages
+        </x-admin.nav-link>
+    @endcan
+
+
+    {{-- Redirects --}}
+    @can('redirects.manage')
+        <x-admin.nav-link :href="route('admin.redirects.index')" :active="request()->routeIs('admin.redirects.*')">
+            Redirects
         </x-admin.nav-link>
     @endcan
 

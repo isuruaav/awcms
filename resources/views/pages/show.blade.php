@@ -1,5 +1,35 @@
 @extends('layouts.public')
 
+@section('title', $pageTitle)
+@section('description', $metaDescription)
+
+@if (is_string($canonicalUrl) && $canonicalUrl !== '')
+    @section('canonical', $canonicalUrl)
+@endif
+
+@section('meta')
+    <meta name="robots" content="{{ $robots }}">
+
+    @if ($socialMetadata)
+        <meta property="og:type" content="{{ $ogType }}">
+        <meta property="og:title" content="{{ $ogTitle }}">
+        <meta property="og:description" content="{{ $ogDescription }}">
+        <meta property="og:url" content="{{ $ogUrl }}">
+
+        @if (is_string($ogImage) && $ogImage !== '')
+            <meta property="og:image" content="{{ $ogImage }}">
+        @endif
+
+        <meta name="twitter:card" content="{{ $twitterCard }}">
+        <meta name="twitter:title" content="{{ $twitterTitle }}">
+        <meta name="twitter:description" content="{{ $twitterDescription }}">
+
+        @if (is_string($twitterImage) && $twitterImage !== '')
+            <meta name="twitter:image" content="{{ $twitterImage }}">
+        @endif
+    @endif
+@endsection
+
 @section('content')
     <article
         class="mx-auto max-w-5xl
