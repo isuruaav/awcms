@@ -38,6 +38,126 @@ final class PageWorkflowService
         );
     }
 
+    public function publishImmediately(Page $page, User $actor): Page
+    {
+        Gate::forUser($actor)->authorize(
+            'pages.publish',
+        );
+
+        $pageId = (int) $page->getKey();
+
+        return DB::transaction(
+            function () use (
+                $pageId,
+                $actor,
+            ): Page {
+                $lockedPage = Page::query()
+                    ->lockForUpdate()
+                    ->findOrFail($pageId);
+
+                $currentStatus = $this->statusOf(
+                    $lockedPage,
+                );
+
+                if ($currentStatus === PageStatus::Published) {
+                    return $lockedPage;
+                }
+
+                $lockedPage->forceFill([
+                    'status' => PageStatus::Published->value,
+                    'published_at' => now(),
+                    'archived_at' => null,
+                    'updated_by' => $actor->id,
+                ])->save();
+
+                app(AuditLogger::class)->log(
+                    event: 'pages.published',
+                    description: 'Website page published.',
+                    actor: $actor,
+                    subject: $lockedPage,
+                    oldValues: [
+                        'status' => $currentStatus->value,
+                    ],
+                    newValues: [
+                        'status' => PageStatus::Published->value,
+                    ],
+                );
+
+                app(PageRevisionService::class)->capture(
+                    page: $lockedPage,
+                    actor: $actor,
+                    summary: sprintf(
+                        'Page published from %s.',
+                        $currentStatus->label(),
+                    ),
+                );
+
+                return $lockedPage->refresh();
+            },
+        );
+    }
+
+    public function unpublish(Page $page, User $actor): Page
+    {
+        Gate::forUser($actor)->authorize(
+            'pages.publish',
+        );
+
+        $pageId = (int) $page->getKey();
+
+        return DB::transaction(
+            function () use (
+                $pageId,
+                $actor,
+            ): Page {
+                $lockedPage = Page::query()
+                    ->lockForUpdate()
+                    ->findOrFail($pageId);
+
+                $currentStatus = $this->statusOf(
+                    $lockedPage,
+                );
+
+                if ($currentStatus !== PageStatus::Published) {
+                    throw ValidationException::withMessages([
+                        'workflow' => 'Only a published page may be unpublished.',
+                    ]);
+                }
+
+                $lockedPage->forceFill([
+                    'status' => PageStatus::Draft->value,
+                    'submitted_at' => null,
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'published_at' => null,
+                    'archived_at' => null,
+                    'updated_by' => $actor->id,
+                ])->save();
+
+                app(AuditLogger::class)->log(
+                    event: 'pages.unpublished',
+                    description: 'Website page unpublished and returned to draft status.',
+                    actor: $actor,
+                    subject: $lockedPage,
+                    oldValues: [
+                        'status' => PageStatus::Published->value,
+                    ],
+                    newValues: [
+                        'status' => PageStatus::Draft->value,
+                    ],
+                );
+
+                app(PageRevisionService::class)->capture(
+                    page: $lockedPage,
+                    actor: $actor,
+                    summary: 'Page unpublished and returned to Draft.',
+                );
+
+                return $lockedPage->refresh();
+            },
+        );
+    }
+
     public function archive(Page $page, User $actor): Page
     {
         return $this->transition(

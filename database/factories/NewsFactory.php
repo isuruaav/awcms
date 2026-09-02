@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\NewsEditorMode;
+use App\Enums\NewsLocale;
 use App\Enums\NewsStatus;
 use App\Models\News;
 use App\Models\NewsCategory;
@@ -44,6 +46,10 @@ final class NewsFactory extends Factory
             'uuid' => Str::uuid()
                 ->toString(),
 
+            'locale' => NewsLocale::English->value,
+
+            'translation_group' => Str::uuid()->toString(),
+
             'category_id' => NewsCategory::factory(),
 
             'title' => $title,
@@ -64,6 +70,8 @@ final class NewsFactory extends Factory
                     $contentText,
                 )
                 .'</p>',
+
+            'editor_mode' => NewsEditorMode::Visual->value,
 
             'featured_image_id' => null,
 

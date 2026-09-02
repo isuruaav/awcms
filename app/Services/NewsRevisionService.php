@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\NewsEditorMode;
+use App\Enums\NewsLocale;
 use App\Enums\NewsStatus;
 use App\Models\MediaAsset;
 use App\Models\News;
@@ -16,10 +18,6 @@ use RuntimeException;
 
 final class NewsRevisionService
 {
-    public function __construct(
-        private readonly ContentSanitizer $contentSanitizer,
-    ) {}
-
     public function createSnapshot(
         News $news,
         User $actor,
@@ -122,10 +120,10 @@ final class NewsRevisionService
                  */
                 if (
                     ! $status instanceof NewsStatus
-                    || ! $status->isEditable()
+                    || $status === NewsStatus::Published
                 ) {
                     throw ValidationException::withMessages([
-                        'revision' => 'Only editable news workflow states may restore a revision.',
+                        'revision' => 'Unpublish the news article before restoring a revision.',
                     ]);
                 }
 
@@ -233,10 +231,13 @@ final class NewsRevisionService
                         maximumLength: 255,
                     );
 
+                $newsLocale = $this->newsLocale($lockedNews);
+
                 $safeSlug =
                     $this->uniqueSlug(
                         candidate: $revisionSlug,
                         ignoreId: (int) $lockedNews->getKey(),
+                        locale: $newsLocale,
                     );
 
                 /*
@@ -312,6 +313,8 @@ final class NewsRevisionService
                     'summary' => $summary,
 
                     'content' => $content,
+
+                    'editor_mode' => $lockedRevision->editor_mode->value,
 
                     'featured_image_id' => $featuredImage instanceof MediaAsset
                             ? (int) $featuredImage->getKey()
@@ -458,6 +461,12 @@ final class NewsRevisionService
 
                 'revision_number' => $revisionNumber,
 
+                'locale' => $this->newsLocale($news)->value,
+
+                'translation_group' => $this->nullableString(
+                    $news->getAttribute('translation_group'),
+                ),
+
                 'category_id' => $news->getAttribute(
                     'category_id',
                 ),
@@ -479,6 +488,8 @@ final class NewsRevisionService
                 'content' => (string) $news->getAttribute(
                     'content',
                 ),
+
+                'editor_mode' => $this->newsEditorMode($news)->value,
 
                 'featured_image_id' => $news->getAttribute(
                     'featured_image_id',
@@ -601,51 +612,29 @@ final class NewsRevisionService
     private function restorableContent(
         NewsRevision $revision,
     ): string {
-        $rawContent =
-            $revision->getAttribute(
-                'content',
-            );
+        $rawContent = $revision->getAttribute('content');
 
-        if (! is_string($rawContent)) {
+        if (! is_string($rawContent) || trim($rawContent) === '') {
             throw ValidationException::withMessages([
-                'revision' => 'The selected revision contains invalid article content.',
+                'revision' => 'The selected revision does not contain valid content.',
             ]);
         }
 
-        if (
-            mb_strlen(
-                $rawContent,
-            ) > 250000
-        ) {
+        $editorMode = $revision->editor_mode;
+
+        $sanitizer = app(PageHtmlSanitizer::class);
+
+        $content = $editorMode === NewsEditorMode::Visual
+            ? $sanitizer->sanitizeVisual($rawContent)
+            : $sanitizer->sanitize($rawContent);
+
+        if (trim(strip_tags($content)) === '') {
             throw ValidationException::withMessages([
-                'revision' => 'The selected revision content is too large.',
+                'revision' => 'The selected revision does not contain readable content.',
             ]);
         }
 
-        $safeContent =
-            $this->contentSanitizer
-                ->sanitize(
-                    $rawContent,
-                );
-
-        $plainText =
-            $this->contentSanitizer
-                ->plainText(
-                    $safeContent,
-                    2,
-                );
-
-        if (
-            trim(
-                $plainText,
-            ) === ''
-        ) {
-            throw ValidationException::withMessages([
-                'revision' => 'The selected revision does not contain readable article content.',
-            ]);
-        }
-
-        return $safeContent;
+        return $content;
     }
 
     private function requiredRevisionText(
@@ -723,6 +712,7 @@ final class NewsRevisionService
     private function uniqueSlug(
         string $candidate,
         int $ignoreId,
+        NewsLocale $locale = NewsLocale::English,
     ): string {
         $baseSlug =
             Str::slug(
@@ -751,6 +741,10 @@ final class NewsRevisionService
             News::query()
                 ->withTrashed()
                 ->where(
+                    'locale',
+                    $locale->value,
+                )
+                ->where(
                     'slug',
                     $slug,
                 )
@@ -778,6 +772,30 @@ final class NewsRevisionService
         }
 
         return $slug;
+    }
+
+    private function newsLocale(News $news): NewsLocale
+    {
+        $rawLocale = $news->getRawOriginal('locale');
+
+        if (! is_string($rawLocale)) {
+            return NewsLocale::English;
+        }
+
+        return NewsLocale::tryFrom($rawLocale)
+            ?? NewsLocale::English;
+    }
+
+    private function newsEditorMode(News $news): NewsEditorMode
+    {
+        $rawEditorMode = $news->getRawOriginal('editor_mode');
+
+        if (! is_string($rawEditorMode)) {
+            return NewsEditorMode::Visual;
+        }
+
+        return NewsEditorMode::tryFrom($rawEditorMode)
+            ?? NewsEditorMode::Visual;
     }
 
     private function nextRevisionNumber(

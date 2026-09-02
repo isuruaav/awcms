@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\NewsLocale;
+use App\Enums\PageLocale;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -81,7 +83,9 @@ final class MenuItem extends Model
     /** @return HasMany<MenuItem, $this> */
     public function children(): HasMany
     {
-        return $this->hasMany(self::class, 'parent_id')->orderBy('sort_order')->orderBy('id');
+        return $this->hasMany(self::class, 'parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 
     public function resolvedUrl(): string
@@ -93,27 +97,69 @@ final class MenuItem extends Model
         if ($this->type === 'page' && is_int($this->reference_id)) {
             $page = Page::query()->published()->find($this->reference_id);
 
-            return $page instanceof Page ? route('pages.show', ['slug' => $page->slug]) : '#';
+            if (! $page instanceof Page) {
+                return '#';
+            }
+
+            $rawLocale = $page->getRawOriginal('locale');
+            $locale = is_string($rawLocale)
+                ? PageLocale::tryFrom($rawLocale)
+                : null;
+            $locale ??= PageLocale::English;
+
+            return $locale === PageLocale::English
+                ? route('pages.show', ['slug' => $page->slug])
+                : route(
+                    'pages.show.localized',
+                    [
+                        'locale' => $locale->value,
+                        'slug' => $page->slug,
+                    ],
+                );
         }
 
         if ($this->type === 'news' && is_int($this->reference_id)) {
             $news = News::query()->published()->find($this->reference_id);
 
-            return $news instanceof News ? route('news.show', ['slug' => $news->slug]) : '#';
+            if (! $news instanceof News) {
+                return '#';
+            }
+
+            $rawLocale = $news->getRawOriginal('locale');
+            $locale = is_string($rawLocale)
+                ? NewsLocale::tryFrom($rawLocale)
+                : null;
+            $locale ??= NewsLocale::English;
+
+            return $locale === NewsLocale::English
+                ? route('news.show', ['slug' => $news->slug])
+                : route(
+                    'news.show.localized',
+                    [
+                        'locale' => $locale->value,
+                        'slug' => $news->slug,
+                    ],
+                );
         }
 
         if ($this->type === 'gallery' && is_int($this->reference_id)) {
             $gallery = Gallery::query()->published()->find($this->reference_id);
 
-            return $gallery instanceof Gallery ? route('galleries.show', ['slug' => $gallery->slug]) : '#';
+            return $gallery instanceof Gallery
+                ? route('galleries.show', ['slug' => $gallery->slug])
+                : '#';
         }
 
         if ($this->type === 'document' && is_int($this->reference_id)) {
             $document = Document::query()->published()->find($this->reference_id);
 
-            return $document instanceof Document ? route('documents.show', ['slug' => $document->slug]) : '#';
+            return $document instanceof Document
+                ? route('documents.show', ['slug' => $document->slug])
+                : '#';
         }
 
-        return is_string($this->url) && $this->url !== '' ? $this->url : '#';
+        return is_string($this->url) && $this->url !== ''
+            ? $this->url
+            : '#';
     }
 }

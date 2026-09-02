@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\NewsPreviewController;
 use App\Http\Controllers\Admin\PagePreviewController;
 use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicDocumentController;
@@ -31,6 +32,26 @@ Route::get(
 */
 
 Route::get(
+    '/{locale}/pages/{slug}',
+    PublicPageController::class,
+)
+    ->where(
+        'locale',
+        'en|si|ta',
+    )
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'pages.show.localized',
+    );
+
+/*
+ * Backward-compatible English page URL. Existing menu links and bookmarks
+ * continue to work while new language switching uses the locale-prefixed URL.
+ */
+Route::get(
     '/pages/{slug}',
     PublicPageController::class,
 )
@@ -47,17 +68,43 @@ Route::get(
 | Public News
 |--------------------------------------------------------------------------
 |
-| These routes MUST remain outside the authenticated administration
-| middleware group.
-|
-| PublicNewsController is responsible for allowing only:
-|
-| - Published articles
-| - Articles whose published_at is not null
-| - Articles whose published_at is now or in the past
-| - Non-deleted articles
+| Manual multilingual news URLs. English legacy routes remain available.
 |
 */
+
+Route::get(
+    '/{locale}/news',
+    [
+        PublicNewsController::class,
+        'index',
+    ],
+)
+    ->where(
+        'locale',
+        'en|si|ta',
+    )
+    ->name(
+        'news.index.localized',
+    );
+
+Route::get(
+    '/{locale}/news/{slug}',
+    [
+        PublicNewsController::class,
+        'show',
+    ],
+)
+    ->where(
+        'locale',
+        'en|si|ta',
+    )
+    ->where(
+        'slug',
+        '[a-z0-9]+(?:-[a-z0-9]+)*',
+    )
+    ->name(
+        'news.show.localized',
+    );
 
 Route::get(
     '/news',
@@ -358,6 +405,24 @@ Route::middleware([
                     'pages.create',
                 );
 
+            Route::livewire(
+                '/pages/{pageId}/translations/{locale}/create',
+                'admin.pages.page-create',
+            )
+                ->whereNumber(
+                    'pageId',
+                )
+                ->where(
+                    'locale',
+                    'en|si|ta',
+                )
+                ->middleware(
+                    'can:pages.create',
+                )
+                ->name(
+                    'pages.translations.create',
+                );
+
             Route::get(
                 '/pages/{page}/preview',
                 PagePreviewController::class,
@@ -426,6 +491,38 @@ Route::middleware([
                 )
                 ->name(
                     'news.create',
+                );
+
+            Route::livewire(
+                '/news/{newsId}/translations/{locale}/create',
+                'admin.news.news-create',
+            )
+                ->whereNumber(
+                    'newsId',
+                )
+                ->where(
+                    'locale',
+                    'en|si|ta',
+                )
+                ->middleware(
+                    'can:news.create',
+                )
+                ->name(
+                    'news.translations.create',
+                );
+
+            Route::get(
+                '/news/{news}/preview',
+                NewsPreviewController::class,
+            )
+                ->whereNumber(
+                    'news',
+                )
+                ->middleware(
+                    'can:news.view',
+                )
+                ->name(
+                    'news.preview',
                 );
 
             /*

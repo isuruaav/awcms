@@ -22,7 +22,7 @@ final class PublicHomeController
         return view('public.home', [
             'settings' => $settings,
             'slides' => $slides,
-            'latestNews' => News::query()->published()->latest('published_at')->limit(3)->get(),
+            'latestNews' => News::query()->published()->where('locale', 'en')->latest('published_at')->limit(3)->get(),
             'latestGalleries' => Gallery::query()->published()->latest('published_at')->limit(3)->get(),
             'latestDocuments' => Document::query()->published()->latest('published_at')->limit(5)->get(),
         ]);

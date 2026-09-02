@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\PageEditorMode;
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -23,8 +25,11 @@ final class PageFactory extends Factory
         return [
             'title' => $title,
             'slug' => Str::slug($title),
+            'locale' => PageLocale::English->value,
+            'translation_group' => (string) Str::uuid(),
             'excerpt' => fake()->sentence(),
             'content' => fake()->paragraphs(3, true),
+            'editor_mode' => PageEditorMode::Html->value,
             'blocks' => null,
             'status' => PageStatus::Draft->value,
             'submitted_at' => null,

@@ -318,6 +318,134 @@ final class NewsWorkflowService
         );
     }
 
+    public function publishImmediately(
+        News $news,
+        User $actor,
+    ): News {
+        Gate::forUser(
+            $actor,
+        )->authorize(
+            'news.publish',
+        );
+
+        return DB::transaction(
+            function () use (
+                $news,
+                $actor,
+            ): News {
+                $news = $this->lockedNews(
+                    $news,
+                );
+
+                $status = $this->status(
+                    $news,
+                );
+
+                if ($status === NewsStatus::Published) {
+                    return $news;
+                }
+
+                $this->revisionService->createSnapshot(
+                    news: $news,
+                    actor: $actor,
+                    reason: sprintf(
+                        'Snapshot before direct publication from %s.',
+                        $status->label(),
+                    ),
+                );
+
+                $publicationDate = $news->published_at ?? now();
+
+                $news->forceFill([
+                    'status' => NewsStatus::Published->value,
+                    'published_at' => $publicationDate,
+                    'published_by' => $actor->id,
+                    'archived_at' => null,
+                    'archived_by' => null,
+                    'updated_by' => $actor->id,
+                ])->save();
+
+                $this->audit(
+                    event: 'news.published',
+                    description: 'A news article was published.',
+                    actor: $actor,
+                    news: $news,
+                    oldStatus: $status,
+                    newStatus: NewsStatus::Published,
+                );
+
+                return $news->refresh();
+            },
+            3,
+        );
+    }
+
+    public function unpublish(
+        News $news,
+        User $actor,
+    ): News {
+        Gate::forUser(
+            $actor,
+        )->authorize(
+            'news.publish',
+        );
+
+        return DB::transaction(
+            function () use (
+                $news,
+                $actor,
+            ): News {
+                $news = $this->lockedNews(
+                    $news,
+                );
+
+                $status = $this->status(
+                    $news,
+                );
+
+                if ($status !== NewsStatus::Published) {
+                    throw ValidationException::withMessages([
+                        'workflow' => 'Only a published news article may be unpublished.',
+                    ]);
+                }
+
+                $this->revisionService->createSnapshot(
+                    news: $news,
+                    actor: $actor,
+                    reason: 'Snapshot before unpublishing.',
+                );
+
+                $news->forceFill([
+                    'status' => NewsStatus::Draft->value,
+                    'published_at' => null,
+                    'published_by' => null,
+                    'submitted_at' => null,
+                    'submitted_by' => null,
+                    'approved_at' => null,
+                    'approved_by' => null,
+                    'archived_at' => null,
+                    'archived_by' => null,
+                    'changes_requested_at' => null,
+                    'changes_requested_by' => null,
+                    'change_request_note' => null,
+                    'updated_by' => $actor->id,
+                ])->save();
+
+                $this->audit(
+                    event: 'news.unpublished',
+                    description: 'A news article was unpublished and returned to Draft.',
+                    actor: $actor,
+                    news: $news,
+                    oldStatus: NewsStatus::Published,
+                    newStatus: NewsStatus::Draft,
+                );
+
+                return $news->refresh();
+            },
+            3,
+        );
+    }
+
     public function archive(
         News $news,
         User $actor,

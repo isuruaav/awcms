@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\NewsEditorMode;
+use App\Enums\NewsLocale;
 use App\Enums\NewsStatus;
 use App\Models\MediaAsset;
 use App\Models\News;
@@ -32,6 +34,9 @@ final class NewsArticleService
         ?DateTimeInterface $publishedAt = null,
         ?string $seoTitle = null,
         ?string $seoDescription = null,
+        NewsLocale $locale = NewsLocale::English,
+        ?string $translationGroup = null,
+        NewsEditorMode $editorMode = NewsEditorMode::Visual,
     ): News {
         Gate::forUser(
             $actor,
@@ -60,8 +65,9 @@ final class NewsArticleService
             maximumLength: 2000,
         );
 
-        $safeContent = $this->richContent(
-            $content,
+        $safeContent = $this->articleContent(
+            content: $content,
+            editorMode: $editorMode,
         );
 
         $safeSeoTitle = $this->plainText(
@@ -77,9 +83,14 @@ final class NewsArticleService
         );
 
         $safeSlug = $this->uniqueSlug(
-            $slug !== null && trim($slug) !== ''
+            candidate: $slug !== null && trim($slug) !== ''
                 ? $slug
                 : $safeTitle,
+            locale: $locale,
+        );
+
+        $safeTranslationGroup = $this->translationGroup(
+            $translationGroup,
         );
 
         $featuredImageId =
@@ -100,10 +111,17 @@ final class NewsArticleService
                 $publishedAt,
                 $safeSeoTitle,
                 $safeSeoDescription,
+                $locale,
+                $safeTranslationGroup,
+                $editorMode,
             ): News {
                 $news = News::query()
                     ->create([
                         'category_id' => (int) $category->getKey(),
+
+                        'locale' => $locale->value,
+
+                        'translation_group' => $safeTranslationGroup,
 
                         'title' => $safeTitle,
 
@@ -112,6 +130,8 @@ final class NewsArticleService
                         'summary' => $safeSummary,
 
                         'content' => $safeContent,
+
+                        'editor_mode' => $editorMode->value,
 
                         'featured_image_id' => $featuredImageId,
 
@@ -227,6 +247,7 @@ final class NewsArticleService
         ?DateTimeInterface $publishedAt = null,
         ?string $seoTitle = null,
         ?string $seoDescription = null,
+        ?NewsEditorMode $editorMode = null,
     ): News {
         Gate::forUser(
             $actor,
@@ -286,8 +307,23 @@ final class NewsArticleService
             maximumLength: 2000,
         );
 
-        $safeContent = $this->richContent(
-            $content,
+        $rawEditorMode = $news->getRawOriginal('editor_mode');
+        $currentEditorMode = is_string($rawEditorMode)
+            ? NewsEditorMode::tryFrom($rawEditorMode)
+            : null;
+        $currentEditorMode ??= NewsEditorMode::Visual;
+
+        $safeEditorMode = $editorMode ?? $currentEditorMode;
+
+        $rawLocale = $news->getRawOriginal('locale');
+        $newsLocale = is_string($rawLocale)
+            ? NewsLocale::tryFrom($rawLocale)
+            : null;
+        $newsLocale ??= NewsLocale::English;
+
+        $safeContent = $this->articleContent(
+            content: $content,
+            editorMode: $safeEditorMode,
         );
 
         $safeSeoTitle = $this->plainText(
@@ -327,8 +363,8 @@ final class NewsArticleService
                 && trim($slug) !== ''
                     ? $slug
                     : $currentSlug,
-
             ignoreId: $newsId,
+            locale: $newsLocale,
         );
 
         $featuredImageId =
@@ -350,6 +386,7 @@ final class NewsArticleService
                 $publishedAt,
                 $safeSeoTitle,
                 $safeSeoDescription,
+                $safeEditorMode,
             ): News {
                 /*
                  * Preserve bounded old values for audit
@@ -423,6 +460,8 @@ final class NewsArticleService
                     'summary' => $safeSummary,
 
                     'content' => $safeContent,
+
+                    'editor_mode' => $safeEditorMode->value,
 
                     'featured_image_id' => $featuredImageId,
 
@@ -592,12 +631,11 @@ final class NewsArticleService
         }
     }
 
-    private function richContent(
+    private function articleContent(
         string $content,
+        NewsEditorMode $editorMode,
     ): string {
-        $content = trim(
-            $content,
-        );
+        $content = trim($content);
 
         if ($content === '') {
             throw ValidationException::withMessages([
@@ -605,29 +643,17 @@ final class NewsArticleService
             ]);
         }
 
-        /*
-         * Protect the sanitizer and application from
-         * excessively large rich-text submissions.
-         */
-        if (
-            mb_strlen(
-                $content,
-            ) > 250000
-        ) {
+        if (mb_strlen($content) > 250000) {
             throw ValidationException::withMessages([
                 'content' => 'The news body is too large.',
             ]);
         }
 
-        /*
-         * HTML received from the editor must never
-         * be trusted directly.
-         */
-        $safeContent =
-            $this->contentSanitizer
-                ->sanitize(
-                    $content,
-                );
+        $sanitizer = app(PageHtmlSanitizer::class);
+
+        $safeContent = $editorMode === NewsEditorMode::Visual
+            ? $sanitizer->sanitizeVisual($content)
+            : $sanitizer->sanitize($content);
 
         if ($safeContent === '') {
             throw ValidationException::withMessages([
@@ -635,22 +661,13 @@ final class NewsArticleService
             ]);
         }
 
-        /*
-         * HTML containing only empty elements is not
-         * considered valid article content.
-         */
-        $plainText =
-            $this->contentSanitizer
-                ->plainText(
-                    $safeContent,
-                    2,
-                );
+        $plainText = trim(html_entity_decode(
+            strip_tags($safeContent),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8',
+        ));
 
-        if (
-            trim(
-                $plainText,
-            ) === ''
-        ) {
+        if ($plainText === '') {
             throw ValidationException::withMessages([
                 'content' => 'The news body must contain readable text.',
             ]);
@@ -739,6 +756,7 @@ final class NewsArticleService
     private function uniqueSlug(
         string $candidate,
         ?int $ignoreId = null,
+        NewsLocale $locale = NewsLocale::English,
     ): string {
         $baseSlug =
             Str::slug(
@@ -775,6 +793,7 @@ final class NewsArticleService
             $this->slugExists(
                 slug: $slug,
                 ignoreId: $ignoreId,
+                locale: $locale,
             )
         ) {
             $suffix =
@@ -799,6 +818,7 @@ final class NewsArticleService
     private function slugExists(
         string $slug,
         ?int $ignoreId,
+        NewsLocale $locale,
     ): bool {
         /*
          * Soft-deleted articles are intentionally included
@@ -807,6 +827,10 @@ final class NewsArticleService
         $query =
             News::query()
                 ->withTrashed()
+                ->where(
+                    'locale',
+                    $locale->value,
+                )
                 ->where(
                     'slug',
                     $slug,
@@ -821,6 +845,19 @@ final class NewsArticleService
         }
 
         return $query->exists();
+    }
+
+    private function translationGroup(?string $value): string
+    {
+        $value = is_string($value)
+            ? trim($value)
+            : '';
+
+        if ($value !== '' && Str::isUuid($value)) {
+            return $value;
+        }
+
+        return Str::uuid()->toString();
     }
 
     private function dateValue(

@@ -1,0 +1,83 @@
+<?php
+
+use App\Enums\PageStatus;
+use App\Models\Page;
+use App\Services\PageHtmlSanitizer;
+
+it('preserves safe tailwind classes in page html', function (): void {
+    $html = <<<'HTML'
+<div class="mx-auto max-w-6xl px-6 py-12 md:grid md:grid-cols-2 md:gap-8">
+    <h2 class="text-3xl font-bold text-emerald-700">About Us</h2>
+    <p class="mt-4 text-zinc-600">Official page content.</p>
+</div>
+HTML;
+
+    $cleanHtml = app(
+        PageHtmlSanitizer::class,
+    )->sanitize($html);
+
+    expect($cleanHtml)
+        ->toContain('mx-auto max-w-6xl px-6 py-12')
+        ->toContain('md:grid md:grid-cols-2 md:gap-8')
+        ->toContain('text-3xl font-bold text-emerald-700');
+});
+
+it('removes active content while keeping safe page html', function (): void {
+    $html = <<<'HTML'
+<div class="rounded-2xl bg-white p-6" onclick="alert('unsafe')">
+    <script>alert('unsafe-script')</script>
+    <iframe src="https://example.com"></iframe>
+    <p style="color:red">Safe text</p>
+</div>
+HTML;
+
+    $cleanHtml = app(
+        PageHtmlSanitizer::class,
+    )->sanitize($html);
+
+    expect($cleanHtml)
+        ->toContain('rounded-2xl bg-white p-6')
+        ->toContain('Safe text')
+        ->not->toContain('onclick')
+        ->not->toContain('<script')
+        ->not->toContain('<iframe')
+        ->not->toContain('style=');
+});
+
+it('page model stores sanitized tailwind html', function (): void {
+    $page = Page::factory()->create([
+        'content' => '<div class="grid gap-6 md:grid-cols-2">'
+            .'<p class="text-zinc-700">Safe content</p>'
+            .'<script>alert("unsafe")</script>'
+            .'</div>',
+    ]);
+
+    $page->refresh();
+
+    expect($page->content)
+        ->toContain('grid gap-6 md:grid-cols-2')
+        ->toContain('text-zinc-700')
+        ->not->toContain('<script');
+});
+
+it('published page renders sanitized tailwind html', function (): void {
+    $page = Page::factory()
+        ->published()
+        ->create([
+            'status' => PageStatus::Published->value,
+            'slug' => 'tailwind-content-page',
+            'content' => '<div class="mx-auto max-w-7xl px-6">'
+                .'<h2 class="text-4xl font-bold">Tailwind Content</h2>'
+                .'</div>',
+        ]);
+
+    $this->get(
+        route('pages.show', $page->slug),
+    )
+        ->assertOk()
+        ->assertSee(
+            'class="mx-auto max-w-7xl px-6"',
+            false,
+        )
+        ->assertSee('Tailwind Content');
+});

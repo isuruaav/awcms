@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\PageEditorMode;
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\PageRevision;
@@ -84,9 +86,16 @@ final class PageRevisionService
                 $revisionSlug =
                     (string) $lockedRevision->slug;
 
+                $rawPageLocale = $page->getRawOriginal('locale');
+                $pageLocaleEnum = is_string($rawPageLocale)
+                    ? PageLocale::tryFrom($rawPageLocale)
+                    : null;
+                $pageLocale = ($pageLocaleEnum ?? PageLocale::English)->value;
+
                 $restoredSlug = PageSlugger::unique(
                     $revisionSlug,
                     (int) $page->id,
+                    $pageLocale,
                 );
 
                 /*
@@ -109,6 +118,12 @@ final class PageRevisionService
                 )
                     ? $page->content
                     : '';
+
+                $oldEditorMode =
+                    $this->editorModeOf($page);
+
+                $oldShowTitle =
+                    (bool) $page->getAttribute('show_title');
 
                 $oldBlocks = $this->blocksOf(
                     $page,
@@ -159,6 +174,12 @@ final class PageRevisionService
                     ? $lockedRevision->content
                     : '';
 
+                $revisionEditorMode =
+                    $this->editorModeOf($lockedRevision);
+
+                $revisionShowTitle =
+                    (bool) $lockedRevision->getAttribute('show_title');
+
                 $revisionBlocks = $this->blocksOf(
                     $lockedRevision,
                 );
@@ -205,6 +226,8 @@ final class PageRevisionService
                     || $oldSlug !== $restoredSlug
                     || $oldExcerpt !== $revisionExcerpt
                     || $oldContent !== $revisionContent
+                    || $oldEditorMode !== $revisionEditorMode
+                    || $oldShowTitle !== $revisionShowTitle
                     || $oldBlocks !== $revisionBlocks
                     || $oldSeoTitle !== $revisionSeoTitle
                     || $oldMetaDescription
@@ -243,6 +266,10 @@ final class PageRevisionService
                     'content' => $revisionContent !== ''
                         ? $revisionContent
                         : null,
+
+                    'editor_mode' => $revisionEditorMode,
+
+                    'show_title' => $revisionShowTitle,
 
                     'blocks' => $revisionBlocks,
 
@@ -293,6 +320,10 @@ final class PageRevisionService
 
                         'content_length' => mb_strlen($oldContent),
 
+                        'editor_mode' => $oldEditorMode,
+
+                        'show_title' => $oldShowTitle,
+
                         'robots_index' => $oldRobotsIndex,
 
                         'seo_title_present' => $oldSeoTitle !== null,
@@ -319,6 +350,10 @@ final class PageRevisionService
                         'content_length' => mb_strlen(
                             $revisionContent,
                         ),
+
+                        'editor_mode' => $revisionEditorMode,
+
+                        'show_title' => $revisionShowTitle,
 
                         'robots_index' => $revisionRobotsIndex,
 
@@ -373,6 +408,8 @@ final class PageRevisionService
          *     slug: string,
          *     excerpt: string|null,
          *     content: string|null,
+         *     editor_mode: string,
+         *     show_title: bool,
          *     seo_title: string|null,
          *     meta_description: string|null,
          *     canonical_url: string|null,
@@ -396,6 +433,10 @@ final class PageRevisionService
             'content' => $this->nullableString(
                 $page->content,
             ),
+
+            'editor_mode' => $this->editorModeOf($page),
+
+            'show_title' => (bool) $page->getAttribute('show_title'),
 
             'seo_title' => $this->nullableString(
                 $page->seo_title,
@@ -478,6 +519,10 @@ final class PageRevisionService
 
             'content' => $snapshot['content'],
 
+            'editor_mode' => $snapshot['editor_mode'],
+
+            'show_title' => $snapshot['show_title'],
+
             'seo_title' => $snapshot['seo_title'],
 
             'meta_description' => $snapshot['meta_description'],
@@ -528,6 +573,24 @@ final class PageRevisionService
         return is_array($blocks)
             ? $blocks
             : null;
+    }
+
+    private function editorModeOf(
+        Page|PageRevision $model,
+    ): string {
+        $editorMode = $model->getRawOriginal(
+            'editor_mode',
+        );
+
+        if (! is_string($editorMode)) {
+            return PageEditorMode::Html->value;
+        }
+
+        return match ($editorMode) {
+            PageEditorMode::Visual->value => PageEditorMode::Visual->value,
+            PageEditorMode::Html->value => PageEditorMode::Html->value,
+            default => PageEditorMode::Html->value,
+        };
     }
 
     private function nullableString(

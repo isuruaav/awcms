@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\PageLocale;
 use App\Models\Page;
 use App\Services\ContentSanitizer;
 
@@ -78,9 +79,27 @@ final class PageSeo
             return $canonicalUrl;
         }
 
+        $rawLocale = $page->getRawOriginal('locale');
+        $locale = is_string($rawLocale)
+            ? PageLocale::tryFrom($rawLocale)
+            : null;
+        $locale ??= PageLocale::English;
+
+        if ($locale === PageLocale::English) {
+            return route(
+                'pages.show',
+                [
+                    'slug' => $page->slug,
+                ],
+            );
+        }
+
         return route(
-            'pages.show',
-            $page->slug,
+            'pages.show.localized',
+            [
+                'locale' => $locale->value,
+                'slug' => $page->slug,
+            ],
         );
     }
 

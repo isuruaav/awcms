@@ -2,22 +2,37 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PageEditorMode;
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
-use App\Services\ContentSanitizer;
 use App\Services\PageBlockRenderer;
+use App\Services\PageHtmlSanitizer;
 use App\Support\PageSeo;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 final class PublicPageController extends Controller
 {
-    public function __invoke(
-        string $slug,
-    ): View {
+    public function __invoke(Request $request): View
+    {
+        $routeSlug = $request->route('slug');
+
+        abort_unless(
+            is_string($routeSlug) && trim($routeSlug) !== '',
+            404,
+        );
+
+        $pageLocale = $this->routeLocale($request);
+
         $page = Page::query()
             ->where(
                 'slug',
-                $slug,
+                $routeSlug,
+            )
+            ->where(
+                'locale',
+                $pageLocale->value,
             )
             ->where(
                 'status',
@@ -33,13 +48,35 @@ final class PublicPageController extends Controller
             )
             ->firstOrFail();
 
-        $safeContent = app(
-            ContentSanitizer::class,
-        )->sanitize(
-            is_string($page->content)
-                ? $page->content
-                : null,
+        app()->setLocale(
+            $pageLocale->value,
         );
+
+        $content = $page->getAttribute('content');
+
+        $rawContent = is_string($content)
+            ? $content
+            : null;
+
+        $rawEditorMode = $page->getRawOriginal('editor_mode');
+
+        $editorMode = is_string($rawEditorMode)
+            ? PageEditorMode::tryFrom($rawEditorMode)
+            : null;
+
+        $editorMode ??= PageEditorMode::Html;
+
+        $htmlSanitizer = app(
+            PageHtmlSanitizer::class,
+        );
+
+        $safeContent = $editorMode === PageEditorMode::Visual
+            ? $htmlSanitizer->sanitizeVisual(
+                $rawContent,
+            )
+            : $htmlSanitizer->sanitize(
+                $rawContent,
+            );
 
         $pageBlocks = app(
             PageBlockRenderer::class,
@@ -80,6 +117,65 @@ final class PublicPageController extends Controller
                 $page,
             );
 
+        $translationGroup = $page->getAttribute(
+            'translation_group',
+        );
+
+        $publishedTranslations = Page::query()
+            ->whereRaw('1 = 0')
+            ->get();
+
+        if (
+            is_string($translationGroup)
+            && trim($translationGroup) !== ''
+        ) {
+            $publishedTranslations = Page::query()
+                ->published()
+                ->where(
+                    'translation_group',
+                    $translationGroup,
+                )
+                ->get();
+        }
+
+        $languageVersions = array_map(
+            static function (PageLocale $localeOption) use (
+                $page,
+                $publishedTranslations,
+            ): array {
+                $translation = $publishedTranslations->first(
+                    static fn (Page $candidate): bool => $candidate->getRawOriginal('locale') === $localeOption->value,
+                );
+
+                $activeLocale = $page->getRawOriginal('locale');
+
+                return [
+                    'code' => $localeOption->value,
+                    'label' => $localeOption->label(),
+                    'native_label' => $localeOption->nativeLabel(),
+                    'active' => $activeLocale === $localeOption->value,
+                    'available' => $translation instanceof Page,
+                    'url' => $translation instanceof Page
+                        ? ($localeOption === PageLocale::English
+                            ? route(
+                                'pages.show',
+                                [
+                                    'slug' => $translation->slug,
+                                ],
+                            )
+                            : route(
+                                'pages.show.localized',
+                                [
+                                    'locale' => $localeOption->value,
+                                    'slug' => $translation->slug,
+                                ],
+                            ))
+                        : null,
+                ];
+            },
+            PageLocale::cases(),
+        );
+
         return view(
             'pages.show',
             [
@@ -88,6 +184,8 @@ final class PublicPageController extends Controller
                 'safeContent' => $safeContent,
 
                 'pageBlocks' => $pageBlocks,
+
+                'languageVersions' => $languageVersions,
 
                 /*
                  * Browser / Search Engine
@@ -129,5 +227,23 @@ final class PublicPageController extends Controller
                 'socialMetadata' => true,
             ],
         );
+    }
+
+    private function routeLocale(Request $request): PageLocale
+    {
+        $routeLocale = $request->route('locale');
+
+        if (! is_string($routeLocale) || trim($routeLocale) === '') {
+            return PageLocale::English;
+        }
+
+        $locale = PageLocale::tryFrom($routeLocale);
+
+        abort_unless(
+            $locale instanceof PageLocale,
+            404,
+        );
+
+        return $locale;
     }
 }

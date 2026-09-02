@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\NewsEditorMode;
+use App\Enums\NewsLocale;
 use App\Enums\NewsStatus;
 use Database\Factories\NewsRevisionFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,11 +15,14 @@ use Illuminate\Support\Carbon;
  * @property int $id
  * @property int $news_id
  * @property int $revision_number
+ * @property NewsLocale $locale
+ * @property string|null $translation_group
  * @property int|null $category_id
  * @property string $title
  * @property string $slug
  * @property string|null $summary
  * @property string $content
+ * @property NewsEditorMode $editor_mode
  * @property int|null $featured_image_id
  * @property bool $is_featured
  * @property NewsStatus $status
@@ -43,35 +48,27 @@ final class NewsRevision extends Model
     {
         return [
             'revision_number' => 'integer',
+            'locale' => NewsLocale::class,
+            'editor_mode' => NewsEditorMode::class,
             'is_featured' => 'boolean',
             'status' => NewsStatus::class,
             'published_at' => 'datetime',
         ];
     }
 
-    /**
-     * @return BelongsTo<News, $this>
-     */
+    /** @return BelongsTo<News, $this> */
     public function news(): BelongsTo
     {
-        return $this->belongsTo(
-            News::class,
-        );
+        return $this->belongsTo(News::class);
     }
 
-    /**
-     * @return BelongsTo<NewsCategory, $this>
-     */
+    /** @return BelongsTo<NewsCategory, $this> */
     public function category(): BelongsTo
     {
-        return $this->belongsTo(
-            NewsCategory::class,
-        );
+        return $this->belongsTo(NewsCategory::class);
     }
 
-    /**
-     * @return BelongsTo<MediaAsset, $this>
-     */
+    /** @return BelongsTo<MediaAsset, $this> */
     public function featuredImage(): BelongsTo
     {
         return $this->belongsTo(
@@ -80,9 +77,7 @@ final class NewsRevision extends Model
         );
     }
 
-    /**
-     * @return BelongsTo<User, $this>
-     */
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(

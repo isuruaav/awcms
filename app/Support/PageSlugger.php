@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\PageLocale;
 use App\Models\Page;
 use Illuminate\Support\Str;
 
@@ -10,6 +11,7 @@ final class PageSlugger
     public static function unique(
         string $value,
         ?int $ignorePageId = null,
+        string $locale = PageLocale::English->value,
     ): string {
         $baseSlug = Str::slug($value);
 
@@ -33,6 +35,7 @@ final class PageSlugger
             self::slugExists(
                 $slug,
                 $ignorePageId,
+                $locale,
             )
         ) {
             $slug = "{$baseSlug}-{$suffix}";
@@ -45,9 +48,11 @@ final class PageSlugger
     private static function slugExists(
         string $slug,
         ?int $ignorePageId,
+        string $locale,
     ): bool {
         $query = Page::withTrashed()
-            ->where('slug', $slug);
+            ->where('slug', $slug)
+            ->where('locale', $locale);
 
         if ($ignorePageId !== null) {
             $query->where(

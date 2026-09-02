@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\NewsEditorMode;
+use App\Enums\NewsLocale;
 use App\Enums\NewsStatus;
 use Database\Factories\NewsFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -30,17 +32,41 @@ final class News extends Model
     {
         self::creating(
             function (News $news): void {
-                $uuid = $news->getAttribute(
-                    'uuid',
-                );
+                $uuid = $news->getAttribute('uuid');
 
-                if (
-                    ! is_string($uuid)
-                    || trim($uuid) === ''
-                ) {
+                if (! is_string($uuid) || trim($uuid) === '') {
                     $news->setAttribute(
                         'uuid',
                         Str::uuid()->toString(),
+                    );
+                }
+
+                $attributes = $news->getAttributes();
+
+                $rawLocale = $attributes['locale'] ?? null;
+
+                if (! is_string($rawLocale) || NewsLocale::tryFrom($rawLocale) === null) {
+                    $news->setAttribute(
+                        'locale',
+                        NewsLocale::English->value,
+                    );
+                }
+
+                $translationGroup = $attributes['translation_group'] ?? null;
+
+                if (! is_string($translationGroup) || trim($translationGroup) === '') {
+                    $news->setAttribute(
+                        'translation_group',
+                        Str::uuid()->toString(),
+                    );
+                }
+
+                $editorMode = $attributes['editor_mode'] ?? null;
+
+                if (! is_string($editorMode) || NewsEditorMode::tryFrom($editorMode) === null) {
+                    $news->setAttribute(
+                        'editor_mode',
+                        NewsEditorMode::Visual->value,
                     );
                 }
             },
@@ -60,23 +86,43 @@ final class News extends Model
     }
 
     /**
+     * @return HasMany<NewsImage, $this>
+     */
+    public function images(): HasMany
+    {
+        return $this->hasMany(
+            NewsImage::class,
+        )
+            ->orderBy('sort_order')
+            ->orderBy('id');
+    }
+
+    /**
+     * @return HasMany<News, $this>
+     */
+    public function translationVersions(): HasMany
+    {
+        return $this->hasMany(
+            self::class,
+            'translation_group',
+            'translation_group',
+        )->orderBy('locale');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
         return [
+            'locale' => NewsLocale::class,
+            'editor_mode' => NewsEditorMode::class,
             'status' => NewsStatus::class,
-
             'is_featured' => 'boolean',
-
             'published_at' => 'datetime',
-
             'submitted_at' => 'datetime',
-
             'approved_at' => 'datetime',
-
             'archived_at' => 'datetime',
-
             'changes_requested_at' => 'datetime',
         ];
     }
@@ -170,6 +216,17 @@ final class News extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function changesRequestedBy(): BelongsTo
+    {
+        return $this->belongsTo(
+            User::class,
+            'changes_requested_by',
+        );
+    }
+
+    /**
      * @param  Builder<News>  $query
      * @return Builder<News>
      */
@@ -192,17 +249,6 @@ final class News extends Model
     }
 
     /**
-     * @return BelongsTo<User, $this>
-     */
-    public function changesRequestedBy(): BelongsTo
-    {
-        return $this->belongsTo(
-            User::class,
-            'changes_requested_by',
-        );
-    }
-
-    /**
      * @param  Builder<News>  $query
      * @return Builder<News>
      */
@@ -217,9 +263,7 @@ final class News extends Model
 
     public function isPublished(): bool
     {
-        $status = $this->getAttribute(
-            'status',
-        );
+        $status = $this->getAttribute('status');
 
         return $status instanceof NewsStatus
             && $status === NewsStatus::Published;

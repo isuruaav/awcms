@@ -1,813 +1,386 @@
 <div class="mx-auto max-w-7xl space-y-6">
-    {{-- Header --}}
-    <div
-        class="flex flex-col gap-4
-               sm:flex-row sm:items-start
-               sm:justify-between"
-    >
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <a
                 href="{{ route('admin.news.index') }}"
                 wire:navigate
-                class="text-sm font-semibold
-                       text-emerald-700
-                       hover:text-emerald-800"
+                class="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
             >
                 ← Back to News
             </a>
 
-            <h1
-                class="mt-2 text-2xl
-                       font-bold text-zinc-950"
-            >
+            <h1 class="mt-2 text-2xl font-bold text-zinc-950">
                 Create News Article
             </h1>
 
-            <p
-                class="mt-1 text-sm
-                       text-zinc-600"
-            >
-                Create a new article and save it
-                as a draft for the publishing workflow.
+            <p class="mt-1 text-sm text-zinc-600">
+                Create English, Sinhala or Tamil news manually. No automatic translation is performed.
             </p>
         </div>
 
-        <span
-            class="inline-flex self-start
-                   rounded-full bg-zinc-100
-                   px-3 py-1.5
-                   text-xs font-bold
-                   uppercase tracking-wide
-                   text-zinc-600"
-        >
-            Draft
-        </span>
+        @if ($canManageCategories ?? auth()->user()?->can('news.categories.manage'))
+            <a
+                href="{{ route('admin.news.categories.index') }}"
+                wire:navigate
+                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+            >
+                Manage Categories
+            </a>
+        @endif
     </div>
 
-    {{-- Validation summary --}}
     @if ($errors->any())
-        <div
-            class="rounded-xl border border-red-200
-                   bg-red-50 px-5 py-4"
-        >
-            <p
-                class="text-sm font-bold
-                       text-red-800"
-            >
+        <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+            <p class="text-sm font-bold text-red-800">
                 Please correct the highlighted fields.
             </p>
 
-            <ul
-                class="mt-2 list-inside list-disc
-                       space-y-1 text-sm
-                       text-red-700"
-            >
+            <ul class="mt-2 list-inside list-disc space-y-1 text-sm text-red-700">
                 @foreach ($errors->all() as $error)
-                    <li>
-                        {{ $error }}
-                    </li>
+                    <li>{{ $error }}</li>
                 @endforeach
             </ul>
         </div>
     @endif
 
-    <form
-        wire:submit="save"
-        class="grid gap-6
-               xl:grid-cols-[minmax(0,1fr)_360px]"
-    >
-        {{-- ==================================================
-             MAIN COLUMN
-        =================================================== --}}
-        <div class="space-y-6">
-            {{-- Main details --}}
-            <section
-                class="rounded-2xl
-                       border border-zinc-200
-                       bg-white shadow-sm"
-            >
-                <div
-                    class="border-b border-zinc-200
-                           px-6 py-4"
-                >
-                    <h2
-                        class="font-bold
-                               text-zinc-900"
-                    >
-                        Article Details
-                    </h2>
+    <form wire:submit="save" class="space-y-6">
+        <section class="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div class="border-b border-zinc-200 px-6 py-5">
+                <h2 class="font-bold text-zinc-950">Article details</h2>
+                <p class="mt-1 text-sm text-zinc-600">Language, title, category and public URL.</p>
+            </div>
 
-                    <p
-                        class="mt-1 text-xs
-                               text-zinc-500"
-                    >
-                        Enter the main information
-                        for the news article.
-                    </p>
-                </div>
+            <div class="grid gap-5 p-6 lg:grid-cols-2">
+                <div class="lg:col-span-2">
+                    <p class="text-sm font-semibold text-zinc-800">Language</p>
 
-                <div class="space-y-5 p-6">
-                    {{-- Title --}}
-                    <div>
-                        <label
-                            for="news-title"
-                            class="mb-2 block
-                                   text-sm font-semibold
-                                   text-zinc-800"
-                        >
-                            Title
-                            <span class="text-red-600">
-                                *
-                            </span>
-                        </label>
-
-                        <input
-                            id="news-title"
-                            type="text"
-                            maxlength="255"
-                            wire:model="title"
-                            placeholder="Enter article title"
-                            class="w-full rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm text-zinc-900
-                                   outline-none
-                                   placeholder:text-zinc-400
-                                   focus:border-emerald-500
-                                   focus:ring-4
-                                   focus:ring-emerald-500/10"
-                        >
-
-                        @error('title')
-                            <p
-                                class="mt-2
-                                       text-sm font-medium
-                                       text-red-600"
-                            >
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    {{-- Slug --}}
-                    <div>
-                        <label
-                            for="news-slug"
-                            class="mb-2 block
-                                   text-sm font-semibold
-                                   text-zinc-800"
-                        >
-                            URL Slug
-                        </label>
-
-                        <div
-                            class="flex overflow-hidden
-                                   rounded-xl
-                                   border border-zinc-300
-                                   bg-white
-                                   focus-within:border-emerald-500
-                                   focus-within:ring-4
-                                   focus-within:ring-emerald-500/10"
-                        >
-                            <span
-                                class="flex items-center
-                                       border-r border-zinc-200
-                                       bg-zinc-50
-                                       px-3 text-sm
-                                       text-zinc-500"
-                            >
-                                /news/
-                            </span>
-
-                            <input
-                                id="news-slug"
-                                type="text"
-                                maxlength="255"
-                                wire:model="slug"
-                                placeholder="automatic-from-title"
-                                class="min-w-0 flex-1
-                                       border-0 bg-white
-                                       px-4 py-3
-                                       text-sm text-zinc-900
-                                       outline-none
-                                       focus:ring-0"
-                            >
-                        </div>
-
-                        <p
-                            class="mt-2 text-xs
-                                   text-zinc-500"
-                        >
-                            Leave blank to generate automatically
-                            from the article title.
-                        </p>
-
-                        @error('slug')
-                            <p
-                                class="mt-2
-                                       text-sm font-medium
-                                       text-red-600"
-                            >
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    {{-- Summary --}}
-                    <div>
-                        <div
-                            class="mb-2 flex
-                                   items-center justify-between"
-                        >
-                            <label
-                                for="news-summary"
-                                class="text-sm font-semibold
-                                       text-zinc-800"
-                            >
-                                Summary
-                            </label>
-
-                            <span
-                                class="text-xs
-                                       text-zinc-400"
-                            >
-                                Max 2000 characters
-                            </span>
-                        </div>
-
-                        <textarea
-                            id="news-summary"
-                            rows="4"
-                            maxlength="2000"
-                            wire:model="summary"
-                            placeholder="Short introduction or summary..."
-                            class="w-full resize-y
-                                   rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm leading-6
-                                   text-zinc-900
-                                   outline-none
-                                   placeholder:text-zinc-400
-                                   focus:border-emerald-500
-                                   focus:ring-4
-                                   focus:ring-emerald-500/10"
-                        ></textarea>
-
-                        @error('summary')
-                            <p
-                                class="mt-2
-                                       text-sm font-medium
-                                       text-red-600"
-                            >
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-                </div>
-            </section>
-
-            {{-- Body --}}
-            <section
-                class="rounded-2xl
-                       border border-zinc-200
-                       bg-white shadow-sm"
-            >
-                <div
-                    class="border-b border-zinc-200
-                           px-6 py-4"
-                >
-                    <h2
-                        class="font-bold
-                               text-zinc-900"
-                    >
-                        Article Body
-                    </h2>
-
-                    <p
-                        class="mt-1 text-xs
-                               text-zinc-500"
-                    >
-                        Use the approved rich-text formatting tools.
-                    </p>
-                </div>
-
-                <div class="p-6">
-                    <label
-                        for="news-content-editor"
-                        class="mb-2 block
-                               text-sm font-semibold
-                               text-zinc-800"
-                    >
-                        Content
-                        <span class="text-red-600">
-                            *
-                        </span>
-                    </label>
-
-                    <div
-                        wire:ignore
-                        class="overflow-hidden
-                               rounded-xl
-                               border border-zinc-300
-                               bg-white"
-                    >
-                        <input
-                            id="news-content-input"
-                            type="hidden"
-                            value="{{ $content }}"
-                        >
-
-                        <trix-editor
-                            id="news-content-editor"
-                            input="news-content-input"
-                            x-data
-                            x-on:trix-change="
-                                $wire.set(
-                                    'content',
-                                    $event.target.value
-                                )
-                            "
-                            class="min-h-72
-                                   border-0
-                                   bg-white
-                                   p-4
-                                   text-sm leading-7
-                                   text-zinc-900"
-                        ></trix-editor>
-                    </div>
-
-                    <p
-                        class="mt-2 text-xs
-                               text-zinc-500"
-                    >
-                        File attachments are disabled.
-                        Use the Media Library for images.
-                    </p>
-
-                    @error('content')
-                        <p
-                            class="mt-2
-                                   text-sm font-medium
-                                   text-red-600"
-                        >
-                            {{ $message }}
-                        </p>
-                    @enderror
-                </div>
-            </section>
-
-            {{-- SEO --}}
-            <section
-                class="rounded-2xl
-                       border border-zinc-200
-                       bg-white shadow-sm"
-            >
-                <div
-                    class="border-b border-zinc-200
-                           px-6 py-4"
-                >
-                    <h2
-                        class="font-bold
-                               text-zinc-900"
-                    >
-                        Search Engine Optimisation
-                    </h2>
-
-                    <p
-                        class="mt-1 text-xs
-                               text-zinc-500"
-                    >
-                        Optional metadata for search
-                        and social previews.
-                    </p>
-                </div>
-
-                <div class="space-y-5 p-6">
-                    <div>
-                        <label
-                            for="news-seo-title"
-                            class="mb-2 block
-                                   text-sm font-semibold
-                                   text-zinc-800"
-                        >
-                            SEO Title
-                        </label>
-
-                        <input
-                            id="news-seo-title"
-                            type="text"
-                            maxlength="255"
-                            wire:model="seoTitle"
-                            placeholder="Optional SEO title"
-                            class="w-full rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm
-                                   focus:border-emerald-500
-                                   focus:ring-4
-                                   focus:ring-emerald-500/10"
-                        >
-
-                        @error('seoTitle')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <div
-                            class="mb-2 flex
-                                   items-center justify-between"
-                        >
-                            <label
-                                for="news-seo-description"
-                                class="text-sm font-semibold
-                                       text-zinc-800"
-                            >
-                                SEO Description
-                            </label>
-
-                            <span
-                                class="text-xs text-zinc-400"
-                            >
-                                Max 320
-                            </span>
-                        </div>
-
-                        <textarea
-                            id="news-seo-description"
-                            rows="3"
-                            maxlength="320"
-                            wire:model="seoDescription"
-                            placeholder="Optional search description..."
-                            class="w-full resize-y
-                                   rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm leading-6
-                                   focus:border-emerald-500
-                                   focus:ring-4
-                                   focus:ring-emerald-500/10"
-                        ></textarea>
-
-                        @error('seoDescription')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        {{-- ==================================================
-             RIGHT SIDEBAR
-        =================================================== --}}
-        <aside class="space-y-6">
-            {{-- Publish settings --}}
-            <section
-                class="rounded-2xl
-                       border border-zinc-200
-                       bg-white shadow-sm"
-            >
-                <div
-                    class="border-b border-zinc-200
-                           px-5 py-4"
-                >
-                    <h2
-                        class="font-bold
-                               text-zinc-900"
-                    >
-                        Article Settings
-                    </h2>
-                </div>
-
-                <div class="space-y-5 p-5">
-                    {{-- Category --}}
-                    <div>
-                        <label
-                            for="news-category-id"
-                            class="mb-2 block
-                                   text-sm font-semibold
-                                   text-zinc-800"
-                        >
-                            Category
-                            <span class="text-red-600">
-                                *
-                            </span>
-                        </label>
-
-                        <select
-                            id="news-category-id"
-                            wire:model="categoryId"
-                            class="w-full rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm"
-                        >
-                            <option value="">
-                                Select category
-                            </option>
-
-                            @foreach ($categories as $categoryOption)
-                                <option
-                                    value="{{ $categoryOption->id }}"
-                                >
-                                    {{ $categoryOption->name }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        @error('categoryId')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-
-                        @if ($categories->isEmpty())
-                            <p
-                                class="mt-2 text-xs
-                                       font-medium text-amber-700"
-                            >
-                                No active categories are available.
-                            </p>
-                        @endif
-                    </div>
-
-                    {{-- Planned date --}}
-                    <div>
-                        <label
-                            for="news-published-at"
-                            class="mb-2 block
-                                   text-sm font-semibold
-                                   text-zinc-800"
-                        >
-                            Planned Publication
-                        </label>
-
-                        <input
-                            id="news-published-at"
-                            type="datetime-local"
-                            wire:model="publishedAt"
-                            class="w-full rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm"
-                        >
-
-                        <p
-                            class="mt-2 text-xs
-                                   leading-5 text-zinc-500"
-                        >
-                            This does not publish the article.
-                            The workflow controls publication.
-                        </p>
-
-                        @error('publishedAt')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    {{-- Featured --}}
-                    <label
-                        class="flex cursor-pointer
-                               items-start gap-3
-                               rounded-xl
-                               border border-zinc-200
-                               bg-zinc-50 p-4"
-                    >
-                        <input
-                            type="checkbox"
-                            wire:model="isFeatured"
-                            class="mt-1 h-4 w-4
-                                   rounded border-zinc-300"
-                        >
-
-                        <span>
-                            <span
-                                class="block text-sm
-                                       font-semibold
-                                       text-zinc-800"
-                            >
-                                Featured Article
-                            </span>
-
-                            <span
-                                class="mt-1 block
-                                       text-xs leading-5
-                                       text-zinc-500"
-                            >
-                                Allow this article to appear
-                                in featured news areas.
-                            </span>
-                        </span>
-                    </label>
-                </div>
-            </section>
-
-            {{-- Main image --}}
-            <section
-                class="rounded-2xl
-                       border border-zinc-200
-                       bg-white shadow-sm"
-            >
-                <div
-                    class="border-b border-zinc-200
-                           px-5 py-4"
-                >
-                    <h2 class="font-bold text-zinc-900">
-                        Main Image
-                    </h2>
-
-                    <p
-                        class="mt-1 text-xs
-                               text-zinc-500"
-                    >
-                        Public Media Library images only.
-                    </p>
-                </div>
-
-                <div class="space-y-4 p-5">
-                    <div>
-                        <label
-                            for="news-featured-image"
-                            class="mb-2 block
-                                   text-sm font-semibold
-                                   text-zinc-800"
-                        >
-                            Featured Image
-                        </label>
-
-                        <select
-                            id="news-featured-image"
-                            wire:model="featuredImageId"
-                            class="w-full rounded-xl
-                                   border border-zinc-300
-                                   bg-white px-4 py-3
-                                   text-sm"
-                        >
-                            <option value="">
-                                No featured image
-                            </option>
-
-                            @foreach ($images as $image)
-                                <option value="{{ $image->id }}">
-                                    #{{ $image->id }}
-                                    —
-                                    {{ $image->title }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        @error('featuredImageId')
-                            <p class="mt-2 text-sm text-red-600">
-                                {{ $message }}
-                            </p>
-                        @enderror
-                    </div>
-
-                    @if ($featuredImageId !== '')
+                    @if ($translationSourceNewsId !== null)
                         @php
-                            $selectedImage = $images->firstWhere(
-                                'id',
-                                (int) $featuredImageId
+                            $selectedLocale = collect($locales)->first(
+                                fn (\App\Enums\NewsLocale $option): bool => $option->value === $locale,
                             );
                         @endphp
 
-                        @if ($selectedImage)
-                            <div
-                                class="rounded-xl
-                                       border border-emerald-200
-                                       bg-emerald-50 p-4"
-                            >
-                                <p
-                                    class="text-xs font-bold
-                                           uppercase tracking-wide
-                                           text-emerald-700"
-                                >
-                                    Selected
-                                </p>
+                        <div class="mt-2 rounded-xl border border-blue-200 bg-blue-50 p-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="rounded-full bg-white px-3 py-1 text-xs font-bold text-blue-800">
+                                    {{ $selectedLocale?->nativeLabel() ?? strtoupper($locale) }}
+                                </span>
 
-                                <p
-                                    class="mt-2 text-sm
-                                           font-semibold
-                                           text-zinc-900"
-                                >
-                                    {{ $selectedImage->title }}
-                                </p>
-
-                                <p
-                                    class="mt-1 text-xs
-                                           text-zinc-500"
-                                >
-                                    {{ $selectedImage->original_name }}
-                                </p>
-
-                                <a
-                                    href="{{ route(
-                                        'admin.media.edit',
-                                        ['media' => $selectedImage->id]
-                                    ) }}"
-                                    target="_blank"
-                                    class="mt-3 inline-flex
-                                           text-xs font-semibold
-                                           text-emerald-700
-                                           hover:text-emerald-800"
-                                >
-                                    View Media →
-                                </a>
+                                <span class="text-sm font-semibold text-blue-950">
+                                    Manual translation of “{{ $translationSourceTitle }}”
+                                </span>
                             </div>
-                        @endif
+
+                            <p class="mt-2 text-xs leading-5 text-blue-800">
+                                Source title, summary and body are not copied. Enter the approved translation manually.
+                            </p>
+                        </div>
+                    @else
+                        <select
+                            wire:model.live="locale"
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                        >
+                            @foreach ($locales as $localeOption)
+                                <option value="{{ $localeOption->value }}">
+                                    {{ $localeOption->label() }} — {{ $localeOption->nativeLabel() }}
+                                </option>
+                            @endforeach
+                        </select>
                     @endif
 
-                    <a
-                        href="{{ route('admin.media.index') }}"
-                        target="_blank"
-                        class="inline-flex text-sm
-                               font-semibold text-emerald-700
-                               hover:text-emerald-800"
-                    >
-                        Open Media Library →
-                    </a>
+                    @error('locale')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
-            </section>
 
-            {{-- Save --}}
-            <section
-                class="rounded-2xl
-                       border border-zinc-200
-                       bg-white p-5 shadow-sm"
+                <div>
+                    <label for="news-title" class="mb-2 block text-sm font-semibold text-zinc-800">
+                        News title
+                    </label>
+
+                    <input
+                        id="news-title"
+                        type="text"
+                        wire:model.live.debounce.300ms="title"
+                        placeholder="Example: Annual Training Programme Begins"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                    >
+
+                    @error('title')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="news-category" class="mb-2 block text-sm font-semibold text-zinc-800">
+                        Category
+                    </label>
+
+                    <select
+                        id="news-category"
+                        wire:model="categoryId"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                    >
+                        <option value="">Select category</option>
+
+                        @foreach ($categories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </select>
+
+                    @error('categoryId')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="lg:col-span-2">
+                    <div class="mb-2 flex items-center justify-between gap-3">
+                        <label for="news-slug" class="text-sm font-semibold text-zinc-800">URL slug</label>
+
+                        <button
+                            type="button"
+                            wire:click="regenerateSlug"
+                            class="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
+                        >
+                            Generate from title
+                        </button>
+                    </div>
+
+                    <div class="flex overflow-hidden rounded-xl border border-zinc-300 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
+                        <span class="flex items-center border-r border-zinc-300 bg-zinc-50 px-3 text-sm text-zinc-500">
+                            /{{ $locale }}/news/
+                        </span>
+
+                        <input
+                            id="news-slug"
+                            type="text"
+                            wire:model.live.debounce.300ms="slug"
+                            placeholder="annual-training-programme"
+                            class="min-w-0 flex-1 border-0 bg-white px-4 py-3 text-sm outline-none focus:ring-0"
+                        >
+                    </div>
+
+                    <p class="mt-2 text-xs text-zinc-500">
+                        The same slug may be used in EN, SI and TA because uniqueness is enforced per language.
+                    </p>
+
+                    @error('slug')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="lg:col-span-2">
+                    <label for="news-summary" class="mb-2 block text-sm font-semibold text-zinc-800">
+                        Summary
+                    </label>
+
+                    <textarea
+                        id="news-summary"
+                        wire:model="summary"
+                        rows="3"
+                        maxlength="2000"
+                        placeholder="Short summary shown in news listings."
+                        class="w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                    ></textarea>
+
+                    @error('summary')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div class="border-b border-zinc-200 px-6 py-5">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 class="font-bold text-zinc-950">News content</h2>
+                        <p class="mt-1 text-sm text-zinc-600">
+                            Use the Word-like Visual Editor or switch to HTML + Tailwind for advanced layouts.
+                        </p>
+                    </div>
+
+                    <span class="w-fit rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                        Visual + Code
+                    </span>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <x-forms.page-content-editor
+                    id="news-content"
+                    model="content"
+                    mode-model="editorMode"
+                    :value="$content"
+                    :editor-mode="$editorMode"
+                />
+
+                @error('content')
+                    <p class="mt-3 text-sm font-medium text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+        </section>
+
+
+        <section class="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div class="border-b border-zinc-200 px-6 py-5">
+                <h2 class="font-bold text-zinc-950">Article images</h2>
+                <p class="mt-1 text-sm text-zinc-600">
+                    Upload multiple images for this article. They are shown after the Body in a four-column grid on desktop.
+                </p>
+            </div>
+
+            <div class="p-6">
+                @if (auth()->user()?->can('media.upload') && auth()->user()?->can('news.update'))
+                    <label for="news-gallery-uploads" class="mb-2 block text-sm font-semibold text-zinc-800">
+                        Upload images
+                    </label>
+
+                    <input
+                        id="news-gallery-uploads"
+                        type="file"
+                        wire:model="galleryUploads"
+                        multiple
+                        accept="image/jpeg,image/png,image/webp"
+                        class="block w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-zinc-700 hover:file:bg-zinc-200"
+                    >
+
+                    <p class="mt-2 text-xs leading-5 text-zinc-500">
+                        Select up to 20 images at once. Maximum 8 MB per image. Selected files are uploaded to the Public Media Library when the draft is saved.
+                    </p>
+
+                    <div wire:loading wire:target="galleryUploads" class="mt-3 text-sm font-semibold text-blue-700">
+                        Preparing selected images...
+                    </div>
+
+                    @if ($galleryUploads !== [])
+                        <div class="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                            <p class="text-sm font-semibold text-zinc-900">
+                                Selected images ({{ count($galleryUploads) }})
+                            </p>
+
+                            <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                                @foreach ($galleryUploads as $upload)
+                                    <figure class="overflow-hidden rounded-lg border border-zinc-200 bg-white">
+                                        <div class="aspect-[4/3] overflow-hidden bg-zinc-100">
+                                            <img
+                                                src="{{ $upload->temporaryUrl() }}"
+                                                alt="Selected news image"
+                                                class="h-full w-full object-cover"
+                                            >
+                                        </div>
+
+                                        <figcaption class="truncate px-3 py-2 text-xs font-medium text-zinc-600">
+                                            {{ $upload->getClientOriginalName() }}
+                                        </figcaption>
+                                    </figure>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @error('galleryUploads')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+
+                    @error('galleryUploads.*')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                @else
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Multiple image upload requires both News Update and Media Upload permissions.
+                    </div>
+                @endif
+            </div>
+        </section>
+
+        <section class="rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div class="border-b border-zinc-200 px-6 py-5">
+                <h2 class="font-bold text-zinc-950">Image & publication options</h2>
+            </div>
+
+            <div class="grid gap-5 p-6 lg:grid-cols-2">
+                <div>
+                    <label for="featured-image" class="mb-2 block text-sm font-semibold text-zinc-800">
+                        Featured image
+                    </label>
+
+                    <select
+                        id="featured-image"
+                        wire:model="featuredImageId"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                    >
+                        <option value="">No featured image</option>
+
+                        @foreach ($images as $image)
+                            <option value="{{ $image->id }}">
+                                {{ $image->title ?: $image->original_name }} (#{{ $image->id }})
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <p class="mt-2 text-xs text-zinc-500">Only Public images from Media Library are listed.</p>
+
+                    @error('featuredImageId')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="published-at" class="mb-2 block text-sm font-semibold text-zinc-800">
+                        Publication date/time
+                    </label>
+
+                    <input
+                        id="published-at"
+                        type="datetime-local"
+                        wire:model="publishedAt"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
+                    >
+
+                    <p class="mt-2 text-xs text-zinc-500">
+                        Optional. If blank, Publish uses the current time. A future value schedules public visibility.
+                    </p>
+
+                    @error('publishedAt')
+                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <label class="lg:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                    <input
+                        type="checkbox"
+                        wire:model="isFeatured"
+                        class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-700 focus:ring-emerald-500"
+                    >
+
+                    <span>
+                        <span class="block text-sm font-semibold text-zinc-900">Featured news article</span>
+                        <span class="mt-1 block text-xs leading-5 text-zinc-500">Featured articles may be prioritised on the public news listing.</span>
+                    </span>
+                </label>
+            </div>
+        </section>
+
+        <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+            <a
+                href="{{ route('admin.news.index') }}"
+                wire:navigate
+                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
             >
-                <div
-                    class="rounded-xl
-                           bg-blue-50 p-4"
-                >
-                    <p
-                        class="text-sm font-semibold
-                               text-blue-800"
-                    >
-                        Draft only
-                    </p>
+                Cancel
+            </a>
 
-                    <p
-                        class="mt-1 text-xs
-                               leading-5 text-blue-700"
-                    >
-                        Creating this article will not
-                        make it publicly visible.
-                    </p>
-                </div>
-
-                <button
-                    type="submit"
-                    wire:loading.attr="disabled"
-                    wire:target="save"
-                    class="mt-4 inline-flex w-full
-                           items-center justify-center
-                           rounded-xl bg-emerald-700
-                           px-5 py-3
-                           text-sm font-bold
-                           text-white
-                           transition
-                           hover:bg-emerald-800
-                           disabled:cursor-not-allowed
-                           disabled:opacity-60"
-                >
-                    <span
-                        wire:loading.remove
-                        wire:target="save"
-                    >
-                        Save Draft
-                    </span>
-
-                    <span
-                        wire:loading
-                        wire:target="save"
-                    >
-                        Saving...
-                    </span>
-                </button>
-
-                <a
-                    href="{{ route('admin.news.index') }}"
-                    wire:navigate
-                    class="mt-3 inline-flex w-full
-                           items-center justify-center
-                           rounded-xl border
-                           border-zinc-300
-                           bg-white px-5 py-3
-                           text-sm font-semibold
-                           text-zinc-700
-                           transition
-                           hover:bg-zinc-50"
-                >
-                    Cancel
-                </a>
-            </section>
-        </aside>
+            <button
+                type="submit"
+                wire:loading.attr="disabled"
+                wire:target="save"
+                class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+                <span wire:loading.remove wire:target="save">Save Draft</span>
+                <span wire:loading wire:target="save">Saving...</span>
+            </button>
+        </div>
     </form>
 </div>

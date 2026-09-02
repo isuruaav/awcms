@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PageEditorMode;
 use App\Enums\PageStatus;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,8 @@ final class PageRevision extends Model
     {
         return [
             'blocks' => 'array',
+            'show_title' => 'boolean',
+            'editor_mode' => PageEditorMode::class,
             'status' => PageStatus::class,
             'robots_index' => 'boolean',
             'created_at' => 'immutable_datetime',

@@ -2,8 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\PageEditorMode;
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Services\ContentSanitizer;
+use App\Services\PageHtmlSanitizer;
 use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 final class Page extends Model
 {
@@ -33,6 +37,9 @@ final class Page extends Model
     {
         return [
             'blocks' => 'array',
+            'locale' => PageLocale::class,
+            'show_title' => 'boolean',
+            'editor_mode' => PageEditorMode::class,
             'status' => PageStatus::class,
             'robots_index' => 'boolean',
             'submitted_at' => 'immutable_datetime',
@@ -52,6 +59,18 @@ final class Page extends Model
         )->orderByDesc(
             'revision_number',
         );
+    }
+
+    /**
+     * @return HasMany<Page, $this>
+     */
+    public function translationVersions(): HasMany
+    {
+        return $this->hasMany(
+            self::class,
+            'translation_group',
+            'translation_group',
+        )->orderBy('locale');
     }
 
     /**
@@ -105,21 +124,69 @@ final class Page extends Model
             : null;
     }
 
-    public function setContentAttribute(mixed $value): void
+    protected static function booted(): void
     {
-        $rawContent = is_string($value)
-            ? $value
-            : null;
+        self::creating(
+            function (Page $page): void {
+                $attributes = $page->getAttributes();
 
-        $content = app(
-            ContentSanitizer::class,
-        )->sanitize(
-            $rawContent,
+                $rawLocale = $attributes['locale'] ?? null;
+
+                if (! is_string($rawLocale) || PageLocale::tryFrom($rawLocale) === null) {
+                    $page->setAttribute(
+                        'locale',
+                        PageLocale::English->value,
+                    );
+                }
+
+                $translationGroup = $attributes['translation_group'] ?? null;
+
+                if (! is_string($translationGroup) || trim($translationGroup) === '') {
+                    $page->setAttribute(
+                        'translation_group',
+                        (string) Str::uuid(),
+                    );
+                }
+            },
         );
 
-        $this->attributes['content'] = $content !== ''
-            ? $content
-            : null;
+        self::saving(
+            function (Page $page): void {
+                $attributes = $page->getAttributes();
+
+                $rawContent = $attributes['content'] ?? null;
+
+                $content = is_string($rawContent)
+                    ? $rawContent
+                    : null;
+
+                $rawEditorMode = $attributes['editor_mode'] ?? null;
+
+                $editorMode = is_string($rawEditorMode)
+                    ? $rawEditorMode
+                    : PageEditorMode::Html->value;
+
+                $sanitizer = app(
+                    PageHtmlSanitizer::class,
+                );
+
+                $cleanContent = $editorMode === PageEditorMode::Visual->value
+                    ? $sanitizer->sanitizeVisual(
+                        $content,
+                    )
+                    : $sanitizer->sanitize(
+                        $content,
+                    );
+
+                $attributes['content'] = $cleanContent !== ''
+                    ? $cleanContent
+                    : null;
+
+                $page->setRawAttributes(
+                    $attributes,
+                );
+            },
+        );
     }
 
     /**

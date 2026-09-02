@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\PageEditorMode;
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
 use App\Services\PageBlockSanitizer;
+use App\Services\PageHtmlSanitizer;
 use App\Services\PageRevisionService;
 use App\Support\PageBlockFactory;
 use App\Support\PageSlugger;
@@ -17,6 +20,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 final class PageCreate extends Component
@@ -28,6 +32,21 @@ final class PageCreate extends Component
     public string $excerpt = '';
 
     public string $content = '';
+
+    public string $locale = PageLocale::English->value;
+
+    #[Locked]
+    public string $translationGroup = '';
+
+    #[Locked]
+    public ?int $translationSourcePageId = null;
+
+    #[Locked]
+    public string $translationSourceTitle = '';
+
+    public string $editorMode = PageEditorMode::Visual->value;
+
+    public bool $showTitle = true;
 
     /**
      * @var list<array<string, mixed>>
@@ -50,11 +69,90 @@ final class PageCreate extends Component
 
     public bool $slugManuallyEdited = false;
 
-    public function mount(): void
-    {
+    public function mount(
+        ?int $pageId = null,
+        ?string $locale = null,
+    ): void {
         Gate::authorize(
             'pages.create',
         );
+
+        if ($pageId === null) {
+            $this->translationGroup = (string) Str::uuid();
+
+            return;
+        }
+
+        $page = Page::query()->findOrFail(
+            $pageId,
+        );
+
+        $targetLocale = is_string($locale)
+            ? PageLocale::tryFrom($locale)
+            : null;
+
+        abort_unless(
+            $targetLocale instanceof PageLocale,
+            404,
+        );
+
+        $rawSourceLocale = $page->getRawOriginal('locale');
+
+        $sourceLocale = is_string($rawSourceLocale)
+            ? PageLocale::tryFrom($rawSourceLocale)
+            : null;
+
+        $sourceLocale ??= PageLocale::English;
+
+        abort_if(
+            $sourceLocale === $targetLocale,
+            409,
+            'That language version already exists.',
+        );
+
+        $translationGroup = $page->getAttribute(
+            'translation_group',
+        );
+
+        abort_unless(
+            is_string($translationGroup)
+                && trim($translationGroup) !== '',
+            409,
+            'The source page does not have a translation group.',
+        );
+
+        $existing = Page::withTrashed()
+            ->where(
+                'translation_group',
+                $translationGroup,
+            )
+            ->where(
+                'locale',
+                $targetLocale->value,
+            )
+            ->exists();
+
+        abort_if(
+            $existing,
+            409,
+            'That language version already exists.',
+        );
+
+        $this->locale = $targetLocale->value;
+        $this->translationGroup = $translationGroup;
+        $this->translationSourcePageId = (int) $page->id;
+        $this->translationSourceTitle = (string) $page->title;
+
+        /*
+         * Translation content is intentionally not copied or translated.
+         * The operator must enter the approved wording manually.
+         */
+        $this->title = '';
+        $this->slug = '';
+        $this->excerpt = '';
+        $this->content = '';
+        $this->editorMode = PageEditorMode::Visual->value;
+        $this->showTitle = true;
     }
 
     public function updatedTitle(): void
@@ -77,6 +175,21 @@ final class PageCreate extends Component
         );
     }
 
+    public function updatedLocale(): void
+    {
+        if ($this->translationSourcePageId !== null) {
+            return;
+        }
+
+        if (PageLocale::tryFrom($this->locale) === null) {
+            $this->locale = PageLocale::English->value;
+        }
+
+        $this->resetValidation(
+            'locale',
+        );
+    }
+
     public function regenerateSlug(): void
     {
         $this->slugManuallyEdited = false;
@@ -87,6 +200,42 @@ final class PageCreate extends Component
 
         $this->resetValidation(
             'slug',
+        );
+    }
+
+    public function setEditorMode(string $mode): void
+    {
+        Gate::authorize(
+            'pages.create',
+        );
+
+        $editorMode = PageEditorMode::tryFrom(
+            $mode,
+        );
+
+        if (! $editorMode instanceof PageEditorMode) {
+            $this->addError(
+                'editorMode',
+                'The selected editor mode is invalid.',
+            );
+
+            return;
+        }
+
+        if ($this->editorMode === $editorMode->value) {
+            return;
+        }
+
+        /*
+         * Both editors use the same canonical HTML content.
+         * The browser UI warns before advanced Tailwind markup is opened
+         * visually, but the server does not duplicate or rewrite content
+         * simply because the preferred editor changes.
+         */
+        $this->editorMode = $editorMode->value;
+
+        $this->resetValidation(
+            'editorMode',
         );
     }
 
@@ -203,6 +352,7 @@ final class PageCreate extends Component
 
         $uniqueSlug = PageSlugger::unique(
             $slugSource,
+            locale: $this->locale,
         );
 
         $page = DB::transaction(
@@ -215,6 +365,10 @@ final class PageCreate extends Component
 
                     'slug' => $uniqueSlug,
 
+                    'locale' => $this->locale,
+
+                    'translation_group' => $this->translationGroup,
+
                     'excerpt' => $this->excerpt !== ''
                         ? $this->excerpt
                         : null,
@@ -222,6 +376,10 @@ final class PageCreate extends Component
                     'content' => $this->content !== ''
                         ? $this->content
                         : null,
+
+                    'editor_mode' => $this->editorMode,
+
+                    'show_title' => $this->showTitle,
 
                     'blocks' => $this->blocks !== []
                         ? $this->blocks
@@ -277,11 +435,21 @@ final class PageCreate extends Component
 
                         'slug' => $page->slug,
 
+                        'locale' => $this->locale,
+
+                        'translation_group' => $this->translationGroup,
+
+                        'translation_source_page_id' => $this->translationSourcePageId,
+
                         'status' => PageStatus::Draft->value,
 
                         'excerpt_present' => $page->excerpt !== null,
 
                         'content_present' => $page->content !== null,
+
+                        'editor_mode' => $this->editorMode,
+
+                        'show_title' => $this->showTitle,
 
                         'blocks_count' => count($this->blocks),
 
@@ -337,6 +505,12 @@ final class PageCreate extends Component
                 'max:255',
             ],
 
+            'locale' => [
+                'required',
+                'string',
+                'in:en,si,ta',
+            ],
+
             'slug' => [
                 'nullable',
                 'string',
@@ -354,6 +528,16 @@ final class PageCreate extends Component
                 'nullable',
                 'string',
                 'max:100000',
+            ],
+
+            'editorMode' => [
+                'required',
+                'string',
+                'in:visual,html',
+            ],
+
+            'showTitle' => [
+                'boolean',
             ],
 
             'blocks' => [
@@ -421,8 +605,11 @@ final class PageCreate extends Component
 
     public function render(): View
     {
+        $locales = PageLocale::cases();
+
         return view(
             'livewire.admin.pages.page-create',
+            compact('locales'),
         )->layout(
             'components.layouts.admin',
             [
@@ -441,6 +628,16 @@ final class PageCreate extends Component
             $this->title,
         );
 
+        $this->locale = match ($this->locale) {
+            PageLocale::Sinhala->value => PageLocale::Sinhala->value,
+            PageLocale::Tamil->value => PageLocale::Tamil->value,
+            default => PageLocale::English->value,
+        };
+
+        if ($this->translationGroup === '') {
+            $this->translationGroup = (string) Str::uuid();
+        }
+
         $this->slug = Str::slug(
             trim($this->slug),
         );
@@ -450,9 +647,17 @@ final class PageCreate extends Component
             500,
         );
 
-        $this->content = $sanitizer->sanitize(
-            $this->content,
+        $pageHtmlSanitizer = app(
+            PageHtmlSanitizer::class,
         );
+
+        $this->content = $this->editorMode === PageEditorMode::Visual->value
+            ? $pageHtmlSanitizer->sanitizeVisual(
+                $this->content,
+            )
+            : $pageHtmlSanitizer->sanitize(
+                $this->content,
+            );
 
         $this->blocks = app(
             PageBlockSanitizer::class,

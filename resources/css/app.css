@@ -3,6 +3,7 @@
 @import 'trix/dist/trix.css';
 
 @source '../views';
+@source '../tailwind/page-content-safelist.html';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
@@ -474,5 +475,334 @@ trix-editor.awcms-editor pre code {
 
     .awcms-content h4 {
         font-size: 1.125rem;
+    }
+}
+/*
+|--------------------------------------------------------------------------
+| AWCMS Page Dual Editor
+|--------------------------------------------------------------------------
+|
+| Word-like visual editing and direct HTML + Tailwind source editing share
+| one canonical page content value.
+|
+*/
+
+.awcms-page-editor-shell {
+    position: relative;
+}
+
+.awcms-page-editor-shell--fullscreen {
+    position: fixed;
+    inset: 0.75rem;
+    z-index: 100;
+
+    overflow: auto;
+
+    border: 1px solid rgb(212 212 216);
+    border-radius: 1rem;
+
+    background: #ffffff;
+
+    padding: 1rem;
+
+    box-shadow: 0 25px 70px rgb(0 0 0 / 0.28);
+}
+
+.awcms-page-editor-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+
+    border: 1px solid rgb(212 212 216);
+    border-radius: 0.75rem;
+
+    background: rgb(250 250 250);
+
+    padding: 0.5rem;
+}
+
+.awcms-page-editor-toolbar-group {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+.awcms-page-editor-button,
+.awcms-page-editor-select,
+.awcms-page-editor-colour {
+    min-height: 2.25rem;
+
+    border: 1px solid rgb(212 212 216);
+    border-radius: 0.5rem;
+
+    background: #ffffff;
+
+    color: rgb(63 63 70);
+
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.awcms-page-editor-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-width: 2.25rem;
+
+    padding: 0.5rem 0.65rem;
+
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+.awcms-page-editor-button:hover,
+.awcms-page-editor-button:focus-visible,
+.awcms-page-editor-select:focus-visible,
+.awcms-page-editor-colour:focus-within {
+    border-color: rgb(16 185 129);
+
+    outline: none;
+
+    box-shadow: 0 0 0 3px rgb(16 185 129 / 0.1);
+}
+
+.awcms-page-editor-select {
+    padding: 0.5rem 2rem 0.5rem 0.65rem;
+}
+
+.awcms-page-editor-colour {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+
+    padding: 0.35rem 0.45rem;
+
+    font-weight: 700;
+
+    cursor: pointer;
+}
+
+.awcms-page-editor-colour input[type='color'] {
+    width: 1.25rem;
+    height: 1.25rem;
+
+    border: 0;
+
+    background: transparent;
+
+    padding: 0;
+
+    cursor: pointer;
+}
+
+.awcms-page-visual-editor {
+    min-height: 30rem;
+
+    overflow: auto;
+
+    border: 1px solid rgb(212 212 216);
+    border-radius: 0.75rem;
+
+    background: #ffffff;
+
+    padding: 1.25rem;
+
+    color: rgb(63 63 70);
+
+    font-size: 1rem;
+    line-height: 1.8;
+
+    outline: none;
+
+    transition:
+        border-color 150ms ease,
+        box-shadow 150ms ease;
+}
+
+.awcms-page-editor-shell--fullscreen .awcms-page-visual-editor {
+    min-height: calc(100vh - 13rem);
+}
+
+.awcms-page-visual-editor:focus {
+    border-color: rgb(16 185 129);
+
+    box-shadow: 0 0 0 4px rgb(16 185 129 / 0.1);
+}
+
+.awcms-page-visual-editor:empty::before {
+    color: rgb(161 161 170);
+
+    content: attr(data-placeholder);
+
+    pointer-events: none;
+}
+
+.awcms-page-visual-editor h1,
+.awcms-content h1 {
+    margin-top: 2.5rem;
+
+    color: rgb(24 24 27);
+
+    font-size: 2.25rem;
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.awcms-page-visual-editor h2 {
+    margin-top: 2.25rem;
+
+    color: rgb(24 24 27);
+
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.25;
+}
+
+.awcms-page-visual-editor h3 {
+    margin-top: 2rem;
+
+    color: rgb(24 24 27);
+
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.awcms-page-visual-editor p {
+    margin: 0.8rem 0;
+}
+
+.awcms-page-visual-editor ul {
+    margin: 1rem 0;
+
+    list-style-type: disc;
+
+    padding-left: 1.75rem;
+}
+
+.awcms-page-visual-editor ol {
+    margin: 1rem 0;
+
+    list-style-type: decimal;
+
+    padding-left: 1.75rem;
+}
+
+.awcms-page-visual-editor blockquote {
+    margin: 1rem 0;
+
+    border-left: 4px solid rgb(16 185 129);
+
+    background: rgb(240 253 250);
+
+    padding: 1rem 1.25rem;
+}
+
+.awcms-page-visual-editor a {
+    color: rgb(4 120 87);
+
+    font-weight: 600;
+
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.awcms-page-visual-editor img {
+    display: block;
+
+    max-width: 100%;
+    height: auto;
+
+    margin: 1.25rem 0;
+
+    border-radius: 0.75rem;
+}
+
+.awcms-page-visual-editor table {
+    width: 100%;
+
+    margin: 1.25rem 0;
+
+    border-collapse: collapse;
+}
+
+.awcms-page-visual-editor th,
+.awcms-page-visual-editor td {
+    border: 1px solid rgb(212 212 216);
+
+    padding: 0.75rem;
+
+    vertical-align: top;
+}
+
+.awcms-page-visual-editor th {
+    background: rgb(250 250 250);
+
+    color: rgb(39 39 42);
+
+    font-weight: 700;
+}
+
+.awcms-page-code-editor {
+    min-height: 32rem;
+    width: 100%;
+
+    resize: vertical;
+
+    border: 1px solid rgb(63 63 70);
+    border-radius: 0.75rem;
+
+    background: rgb(9 9 11);
+
+    padding: 1rem;
+
+    color: rgb(244 244 245);
+
+    font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        'Liberation Mono',
+        'Courier New',
+        monospace;
+
+    font-size: 0.875rem;
+    line-height: 1.6;
+
+    outline: none;
+
+    tab-size: 4;
+}
+
+.awcms-page-editor-shell--fullscreen .awcms-page-code-editor {
+    min-height: calc(100vh - 11rem);
+}
+
+.awcms-page-code-editor:focus {
+    border-color: rgb(16 185 129);
+
+    box-shadow: 0 0 0 4px rgb(16 185 129 / 0.12);
+}
+
+@media (max-width: 640px) {
+    .awcms-page-editor-shell--fullscreen {
+        inset: 0;
+
+        border-radius: 0;
+    }
+
+    .awcms-page-visual-editor,
+    .awcms-page-code-editor {
+        min-height: 24rem;
+    }
+
+    .awcms-page-editor-toolbar-group.ml-auto {
+        margin-left: 0;
     }
 }

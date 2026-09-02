@@ -2,12 +2,15 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\PageEditorMode;
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
 use App\Services\PageBlockSanitizer;
+use App\Services\PageHtmlSanitizer;
 use App\Services\PageRevisionService;
 use App\Support\PageBlockFactory;
 use App\Support\PageSlugger;
@@ -26,6 +29,12 @@ final class PageEdit extends Component
     #[Locked]
     public int $pageId;
 
+    #[Locked]
+    public string $locale = PageLocale::English->value;
+
+    #[Locked]
+    public string $translationGroup = '';
+
     public string $title = '';
 
     public string $slug = '';
@@ -33,6 +42,10 @@ final class PageEdit extends Component
     public string $excerpt = '';
 
     public string $content = '';
+
+    public string $editorMode = PageEditorMode::Html->value;
+
+    public bool $showTitle = true;
 
     /**
      * @var list<array<string, mixed>>
@@ -68,6 +81,21 @@ final class PageEdit extends Component
         $this->pageId =
             (int) $page->id;
 
+        $rawLocale = $page->getRawOriginal('locale');
+        $pageLocale = is_string($rawLocale)
+            ? PageLocale::tryFrom($rawLocale)
+            : null;
+
+        $this->locale = ($pageLocale ?? PageLocale::English)->value;
+
+        $translationGroup = $page->getAttribute(
+            'translation_group',
+        );
+
+        $this->translationGroup = is_string($translationGroup)
+            ? $translationGroup
+            : '';
+
         $this->title =
             (string) $page->title;
 
@@ -83,6 +111,12 @@ final class PageEdit extends Component
             is_string($page->content)
             ? $page->content
             : '';
+
+        $this->editorMode =
+            $this->editorModeOf($page)->value;
+
+        $this->showTitle =
+            (bool) $page->getAttribute('show_title');
 
         $this->blocks =
             $this->pageBlocks(
@@ -155,6 +189,46 @@ final class PageEdit extends Component
 
         $this->resetValidation(
             'slug',
+        );
+    }
+
+    public function setEditorMode(string $mode): void
+    {
+        Gate::authorize(
+            'pages.update',
+        );
+
+        $this->ensureDraftPage(
+            $this->page(),
+        );
+
+        $editorMode = PageEditorMode::tryFrom(
+            $mode,
+        );
+
+        if (! $editorMode instanceof PageEditorMode) {
+            $this->addError(
+                'editorMode',
+                'The selected editor mode is invalid.',
+            );
+
+            return;
+        }
+
+        if ($this->editorMode === $editorMode->value) {
+            return;
+        }
+
+        /*
+         * Both editors use the same canonical HTML content.
+         * The browser UI warns before advanced Tailwind markup is opened
+         * visually, but the server does not duplicate or rewrite content
+         * simply because the preferred editor changes.
+         */
+        $this->editorMode = $editorMode->value;
+
+        $this->resetValidation(
+            'editorMode',
         );
     }
 
@@ -269,6 +343,7 @@ final class PageEdit extends Component
         $uniqueSlug = PageSlugger::unique(
             $slugSource,
             (int) $page->id,
+            $this->locale,
         );
 
         /*
@@ -289,6 +364,12 @@ final class PageEdit extends Component
             is_string($page->content)
             ? $page->content
             : '';
+
+        $oldEditorMode =
+            $this->editorModeOf($page)->value;
+
+        $oldShowTitle =
+            (bool) $page->getAttribute('show_title');
 
         $oldBlocks =
             $this->pageBlocks(
@@ -343,6 +424,12 @@ final class PageEdit extends Component
         $contentChanged =
             $oldContent !== $this->content;
 
+        $editorModeChanged =
+            $oldEditorMode !== $this->editorMode;
+
+        $showTitleChanged =
+            $oldShowTitle !== $this->showTitle;
+
         $blocksChanged =
             $oldBlocks !== $this->blocks;
 
@@ -376,6 +463,8 @@ final class PageEdit extends Component
             || $slugChanged
             || $excerptChanged
             || $contentChanged
+            || $editorModeChanged
+            || $showTitleChanged
             || $blocksChanged
             || $seoTitleChanged
             || $metaDescriptionChanged
@@ -403,6 +492,8 @@ final class PageEdit extends Component
                 $oldSlug,
                 $oldExcerpt,
                 $oldContent,
+                $oldEditorMode,
+                $oldShowTitle,
                 $oldBlocks,
                 $oldSeoTitle,
                 $oldMetaDescription,
@@ -415,6 +506,8 @@ final class PageEdit extends Component
                 $slugChanged,
                 $excerptChanged,
                 $contentChanged,
+                $editorModeChanged,
+                $showTitleChanged,
                 $blocksChanged,
                 $seoTitleChanged,
                 $metaDescriptionChanged,
@@ -436,6 +529,10 @@ final class PageEdit extends Component
                     'content' => $this->content !== ''
                         ? $this->content
                         : null,
+
+                    'editor_mode' => $this->editorMode,
+
+                    'show_title' => $this->showTitle,
 
                     'blocks' => $this->blocks !== []
                         ? $this->blocks
@@ -520,6 +617,22 @@ final class PageEdit extends Component
 
                     $newValues['content_changed'] =
                         true;
+                }
+
+                if ($editorModeChanged) {
+                    $oldValues['editor_mode'] =
+                        $oldEditorMode;
+
+                    $newValues['editor_mode'] =
+                        $this->editorMode;
+                }
+
+                if ($showTitleChanged) {
+                    $oldValues['show_title'] =
+                        $oldShowTitle;
+
+                    $newValues['show_title'] =
+                        $this->showTitle;
                 }
 
                 if ($blocksChanged) {
@@ -649,6 +762,9 @@ final class PageEdit extends Component
                 Rule::unique(
                     'pages',
                     'slug',
+                )->where(
+                    'locale',
+                    $this->locale,
                 )->ignore(
                     $this->pageId,
                 ),
@@ -664,6 +780,16 @@ final class PageEdit extends Component
                 'nullable',
                 'string',
                 'max:100000',
+            ],
+
+            'editorMode' => [
+                'required',
+                'string',
+                'in:visual,html',
+            ],
+
+            'showTitle' => [
+                'boolean',
             ],
 
             'blocks' => [
@@ -734,10 +860,23 @@ final class PageEdit extends Component
     public function render(): View
     {
         $page = $this->page();
+        $locales = PageLocale::cases();
+
+        $translations = Page::withTrashed()
+            ->where(
+                'translation_group',
+                $this->translationGroup,
+            )
+            ->orderBy('locale')
+            ->get();
 
         return view(
             'livewire.admin.pages.page-edit',
-            compact('page'),
+            compact(
+                'page',
+                'locales',
+                'translations',
+            ),
         )->layout(
             'components.layouts.admin',
             [
@@ -786,9 +925,17 @@ final class PageEdit extends Component
             500,
         );
 
-        $this->content = $sanitizer->sanitize(
-            $this->content,
+        $pageHtmlSanitizer = app(
+            PageHtmlSanitizer::class,
         );
+
+        $this->content = $this->editorMode === PageEditorMode::Visual->value
+            ? $pageHtmlSanitizer->sanitizeVisual(
+                $this->content,
+            )
+            : $pageHtmlSanitizer->sanitize(
+                $this->content,
+            );
 
         $this->blocks = app(
             PageBlockSanitizer::class,
@@ -825,6 +972,21 @@ final class PageEdit extends Component
         $this->ogImage = trim(
             $this->ogImage,
         );
+    }
+
+    private function editorModeOf(Page $page): PageEditorMode
+    {
+        $editorMode = $page->getRawOriginal(
+            'editor_mode',
+        );
+
+        if (! is_string($editorMode)) {
+            return PageEditorMode::Html;
+        }
+
+        return PageEditorMode::tryFrom(
+            $editorMode,
+        ) ?? PageEditorMode::Html;
     }
 
     private function swapBlocks(

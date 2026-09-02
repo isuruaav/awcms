@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Page;
-use App\Services\ContentSanitizer;
 use App\Services\PageBlockRenderer;
+use App\Services\PageHtmlSanitizer;
 use App\Support\PageSeo;
 use Illuminate\Contracts\View\View;
 
@@ -15,7 +15,7 @@ final class PagePreviewController extends Controller
         Page $page,
     ): View {
         $safeContent = app(
-            ContentSanitizer::class,
+            PageHtmlSanitizer::class,
         )->sanitize(
             is_string($page->content)
                 ? $page->content

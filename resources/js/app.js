@@ -1,3 +1,4 @@
+import './page-content-editor.js';
 import Trix from 'trix';
 
 /*

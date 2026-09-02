@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Pages;
 
+use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
@@ -24,6 +25,7 @@ final class PageIndex extends Component
      */
     private const SORTABLE_FIELDS = [
         'title',
+        'locale',
         'status',
         'updated_at',
         'published_at',
@@ -45,6 +47,9 @@ final class PageIndex extends Component
 
     #[Url(except: 'all')]
     public string $status = 'all';
+
+    #[Url(except: 'all')]
+    public string $locale = 'all';
 
     #[Url(as: 'sort', except: 'updated_at')]
     public string $sortField = 'updated_at';
@@ -75,6 +80,12 @@ final class PageIndex extends Component
         $this->resetPage();
     }
 
+    public function updatedLocale(): void
+    {
+        $this->normaliseLocale();
+        $this->resetPage();
+    }
+
     public function updatedRecordState(): void
     {
         $this->normaliseRecordState();
@@ -91,6 +102,7 @@ final class PageIndex extends Component
     {
         $this->search = '';
         $this->status = 'all';
+        $this->locale = 'all';
         $this->sortField = 'updated_at';
         $this->sortDirection = 'desc';
         $this->recordState = 'active';
@@ -155,7 +167,7 @@ final class PageIndex extends Component
     {
         $page = Page::query()->findOrFail($pageId);
 
-        app(PageWorkflowService::class)->publish(
+        app(PageWorkflowService::class)->publishImmediately(
             $page,
             $this->actor(),
         );
@@ -163,6 +175,21 @@ final class PageIndex extends Component
         session()->flash(
             'status',
             "{$page->title} was published.",
+        );
+    }
+
+    public function unpublishPage(int $pageId): void
+    {
+        $page = Page::query()->findOrFail($pageId);
+
+        app(PageWorkflowService::class)->unpublish(
+            $page,
+            $this->actor(),
+        );
+
+        session()->flash(
+            'status',
+            "{$page->title} was unpublished and returned to Draft.",
         );
     }
 
@@ -244,6 +271,7 @@ final class PageIndex extends Component
             'creator:id,name',
             'updater:id,name',
             'approver:id,name',
+            'translationVersions',
         ]);
 
         $search = trim($this->search);
@@ -271,6 +299,13 @@ final class PageIndex extends Component
             );
         }
 
+        if ($this->locale !== 'all') {
+            $query->where(
+                'locale',
+                $this->locale,
+            );
+        }
+
         if ($this->status !== 'all') {
             $query->where(
                 'status',
@@ -286,12 +321,14 @@ final class PageIndex extends Component
             ->paginate($this->perPage);
 
         $statuses = PageStatus::cases();
+        $locales = PageLocale::cases();
 
         return view(
             'livewire.admin.pages.page-index',
             compact(
                 'pages',
                 'statuses',
+                'locales',
             ),
         )->layout(
             'components.layouts.admin',
@@ -307,6 +344,7 @@ final class PageIndex extends Component
         $this->sortDirection = $this->normalisedSortDirection();
 
         $this->normaliseStatus();
+        $this->normaliseLocale();
         $this->normaliseRecordState();
         $this->normalisePerPage();
     }
@@ -324,6 +362,17 @@ final class PageIndex extends Component
 
         if (! in_array($this->status, $validStatuses, true)) {
             $this->status = 'all';
+        }
+    }
+
+    private function normaliseLocale(): void
+    {
+        if ($this->locale === 'all') {
+            return;
+        }
+
+        if (! in_array($this->locale, PageLocale::values(), true)) {
+            $this->locale = 'all';
         }
     }
 
