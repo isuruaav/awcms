@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Menus;
 
+use App\Enums\MenuLocale;
 use App\Models\Document;
 use App\Models\Gallery;
 use App\Models\Menu;
@@ -35,9 +36,17 @@ final class MenuIndex extends Component
 
     public string $label = '';
 
+    public string $sinhalaLabel = '';
+
+    public string $tamilLabel = '';
+
     public string $type = 'url';
 
     public string $url = '';
+
+    public string $sinhalaUrl = '';
+
+    public string $tamilUrl = '';
 
     public string $routeName = '';
 
@@ -134,8 +143,12 @@ final class MenuIndex extends Component
     {
         $this->validate([
             'label' => ['required', 'string', 'max:150'],
+            'sinhalaLabel' => ['nullable', 'string', 'max:150'],
+            'tamilLabel' => ['nullable', 'string', 'max:150'],
             'type' => ['required', 'in:url,route,page,news,gallery,document'],
             'url' => ['nullable', 'string', 'max:2048'],
+            'sinhalaUrl' => ['nullable', 'string', 'max:2048'],
+            'tamilUrl' => ['nullable', 'string', 'max:2048'],
             'routeName' => ['nullable', 'string', 'max:150'],
             'referenceId' => ['nullable', 'integer', 'min:1'],
             'parentId' => ['nullable', 'integer', 'min:1'],
@@ -158,6 +171,10 @@ final class MenuIndex extends Component
                 parentId: $this->parentId,
                 openInNewTab: $this->openInNewTab,
                 isActive: $this->itemIsActive,
+                sinhalaLabel: $this->sinhalaLabel,
+                tamilLabel: $this->tamilLabel,
+                sinhalaUrl: $this->sinhalaUrl !== '' ? $this->sinhalaUrl : null,
+                tamilUrl: $this->tamilUrl !== '' ? $this->tamilUrl : null,
             );
 
             session()->flash('status', 'Menu item added successfully.');
@@ -177,6 +194,10 @@ final class MenuIndex extends Component
                 parentId: $this->parentId,
                 openInNewTab: $this->openInNewTab,
                 isActive: $this->itemIsActive,
+                sinhalaLabel: $this->sinhalaLabel,
+                tamilLabel: $this->tamilLabel,
+                sinhalaUrl: $this->sinhalaUrl !== '' ? $this->sinhalaUrl : null,
+                tamilUrl: $this->tamilUrl !== '' ? $this->tamilUrl : null,
             );
 
             session()->flash('status', 'Menu item updated successfully.');
@@ -191,13 +212,31 @@ final class MenuIndex extends Component
 
         $menu = $this->selectedMenu();
         $item = MenuItem::query()
+            ->with('translations')
             ->where('menu_id', $menu->id)
             ->findOrFail($itemId);
 
         $this->editingItemId = $item->id;
         $this->label = $item->label;
+        $this->sinhalaLabel = $item->labelForLocale('si') === $item->label ? '' : $item->labelForLocale('si');
+        $this->tamilLabel = $item->labelForLocale('ta') === $item->label ? '' : $item->labelForLocale('ta');
         $this->type = $item->type;
         $this->url = $item->url ?? '';
+        $sinhalaUrl = $item->translations()
+            ->where('locale', MenuLocale::Sinhala->value)
+            ->value('url');
+
+        $tamilUrl = $item->translations()
+            ->where('locale', MenuLocale::Tamil->value)
+            ->value('url');
+
+        $this->sinhalaUrl = is_string($sinhalaUrl)
+            ? $sinhalaUrl
+            : '';
+
+        $this->tamilUrl = is_string($tamilUrl)
+            ? $tamilUrl
+            : '';
         $this->routeName = $item->route_name ?? '';
         $this->referenceId = $item->reference_id;
         $this->parentId = $item->parent_id;
@@ -264,7 +303,7 @@ final class MenuIndex extends Component
 
         $selected = $this->selectedMenuId !== null
             ? Menu::query()
-                ->with(['rootItems.children'])
+                ->with(['rootItems.translations', 'rootItems.children.translations'])
                 ->find($this->selectedMenuId)
             : null;
 
@@ -275,11 +314,13 @@ final class MenuIndex extends Component
                 'selectedMenu' => $selected,
                 'pages' => Page::query()
                     ->published()
+                    ->where('locale', 'en')
                     ->orderBy('title')
                     ->limit(200)
                     ->get(['id', 'title']),
                 'newsItems' => News::query()
                     ->published()
+                    ->where('locale', 'en')
                     ->latest('published_at')
                     ->limit(200)
                     ->get(['id', 'title']),
@@ -317,8 +358,12 @@ final class MenuIndex extends Component
     {
         $this->editingItemId = null;
         $this->label = '';
+        $this->sinhalaLabel = '';
+        $this->tamilLabel = '';
         $this->type = 'url';
         $this->url = '';
+        $this->sinhalaUrl = '';
+        $this->tamilUrl = '';
         $this->routeName = '';
         $this->referenceId = null;
         $this->parentId = null;

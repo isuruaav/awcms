@@ -115,21 +115,14 @@ final class PublicNewsController extends Controller
                     'active' => $activeLocale === $localeOption->value,
                     'available' => $translation instanceof News,
                     'url' => $translation instanceof News
-                        ? ($localeOption === NewsLocale::English
-                            ? route(
-                                'news.show',
-                                [
-                                    'slug' => $translation->slug,
-                                ],
-                            )
-                            : route(
-                                'news.show.localized',
-                                [
-                                    'locale' => $localeOption->value,
-                                    'slug' => $translation->slug,
-                                ],
-                            ))
-                        : null,
+    ? route(
+        'news.show.localized',
+        [
+            'locale' => $localeOption->value,
+            'slug' => $translation->slug,
+        ],
+    )
+    : null,
                 ];
             },
             NewsLocale::cases(),

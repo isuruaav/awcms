@@ -37,9 +37,9 @@
                 @if($primaryMenu)
                     @foreach($primaryMenu->rootItems->where('is_active', true) as $item)
                         @if($item->children->where('is_active', true)->isNotEmpty())
-                            <div class="group relative"><a href="{{ $item->resolvedUrl() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="inline-flex rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">{{ $item->label }} ▾</a><div class="invisible absolute left-0 top-full z-50 min-w-56 rounded-xl border border-zinc-200 bg-white p-2 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">@foreach($item->children->where('is_active', true) as $child)<a href="{{ $child->resolvedUrl() }}" @if($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="block rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">{{ $child->label }}</a>@endforeach</div></div>
+                            <div class="group relative"><a href="{{ $item->resolvedUrl() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="inline-flex rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">{{ $item->labelForLocale() }} ▾</a><div class="invisible absolute left-0 top-full z-50 min-w-56 rounded-xl border border-zinc-200 bg-white p-2 opacity-0 shadow-xl transition group-hover:visible group-hover:opacity-100">@foreach($item->children->where('is_active', true) as $child)<a href="{{ $child->resolvedUrl() }}" @if($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="block rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">{{ $child->labelForLocale() }}</a>@endforeach</div></div>
                         @else
-                            <a href="{{ $item->resolvedUrl() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">{{ $item->label }}</a>
+                            <a href="{{ $item->resolvedUrl() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-100">{{ $item->labelForLocale() }}</a>
                         @endif
                     @endforeach
                 @else
@@ -58,8 +58,8 @@
             <nav class="mx-auto grid max-w-7xl gap-1">
                 @if($primaryMenu)
                     @foreach($primaryMenu->rootItems->where('is_active', true) as $item)
-                        <a href="{{ $item->resolvedUrl() }}" class="rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700">{{ $item->label }}</a>
-                        @foreach($item->children->where('is_active', true) as $child)<a href="{{ $child->resolvedUrl() }}" class="ml-5 rounded-lg px-3 py-2 text-sm text-zinc-600">— {{ $child->label }}</a>@endforeach
+                        <a href="{{ $item->resolvedUrl() }}" @if($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="rounded-lg px-3 py-2 text-sm font-semibold text-zinc-700">{{ $item->labelForLocale() }}</a>
+                        @foreach($item->children->where('is_active', true) as $child)<a href="{{ $child->resolvedUrl() }}" @if($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="ml-5 rounded-lg px-3 py-2 text-sm text-zinc-600">— {{ $child->labelForLocale() }}</a>@endforeach
                     @endforeach
                 @else
                     <a href="{{ route('home') }}" class="rounded-lg px-3 py-2 text-sm font-semibold">Home</a><a href="{{ route('news.index') }}" class="rounded-lg px-3 py-2 text-sm font-semibold">News</a><a href="{{ route('galleries.index') }}" class="rounded-lg px-3 py-2 text-sm font-semibold">Galleries</a><a href="{{ route('documents.index') }}" class="rounded-lg px-3 py-2 text-sm font-semibold">Documents</a><a href="{{ route('contact.create') }}" class="rounded-lg px-3 py-2 text-sm font-semibold">Contact</a>

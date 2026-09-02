@@ -173,7 +173,7 @@ class AppServiceProvider extends ServiceProvider
                 ? Menu::query()
                     ->active()
                     ->where('location', 'primary')
-                    ->with(['rootItems.children'])
+                    ->with(['rootItems.translations', 'rootItems.children.translations'])
                     ->first()
                 : null;
 

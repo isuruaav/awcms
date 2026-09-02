@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Menu;
 use App\Models\MenuItem;
+use App\Models\MenuItemTranslation;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -83,12 +84,20 @@ final class MenuService
         ?int $parentId,
         bool $openInNewTab,
         bool $isActive,
+        ?string $sinhalaLabel = null,
+        ?string $tamilLabel = null,
+        ?string $sinhalaUrl = null,
+        ?string $tamilUrl = null,
     ): MenuItem {
         Gate::forUser($actor)->authorize('menus.manage');
         $label = $this->cleanText($label, 150, 'label', 'Menu item label');
         $type = in_array($type, ['url', 'route', 'page', 'news', 'gallery', 'document'], true) ? $type : 'url';
         $url = $this->nullableUrl($url);
         $routeName = $this->nullableText($routeName, 150);
+        $sinhalaLabel = $this->nullableText($sinhalaLabel, 150);
+        $tamilLabel = $this->nullableText($tamilLabel, 150);
+        $sinhalaUrl = $this->nullableUrl($sinhalaUrl);
+        $tamilUrl = $this->nullableUrl($tamilUrl);
 
         if ($type === 'url' && $url === null) {
             throw ValidationException::withMessages(['url' => 'A URL is required for URL menu items.']);
@@ -113,7 +122,7 @@ final class MenuService
             }
         }
 
-        return DB::transaction(function () use ($menu, $actor, $label, $type, $url, $routeName, $referenceId, $parentId, $openInNewTab, $isActive): MenuItem {
+        return DB::transaction(function () use ($menu, $actor, $label, $type, $url, $routeName, $referenceId, $parentId, $openInNewTab, $isActive, $sinhalaLabel, $tamilLabel, $sinhalaUrl, $tamilUrl): MenuItem {
             $nextOrder = (int) MenuItem::query()
                 ->where('menu_id', $menu->id)
                 ->where('parent_id', $parentId)
@@ -134,12 +143,21 @@ final class MenuService
                 'updated_by' => $actor->id,
             ]);
 
+            $this->syncTranslations($item, $label, $url, $sinhalaLabel, $tamilLabel, $sinhalaUrl, $tamilUrl);
+
             app(AuditLogger::class)->log(
                 event: 'menus.item-created',
                 description: 'A menu item was created.',
                 actor: $actor,
                 subject: $item,
-                newValues: ['menu_id' => $menu->id, 'label' => $label, 'type' => $type, 'parent_id' => $parentId],
+                newValues: [
+                    'menu_id' => $menu->id,
+                    'label' => $label,
+                    'label_si' => $sinhalaLabel,
+                    'label_ta' => $tamilLabel,
+                    'type' => $type,
+                    'parent_id' => $parentId,
+                ],
             );
 
             return $item->refresh();
@@ -157,12 +175,20 @@ final class MenuService
         ?int $parentId,
         bool $openInNewTab,
         bool $isActive,
+        ?string $sinhalaLabel = null,
+        ?string $tamilLabel = null,
+        ?string $sinhalaUrl = null,
+        ?string $tamilUrl = null,
     ): MenuItem {
         Gate::forUser($actor)->authorize('menus.manage');
         $label = $this->cleanText($label, 150, 'label', 'Menu item label');
         $type = in_array($type, ['url', 'route', 'page', 'news', 'gallery', 'document'], true) ? $type : 'url';
         $url = $this->nullableUrl($url);
         $routeName = $this->nullableText($routeName, 150);
+        $sinhalaLabel = $this->nullableText($sinhalaLabel, 150);
+        $tamilLabel = $this->nullableText($tamilLabel, 150);
+        $sinhalaUrl = $this->nullableUrl($sinhalaUrl);
+        $tamilUrl = $this->nullableUrl($tamilUrl);
 
         if ($type === 'url' && $url === null) {
             throw ValidationException::withMessages(['url' => 'A URL is required for URL menu items.']);
@@ -199,9 +225,12 @@ final class MenuService
             }
         }
 
-        return DB::transaction(function () use ($item, $actor, $label, $type, $url, $routeName, $referenceId, $parentId, $openInNewTab, $isActive): MenuItem {
+        return DB::transaction(function () use ($item, $actor, $label, $type, $url, $routeName, $referenceId, $parentId, $openInNewTab, $isActive, $sinhalaLabel, $tamilLabel, $sinhalaUrl, $tamilUrl): MenuItem {
             $locked = MenuItem::query()->lockForUpdate()->findOrFail($item->id);
+            $locked->load('translations');
             $old = $locked->only(['label', 'type', 'url', 'route_name', 'reference_id', 'parent_id', 'open_in_new_tab', 'is_active']);
+            $old['label_si'] = $locked->labelForLocale('si');
+            $old['label_ta'] = $locked->labelForLocale('ta');
 
             if ($locked->parent_id !== $parentId) {
                 $locked->sort_order = ((int) MenuItem::query()
@@ -222,13 +251,18 @@ final class MenuService
                 'updated_by' => $actor->id,
             ])->save();
 
+            $this->syncTranslations($locked, $label, $url, $sinhalaLabel, $tamilLabel, $sinhalaUrl, $tamilUrl);
+
             app(AuditLogger::class)->log(
                 event: 'menus.item-updated',
                 description: 'A menu item was updated.',
                 actor: $actor,
                 subject: $locked,
                 oldValues: $old,
-                newValues: $locked->only(['label', 'type', 'url', 'route_name', 'reference_id', 'parent_id', 'open_in_new_tab', 'is_active']),
+                newValues: array_merge(
+                    $locked->only(['label', 'type', 'url', 'route_name', 'reference_id', 'parent_id', 'open_in_new_tab', 'is_active']),
+                    ['label_si' => $sinhalaLabel, 'label_ta' => $tamilLabel],
+                ),
             );
 
             return $locked->refresh();
@@ -356,6 +390,40 @@ final class MenuService
         }
 
         return $value;
+    }
+
+    private function syncTranslations(
+        MenuItem $item,
+        string $englishLabel,
+        ?string $englishUrl,
+        ?string $sinhalaLabel,
+        ?string $tamilLabel,
+        ?string $sinhalaUrl,
+        ?string $tamilUrl,
+    ): void {
+        $translations = [
+            'en' => ['label' => $englishLabel, 'url' => $englishUrl],
+            'si' => ['label' => $sinhalaLabel, 'url' => $sinhalaUrl],
+            'ta' => ['label' => $tamilLabel, 'url' => $tamilUrl],
+        ];
+
+        foreach ($translations as $locale => $values) {
+            $label = $values['label'];
+
+            if (! is_string($label) || trim($label) === '') {
+                MenuItemTranslation::query()
+                    ->where('menu_item_id', $item->id)
+                    ->where('locale', $locale)
+                    ->delete();
+
+                continue;
+            }
+
+            MenuItemTranslation::query()->updateOrCreate(
+                ['menu_item_id' => $item->id, 'locale' => $locale],
+                ['label' => $label, 'url' => $values['url']],
+            );
+        }
     }
 
     private function nullableText(?string $value, int $max): ?string

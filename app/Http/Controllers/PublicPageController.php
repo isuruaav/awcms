@@ -156,21 +156,14 @@ final class PublicPageController extends Controller
                     'active' => $activeLocale === $localeOption->value,
                     'available' => $translation instanceof Page,
                     'url' => $translation instanceof Page
-                        ? ($localeOption === PageLocale::English
-                            ? route(
-                                'pages.show',
-                                [
-                                    'slug' => $translation->slug,
-                                ],
-                            )
-                            : route(
-                                'pages.show.localized',
-                                [
-                                    'locale' => $localeOption->value,
-                                    'slug' => $translation->slug,
-                                ],
-                            ))
-                        : null,
+    ? route(
+        'pages.show.localized',
+        [
+            'locale' => $localeOption->value,
+            'slug' => $translation->slug,
+        ],
+    )
+    : null,
                 ];
             },
             PageLocale::cases(),

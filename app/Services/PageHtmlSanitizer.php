@@ -83,12 +83,11 @@ final class PageHtmlSanitizer
                 'Unable to create the page HTML Purifier cache directory.',
             );
         }
-
         $this->htmlPurifier = $this->makePurifier(
             cachePath: $cachePath,
             definitionId: 'awcms-page-tailwind-html',
-            definitionRev: 5,
-            allowVisualStyles: true,
+            definitionRev: 6,
+            allowVisualStyles: false,
         );
 
         $this->visualPurifier = $this->makePurifier(
@@ -345,6 +344,27 @@ final class PageHtmlSanitizer
         );
 
         if ($cleanHtml === '') {
+            return '';
+        }
+
+        $textContent = html_entity_decode(
+            strip_tags($cleanHtml),
+            ENT_QUOTES | ENT_HTML5,
+            'UTF-8',
+        );
+
+        $textContent = str_replace(
+            "\u{00A0}",
+            '',
+            $textContent,
+        );
+
+        $hasMeaningfulMedia = preg_match(
+            '/<(?:img|hr)\b/iu',
+            $cleanHtml,
+        ) === 1;
+
+        if (trim($textContent) === '' && ! $hasMeaningfulMedia) {
             return '';
         }
 

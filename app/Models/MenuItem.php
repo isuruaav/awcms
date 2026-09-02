@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MenuLocale;
 use App\Enums\NewsLocale;
 use App\Enums\PageLocale;
 use Illuminate\Database\Eloquent\Model;
@@ -88,9 +89,37 @@ final class MenuItem extends Model
             ->orderBy('id');
     }
 
-    public function resolvedUrl(): string
+    /** @return HasMany<MenuItemTranslation, $this> */
+    public function translations(): HasMany
     {
+        return $this->hasMany(MenuItemTranslation::class);
+    }
+
+    public function labelForLocale(?string $locale = null): string
+    {
+        $menuLocale = MenuLocale::fromApplicationLocale($locale);
+
+        if ($menuLocale === MenuLocale::English) {
+            return $this->label;
+        }
+
+        $translation = $this->translations
+            ->first(static fn (MenuItemTranslation $candidate): bool => $candidate->locale === $menuLocale);
+
+        return $translation instanceof MenuItemTranslation && trim($translation->label) !== ''
+            ? $translation->label
+            : $this->label;
+    }
+
+    public function resolvedUrl(?string $locale = null): string
+    {
+        $menuLocale = MenuLocale::fromApplicationLocale($locale);
+
         if ($this->type === 'route' && is_string($this->route_name) && $this->route_name !== '') {
+            if ($this->route_name === 'news.index' && $menuLocale !== MenuLocale::English) {
+                return route('news.index.localized', ['locale' => $menuLocale->value]);
+            }
+
             return route($this->route_name);
         }
 
@@ -101,19 +130,18 @@ final class MenuItem extends Model
                 return '#';
             }
 
-            $rawLocale = $page->getRawOriginal('locale');
-            $locale = is_string($rawLocale)
-                ? PageLocale::tryFrom($rawLocale)
-                : null;
-            $locale ??= PageLocale::English;
+            $target = $this->translatedPage($page, $menuLocale);
+            $rawTargetLocale = $target->getRawOriginal('locale');
+            $targetLocale = is_string($rawTargetLocale) ? PageLocale::tryFrom($rawTargetLocale) : null;
+            $targetLocale ??= PageLocale::English;
 
-            return $locale === PageLocale::English
-                ? route('pages.show', ['slug' => $page->slug])
+            return $targetLocale === PageLocale::English
+                ? route('pages.show', ['slug' => $target->slug])
                 : route(
                     'pages.show.localized',
                     [
-                        'locale' => $locale->value,
-                        'slug' => $page->slug,
+                        'locale' => $targetLocale->value,
+                        'slug' => $target->slug,
                     ],
                 );
         }
@@ -125,19 +153,18 @@ final class MenuItem extends Model
                 return '#';
             }
 
-            $rawLocale = $news->getRawOriginal('locale');
-            $locale = is_string($rawLocale)
-                ? NewsLocale::tryFrom($rawLocale)
-                : null;
-            $locale ??= NewsLocale::English;
+            $target = $this->translatedNews($news, $menuLocale);
+            $rawTargetLocale = $target->getRawOriginal('locale');
+            $targetLocale = is_string($rawTargetLocale) ? NewsLocale::tryFrom($rawTargetLocale) : null;
+            $targetLocale ??= NewsLocale::English;
 
-            return $locale === NewsLocale::English
-                ? route('news.show', ['slug' => $news->slug])
+            return $targetLocale === NewsLocale::English
+                ? route('news.show', ['slug' => $target->slug])
                 : route(
                     'news.show.localized',
                     [
-                        'locale' => $locale->value,
-                        'slug' => $news->slug,
+                        'locale' => $targetLocale->value,
+                        'slug' => $target->slug,
                     ],
                 );
         }
@@ -158,8 +185,52 @@ final class MenuItem extends Model
                 : '#';
         }
 
-        return is_string($this->url) && $this->url !== ''
-            ? $this->url
+        $translatedUrl = $this->translatedCustomUrl($menuLocale);
+
+        return $translatedUrl !== null
+            ? $translatedUrl
             : '#';
+    }
+
+    private function translatedCustomUrl(MenuLocale $locale): ?string
+    {
+        if ($locale !== MenuLocale::English) {
+            $translation = $this->translations
+                ->first(static fn (MenuItemTranslation $candidate): bool => $candidate->locale === $locale);
+
+            if ($translation instanceof MenuItemTranslation && is_string($translation->url) && trim($translation->url) !== '') {
+                return $translation->url;
+            }
+        }
+
+        return is_string($this->url) && trim($this->url) !== '' ? $this->url : null;
+    }
+
+    private function translatedPage(Page $page, MenuLocale $locale): Page
+    {
+        $group = $page->getAttribute('translation_group');
+
+        if ($locale === MenuLocale::English || ! is_string($group) || trim($group) === '') {
+            return $page;
+        }
+
+        return Page::query()->published()
+            ->where('translation_group', $group)
+            ->where('locale', $locale->value)
+            ->first() ?? $page;
+    }
+
+    private function translatedNews(News $news, MenuLocale $locale): News
+    {
+        $group = $news->getAttribute('translation_group');
+
+        if ($locale === MenuLocale::English || ! is_string($group) || trim($group) === '') {
+            return $news;
+        }
+
+        return News::query()->published()
+            ->where('translation_group', $group)
+            ->where('locale', $locale->value)
+            ->first() ?? $news;
     }
 }
