@@ -106,6 +106,14 @@
     @endcan
 
 
+    {{-- Header & Footer --}}
+    @can('theme-layouts.manage')
+        <x-admin.nav-link :href="route('admin.theme-layouts.index')" :active="request()->routeIs('admin.theme-layouts.*')">
+            Header &amp; Footer
+        </x-admin.nav-link>
+    @endcan
+
+
     {{-- Site Settings --}}
     @can('settings.manage')
         <x-admin.nav-link :href="route('admin.site-settings.index')" :active="request()->routeIs('admin.site-settings.*')">

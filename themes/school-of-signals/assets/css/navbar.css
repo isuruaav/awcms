@@ -1,0 +1,129 @@
+/* AWCMS dynamic navigation refinements for the School of Signals theme. */
+
+.desktop-nav {
+    flex: 1 1 auto;
+    justify-content: center;
+}
+
+.desktop-nav > a,
+.drop-toggle {
+    white-space: nowrap;
+}
+
+.language-menu {
+    z-index: 30;
+}
+
+.mobile-submenu-link {
+    padding-left: 24px !important;
+    color: var(--muted) !important;
+    font-size: 14px;
+}
+
+.mobile-submenu-link:hover {
+    color: var(--blue-700) !important;
+}
+
+@media (max-width: 1180px) {
+    .desktop-nav > a,
+    .drop-toggle {
+        padding-right: 7px;
+        padding-left: 7px;
+        font-size: 14px;
+    }
+
+    .portal-button {
+        padding-right: 17px;
+        padding-left: 17px;
+    }
+}
+
+@media (max-width: 980px) {
+    .desktop-nav,
+    .portal-button {
+        display: none;
+    }
+
+    .mobile-btn {
+        display: inline-flex;
+    }
+
+    .mobile-language {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 620px) {
+    .topbar-right .motto,
+    .portal-small {
+        display: none;
+    }
+
+    .nav-wrap {
+        min-height: 72px;
+    }
+
+    .brand {
+        min-width: 0;
+    }
+
+    .brand-logo {
+        width: 50px;
+        height: 50px;
+        border-radius: 15px;
+    }
+
+    .brand-logo img {
+        width: 42px;
+        height: 42px;
+    }
+
+    .brand-title {
+        font-size: 18px;
+    }
+
+    .brand-subtitle {
+        font-size: 11px;
+    }
+
+    .language-switch {
+        display: none;
+    }
+
+    .mobile-language {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Managed header language visibility */
+.managed-school-mobile-languages {
+    display: none;
+}
+
+@media (max-width: 980px) {
+    .managed-school-languages {
+        display: none;
+    }
+
+    .managed-school-mobile-languages {
+        display: block;
+        padding: 12px 0;
+    }
+
+    .managed-school-header-actions {
+        flex: 0 0 auto;
+        gap: 0;
+    }
+
+    .cms-mobile-menu-toggle {
+        flex: 0 0 48px;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+    }
+
+    .cms-mobile-menu-toggle-label {
+        display: none;
+    }
+}

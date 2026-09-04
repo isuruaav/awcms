@@ -2,6 +2,7 @@
 /.phpunit.result.cache
 /node_modules
 /public/build
+/public/themes
 /public/hot
 /public/storage
 /storage/*.key

@@ -3,6 +3,7 @@
 @import 'trix/dist/trix.css';
 
 @source '../views';
+@source '../../themes/**/*.blade.php';
 @source '../tailwind/page-content-safelist.html';
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';

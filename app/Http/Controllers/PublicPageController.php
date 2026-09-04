@@ -8,12 +8,18 @@ use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Services\PageBlockRenderer;
 use App\Services\PageHtmlSanitizer;
+use App\Services\ThemeViewResolver;
 use App\Support\PageSeo;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View as ViewFacade;
 
 final class PublicPageController extends Controller
 {
+    public function __construct(
+        private readonly ThemeViewResolver $themeViewResolver,
+    ) {}
+
     public function __invoke(Request $request): View
     {
         $routeSlug = $request->route('slug');
@@ -169,8 +175,7 @@ final class PublicPageController extends Controller
             PageLocale::cases(),
         );
 
-        return view(
-            'pages.show',
+        return $this->pageView(
             [
                 'page' => $page,
 
@@ -219,6 +224,25 @@ final class PublicPageController extends Controller
 
                 'socialMetadata' => true,
             ],
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function pageView(array $data): View
+    {
+        $themeViewPath = $this->themeViewResolver->resolve(
+            'pages.show',
+        );
+
+        if ($themeViewPath === null) {
+            return view('pages.show', $data);
+        }
+
+        return ViewFacade::file(
+            $themeViewPath,
+            $data,
         );
     }
 

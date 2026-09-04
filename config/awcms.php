@@ -14,4 +14,15 @@ return [
         'AWCMS_SUPPORT_EMAIL',
         'support@example.com'
     ),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Active Public Theme
+    |--------------------------------------------------------------------------
+    |
+    | Keep this null to use the default AWCMS public views. Installed themes
+    | are selected by their safe manifest slug, for example school-of-signals.
+    |
+    */
+    'active_theme' => env('AWCMS_ACTIVE_THEME'),
 ];

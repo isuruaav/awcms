@@ -164,29 +164,34 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configurePublicViewData(): void
     {
-        View::composer('layouts.public', function (ViewInstance $view): void {
-            $settings = Schema::hasTable('site_settings')
-                ? SiteSetting::query()->first()
-                : null;
+        View::composer(
+            [
+                'layouts.public',
+                'theme-*::layout',
+            ],
+            function (ViewInstance $view): void {
+                $settings = Schema::hasTable('site_settings')
+                    ? SiteSetting::query()->first()
+                    : null;
 
-            $primaryMenu = Schema::hasTable('menus') && Schema::hasTable('menu_items')
-                ? Menu::query()
-                    ->active()
-                    ->where('location', 'primary')
-                    ->with(['rootItems.translations', 'rootItems.children.translations'])
-                    ->first()
-                : null;
+                $primaryMenu = Schema::hasTable('menus') && Schema::hasTable('menu_items')
+                    ? Menu::query()
+                        ->active()
+                        ->where('location', 'primary')
+                        ->with(['rootItems.translations', 'rootItems.children.translations'])
+                        ->first()
+                    : null;
 
-            $socialLinks = Schema::hasTable('social_links')
-                ? SocialLink::query()->active()->get()
-                : collect();
+                $socialLinks = Schema::hasTable('social_links')
+                    ? SocialLink::query()->active()->get()
+                    : collect();
 
-            $view->with([
-                'siteSettings' => $settings,
-                'primaryMenu' => $primaryMenu,
-                'publicSocialLinks' => $socialLinks,
-            ]);
-        });
+                $view->with([
+                    'siteSettings' => $settings,
+                    'primaryMenu' => $primaryMenu,
+                    'publicSocialLinks' => $socialLinks,
+                ]);
+            });
     }
 
     /**

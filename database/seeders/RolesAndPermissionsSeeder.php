@@ -149,6 +149,7 @@ final class RolesAndPermissionsSeeder extends Seeder
             */
 
             'menus.manage',
+            'theme-layouts.manage',
             'settings.manage',
             'contacts.manage',
             'redirects.manage',
@@ -288,6 +289,7 @@ final class RolesAndPermissionsSeeder extends Seeder
                  * Site Management
                  */
                 'menus.manage',
+                'theme-layouts.manage',
                 'settings.manage',
                 'contacts.manage',
                 'redirects.manage',
