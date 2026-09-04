@@ -8,7 +8,28 @@
         ? $mediaUrls->mediumOrOriginal($siteSettings->logo)
         : $themeAssetBase . '/images/logo.png';
     $faviconUrl = $siteSettings?->favicon ? $mediaUrls->original($siteSettings->favicon) : null;
-    $languageOptions = isset($languageVersions) && is_array($languageVersions) ? $languageVersions : [];
+    $configuredThemeLocales = config('awcms.theme_locales.school-of-signals', ['en', 'si', 'ta']);
+    $supportedThemeLocales = is_array($configuredThemeLocales)
+        ? array_values(
+            array_filter(
+                $configuredThemeLocales,
+                static fn(mixed $locale): bool => is_string($locale) && in_array($locale, ['en', 'si', 'ta'], true),
+            ),
+        )
+        : ['en', 'si', 'ta'];
+    $supportedThemeLocales = $supportedThemeLocales !== [] ? $supportedThemeLocales : ['en'];
+    $languageOptions =
+        isset($languageVersions) && is_array($languageVersions)
+            ? array_values(
+                array_filter(
+                    $languageVersions,
+                    static fn(mixed $language): bool => is_array($language) &&
+                        isset($language['code']) &&
+                        is_string($language['code']) &&
+                        in_array($language['code'], $supportedThemeLocales, true),
+                ),
+            )
+            : [];
     $localeNames = ['en' => 'English', 'si' => 'සිංහල', 'ta' => 'தமிழ்'];
     $themeLayoutRenderer = app(\App\Services\ThemeLayoutRenderer::class);
 

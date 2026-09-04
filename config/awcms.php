@@ -25,4 +25,17 @@ return [
     |
     */
     'active_theme' => env('AWCMS_ACTIVE_THEME'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Theme Locales
+    |--------------------------------------------------------------------------
+    |
+    | AWCMS core supports English, Sinhala and Tamil. Individual themes may
+    | expose only the languages required by that website.
+    |
+    */
+    'theme_locales' => [
+        'school-of-signals' => ['en', 'si'],
+    ],
 ];

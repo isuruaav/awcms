@@ -98,6 +98,7 @@ final class ThemeLayoutRenderer
             '[[language_switcher]]' => $this->languageSwitcher(
                 $languageOptions,
                 $locale,
+                $themeSlug,
             ),
             '[[social_links]]' => $this->socialLinks($socialLinks),
             '[[contact_details]]' => $this->contactDetails($siteSettings),
@@ -295,21 +296,28 @@ final class ThemeLayoutRenderer
     /**
      * @return list<array{code: string, available: true, url: string}>
      */
-    private function homeLanguageOptions(): array
+    private function homeLanguageOptions(string $themeSlug): array
     {
-        $options = [
-            [
+        $supportedLocales = $this->themeLocaleCodes($themeSlug);
+        $options = [];
+
+        if (in_array('en', $supportedLocales, true)) {
+            $options[] = [
                 'code' => 'en',
                 'available' => true,
                 'url' => url('/'),
-            ],
-        ];
+            ];
+        }
 
         if (! Schema::hasTable('pages')) {
             return $options;
         }
 
         foreach (['si', 'ta'] as $locale) {
+            if (! in_array($locale, $supportedLocales, true)) {
+                continue;
+            }
+
             $homePageExists = Page::query()
                 ->published()
                 ->where('locale', $locale)
@@ -339,9 +347,12 @@ final class ThemeLayoutRenderer
     private function languageSwitcher(
         array $languageOptions,
         string $currentLocale,
+        string $themeSlug,
     ): string {
+        $supportedLocales = $this->themeLocaleCodes($themeSlug);
+
         if ($languageOptions === []) {
-            $languageOptions = $this->homeLanguageOptions();
+            $languageOptions = $this->homeLanguageOptions($themeSlug);
         }
 
         $localeNames = [
@@ -367,6 +378,10 @@ final class ThemeLayoutRenderer
                 || ! array_key_exists($code, $localeNames)
                 || ! is_string($url)
             ) {
+                continue;
+            }
+
+            if (! in_array($code, $supportedLocales, true)) {
                 continue;
             }
 
@@ -398,6 +413,37 @@ final class ThemeLayoutRenderer
         return '<nav class="cms-language-switcher" aria-label="Language selection">'
             .$links
             .'</nav>';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function themeLocaleCodes(string $themeSlug): array
+    {
+        $configuredLocales = config(
+            'awcms.theme_locales.'.$themeSlug,
+            ['en', 'si', 'ta'],
+        );
+
+        if (! is_array($configuredLocales)) {
+            return ['en', 'si', 'ta'];
+        }
+
+        $supportedLocales = [];
+
+        foreach ($configuredLocales as $locale) {
+            if (
+                is_string($locale)
+                && in_array($locale, ['en', 'si', 'ta'], true)
+                && ! in_array($locale, $supportedLocales, true)
+            ) {
+                $supportedLocales[] = $locale;
+            }
+        }
+
+        return $supportedLocales !== []
+            ? $supportedLocales
+            : ['en'];
     }
 
     /**

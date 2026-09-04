@@ -25,6 +25,18 @@ Route::get(
     'home',
 );
 
+Route::get(
+    '/{locale}',
+    PublicHomeController::class,
+)
+    ->where(
+        'locale',
+        'en|si|ta',
+    )
+    ->name(
+        'home.localized',
+    );
+
 /*
 |--------------------------------------------------------------------------
 | Public Published Pages

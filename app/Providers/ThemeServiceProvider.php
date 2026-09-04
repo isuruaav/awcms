@@ -11,19 +11,30 @@ final class ThemeServiceProvider extends ServiceProvider
     public function boot(
         ThemeManager $themeManager,
     ): void {
-        foreach ($themeManager->all() as $slug => $theme) {
-            $viewsPath = $themeManager->viewsPath(
-                $slug,
-            );
+        foreach (array_keys($themeManager->all()) as $slug) {
+            $viewsPath = $themeManager->viewsPath($slug);
 
             if ($viewsPath === null) {
                 continue;
             }
 
+            $namespace = 'theme-'.$slug;
+
             View::addNamespace(
-                'theme-'.$slug,
+                $namespace,
                 $viewsPath,
             );
+
+            $translationsPath = dirname($viewsPath)
+                .DIRECTORY_SEPARATOR
+                .'lang';
+
+            if (is_dir($translationsPath)) {
+                $this->loadTranslationsFrom(
+                    $translationsPath,
+                    $namespace,
+                );
+            }
         }
     }
 }
