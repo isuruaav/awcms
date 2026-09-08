@@ -113,6 +113,14 @@
         </x-admin.nav-link>
     @endcan
 
+    {{-- Hero Slider --}}
+    @can('settings.manage')
+        <x-admin.nav-link :href="route('admin.hero-slides.index')" :active="request()->routeIs('admin.hero-slides.*')">
+            Hero Slider
+        </x-admin.nav-link>
+    @endcan
+
+
 
     {{-- Site Settings --}}
     @can('settings.manage')

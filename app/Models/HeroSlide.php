@@ -2,9 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\PageLocale;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
 /**
@@ -19,6 +22,8 @@ use Illuminate\Support\Str;
  * @property int $sort_order
  * @property int|null $created_by
  * @property int|null $updated_by
+ * @property-read MediaAsset|null $image
+ * @property-read Collection<int, HeroSlideTranslation> $translations
  */
 final class HeroSlide extends Model
 {
@@ -56,13 +61,55 @@ final class HeroSlide extends Model
             'image_media_id' => 'integer',
             'is_active' => 'boolean',
             'sort_order' => 'integer',
+            'created_by' => 'integer',
+            'updated_by' => 'integer',
         ];
     }
 
     /** @return BelongsTo<MediaAsset, $this> */
     public function image(): BelongsTo
     {
-        return $this->belongsTo(MediaAsset::class, 'image_media_id');
+        return $this->belongsTo(
+            MediaAsset::class,
+            'image_media_id',
+        );
+    }
+
+    /** @return HasMany<HeroSlideTranslation, $this> */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(
+            HeroSlideTranslation::class,
+        );
+    }
+
+    public function translation(
+        PageLocale|string $locale,
+        bool $fallbackToEnglish = true,
+    ): ?HeroSlideTranslation {
+        $localeCode = $locale instanceof PageLocale
+            ? $locale->value
+            : $locale;
+
+        $translation = $this->translations->first(
+            static fn (HeroSlideTranslation $item): bool => $item->locale->value === $localeCode,
+        );
+
+        if (
+            $translation instanceof HeroSlideTranslation
+            || ! $fallbackToEnglish
+            || $localeCode === PageLocale::English->value
+        ) {
+            return $translation;
+        }
+
+        $englishTranslation = $this->translations->first(
+            static fn (HeroSlideTranslation $item): bool => $item->locale === PageLocale::English,
+        );
+
+        return $englishTranslation instanceof HeroSlideTranslation
+            ? $englishTranslation
+            : null;
     }
 
     /**
@@ -71,6 +118,9 @@ final class HeroSlide extends Model
      */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('is_active', true)->orderBy('sort_order')->orderBy('id');
+        return $query
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id');
     }
 }

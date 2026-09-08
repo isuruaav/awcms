@@ -2,7 +2,6 @@
 
 namespace App\Livewire\Admin\Settings;
 
-use App\Models\HeroSlide;
 use App\Models\MediaAsset;
 use App\Models\SiteSetting;
 use App\Models\SocialLink;
@@ -64,16 +63,6 @@ final class SiteSettingsIndex extends Component
     public string $socialLabel = '';
 
     public string $socialUrl = '';
-
-    public string $slideTitle = '';
-
-    public string $slideSubtitle = '';
-
-    public ?int $slideImageMediaId = null;
-
-    public string $slideButtonLabel = '';
-
-    public string $slideButtonUrl = '';
 
     public function mount(): void
     {
@@ -223,86 +212,6 @@ final class SiteSettingsIndex extends Component
         $link->delete();
     }
 
-    public function addHeroSlide(): void
-    {
-        Gate::authorize('settings.manage');
-
-        $this->validate([
-            'slideTitle' => ['required', 'string', 'max:180'],
-            'slideSubtitle' => ['nullable', 'string', 'max:255'],
-            'slideImageMediaId' => ['nullable', 'integer', 'exists:media_assets,id'],
-            'slideButtonLabel' => ['nullable', 'string', 'max:100'],
-            'slideButtonUrl' => ['nullable', 'string', 'max:2048'],
-        ]);
-
-        $this->assertPublicImage(
-            $this->slideImageMediaId,
-            'slideImageMediaId',
-        );
-
-        $buttonUrl = $this->safeLink(
-            $this->slideButtonUrl,
-            'slideButtonUrl',
-        );
-
-        if (
-            $this->nullable($this->slideButtonLabel) !== null
-            && $buttonUrl === null
-        ) {
-            throw ValidationException::withMessages([
-                'slideButtonUrl' => 'A button URL is required when a button label is provided.',
-            ]);
-        }
-
-        $actor = $this->actor();
-
-        $slide = HeroSlide::query()->create([
-            'title' => trim(strip_tags($this->slideTitle)),
-            'subtitle' => $this->nullable(strip_tags($this->slideSubtitle)),
-            'image_media_id' => $this->slideImageMediaId,
-            'button_label' => $this->nullable(strip_tags($this->slideButtonLabel)),
-            'button_url' => $buttonUrl,
-            'is_active' => true,
-            'sort_order' => ((int) HeroSlide::query()->max('sort_order')) + 10,
-            'created_by' => $actor->id,
-            'updated_by' => $actor->id,
-        ]);
-
-        app(AuditLogger::class)->log(
-            event: 'settings.hero-created',
-            description: 'A hero slide was created.',
-            actor: $actor,
-            subject: $slide,
-        );
-
-        $this->slideTitle = '';
-        $this->slideSubtitle = '';
-        $this->slideButtonLabel = '';
-        $this->slideButtonUrl = '';
-        $this->slideImageMediaId = null;
-
-        session()->flash(
-            'status',
-            'Hero slide added.',
-        );
-    }
-
-    public function deleteHeroSlide(int $id): void
-    {
-        Gate::authorize('settings.manage');
-
-        $slide = HeroSlide::query()->findOrFail($id);
-
-        app(AuditLogger::class)->log(
-            event: 'settings.hero-deleted',
-            description: 'A hero slide was deleted.',
-            actor: $this->actor(),
-            subject: $slide,
-        );
-
-        $slide->delete();
-    }
-
     public function render(): View
     {
         return view(
@@ -315,11 +224,6 @@ final class SiteSettingsIndex extends Component
                     ->limit(200)
                     ->get(),
                 'socialLinks' => SocialLink::query()
-                    ->orderBy('sort_order')
-                    ->orderBy('id')
-                    ->get(),
-                'heroSlides' => HeroSlide::query()
-                    ->with('image')
                     ->orderBy('sort_order')
                     ->orderBy('id')
                     ->get(),
@@ -416,26 +320,6 @@ final class SiteSettingsIndex extends Component
         }
 
         return $value;
-    }
-
-    private function safeLink(
-        string $value,
-        string $field,
-    ): ?string {
-        $value = trim($value);
-
-        if ($value === '') {
-            return null;
-        }
-
-        if (str_starts_with($value, '/')) {
-            return $value;
-        }
-
-        return $this->safeHttpUrl(
-            $value,
-            $field,
-        );
     }
 
     private function actor(): User

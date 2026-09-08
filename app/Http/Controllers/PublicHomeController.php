@@ -32,7 +32,10 @@ final class PublicHomeController
         $slides = Schema::hasTable('hero_slides')
             ? HeroSlide::query()
                 ->active()
-                ->with(['image.variants'])
+                ->with([
+                    'image.variants',
+                    'translations',
+                ])
                 ->get()
             : collect();
 
