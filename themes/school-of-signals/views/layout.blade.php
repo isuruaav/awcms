@@ -177,6 +177,10 @@
                                 href="{{ $currentLocale === 'en' ? route('history.past-commandants') : route('history.past-commandants.localized') }}">
                                 {{ $currentLocale === 'si' ? 'හිටපු සේනාවිධායකවරු' : 'Past Commandants' }}
                             </a>
+                            <a
+                                href="{{ $currentLocale === 'en' ? route('history.past-chief-instructors') : route('history.past-chief-instructors.localized') }}">
+                                {{ $currentLocale === 'si' ? 'හිටපු ප්‍රධාන උපදේශකවරු' : 'Past Chief Instructors' }}
+                            </a>
                             <a href="#">
                                 {{ $currentLocale === 'si' ? 'සුවිශේෂී සන්ධිස්ථාන' : 'Milestones' }}
                             </a>
@@ -262,6 +266,11 @@
                     <a
                         href="{{ $currentLocale === 'en' ? route('history.past-commandants') : route('history.past-commandants.localized') }}">
                         <span>{{ $currentLocale === 'si' ? 'හිටපු සේනාවිධායකවරු' : 'Past Commandants' }}</span>
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
+                    <a
+                        href="{{ $currentLocale === 'en' ? route('history.past-chief-instructors') : route('history.past-chief-instructors.localized') }}">
+                        <span>{{ $currentLocale === 'si' ? 'හිටපු ප්‍රධාන උපදේශකවරු' : 'Past Chief Instructors' }}</span>
                         <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                     </a>
                 </div>

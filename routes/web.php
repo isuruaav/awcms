@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NewsPreviewController;
 use App\Http\Controllers\Admin\PagePreviewController;
+use App\Http\Controllers\PastChiefInstructorController;
 use App\Http\Controllers\PastCommandantController;
 use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicDocumentController;
@@ -290,6 +291,20 @@ Route::get(
 )
     ->defaults('locale', 'si')
     ->name('history.past-commandants.localized');
+
+Route::get(
+    '/en/history/past-chief-instructors',
+    PastChiefInstructorController::class,
+)
+    ->defaults('locale', 'en')
+    ->name('history.past-chief-instructors');
+
+Route::get(
+    '/si/history/past-chief-instructors',
+    PastChiefInstructorController::class,
+)
+    ->defaults('locale', 'si')
+    ->name('history.past-chief-instructors.localized');
 
 /*
 |--------------------------------------------------------------------------
@@ -807,6 +822,13 @@ Route::middleware([
             )
                 ->middleware('can:settings.manage')
                 ->name('past-commandants.index');
+
+            Route::livewire(
+                '/past-chief-instructors',
+                'admin.past-chief-instructors.past-chief-instructor-index',
+            )
+                ->middleware('can:settings.manage')
+                ->name('past-chief-instructors.index');
 
             /*
             |--------------------------------------------------------------------------

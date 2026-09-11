@@ -191,12 +191,12 @@
                     class="btn btn-green"><span>{{ __('theme-school-of-signals::home.about.explore_more') }}</span><i
                         class="fa-solid fa-arrow-right"></i></a>
             </div>
-            <div class="image-frame reveal">
-                <img src="{{ asset('themes/school-of-signals/assets/images/image-placeholder.svg') }}"
+            <div class="reveal">
+                <img src="{{ asset('themes/school-of-signals/assets/images/slsc_about.png') }}"
                     alt="{{ __('theme-school-of-signals::home.about.image_alt') }}">
-                <div class="years-badge">
+                {{-- <div class="years-badge">
                     <strong>{{ __('theme-school-of-signals::home.about.years') }}</strong><span>{{ __('theme-school-of-signals::home.about.years_label') }}</span>
-                </div>
+                </div> --}}
             </div>
         </div>
     </section>

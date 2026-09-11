@@ -134,6 +134,13 @@
         </x-admin.nav-link>
     @endcan
 
+    {{-- Past Chief Instructors --}}
+    @can('settings.manage')
+        <x-admin.nav-link :href="route('admin.past-chief-instructors.index')" :active="request()->routeIs('admin.past-chief-instructors.*')">
+            Past Chief Instructors
+        </x-admin.nav-link>
+    @endcan
+
 
 
     {{-- Site Settings --}}
