@@ -3,11 +3,14 @@
 use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
 use App\Enums\NewsStatus;
+use App\Models\MediaAsset;
 use App\Models\News;
 use App\Models\NewsCategory;
+use App\Models\NewsImage;
 use App\Models\User;
 use App\Services\MediaUploadService;
 use App\Services\NewsArticleService;
+use App\Services\NewsImageService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\UploadedFile;
@@ -26,6 +29,35 @@ beforeEach(function (): void {
     Storage::fake(
         'local',
     );
+});
+
+test('featured image must be selected from the article images', function (): void {
+    $editor = User::factory()->create();
+    $editor->assignRole('Content Editor');
+
+    $news = News::factory()->create([
+        'status' => NewsStatus::Draft->value,
+        'featured_image_id' => null,
+    ]);
+    $media = MediaAsset::factory()->create();
+    $newsImage = NewsImage::query()->create([
+        'news_id' => $news->id,
+        'media_asset_id' => $media->id,
+        'sort_order' => 0,
+    ]);
+
+    app(NewsImageService::class)->setFeaturedImage($newsImage, $editor);
+
+    expect($news->refresh()->featured_image_id)->toBe($media->id);
+
+    app(NewsImageService::class)->clearFeaturedImage($news, $editor);
+
+    expect($news->refresh()->featured_image_id)->toBeNull();
+
+    app(NewsImageService::class)->setFeaturedImage($newsImage, $editor);
+    app(NewsImageService::class)->removeImage($newsImage, $editor);
+
+    expect($news->refresh()->featured_image_id)->toBeNull();
 });
 
 test('content editor can create a draft news article', function (): void {

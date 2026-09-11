@@ -170,11 +170,13 @@
                 <span class="decor"></span><span
                     class="eyebrow">{{ __('theme-school-of-signals::home.about.eyebrow') }}</span>
                 <h2>{{ __('theme-school-of-signals::home.about.title_start') }}
-                    <span>{{ __('theme-school-of-signals::home.about.title_end') }}</span></h2>
+                    <span>{{ __('theme-school-of-signals::home.about.title_end') }}</span>
+                </h2>
                 <p>{{ __('theme-school-of-signals::home.about.paragraph_one') }}</p>
                 <p>{{ __('theme-school-of-signals::home.about.paragraph_two_start') }}
                     <strong>{{ __('theme-school-of-signals::home.about.motto') }}</strong>,
-                    {{ __('theme-school-of-signals::home.about.paragraph_two_end') }}</p>
+                    {{ __('theme-school-of-signals::home.about.paragraph_two_end') }}
+                </p>
                 <div class="about-points">
                     <div class="about-point"><i class="fa-solid fa-check-circle"></i>
                         {{ __('theme-school-of-signals::home.about.discipline') }}</div>
@@ -199,58 +201,90 @@
         </div>
     </section>
 
-    <section class="section white" id="news">
+    <section class="section white" id="news" aria-labelledby="news-section-title">
         <div class="container">
             <div class="section-head reveal">
                 <div>
                     <p class="kicker">{{ __('theme-school-of-signals::home.news.kicker') }}</p>
-                    <h2 class="title-lg">{{ __('theme-school-of-signals::home.news.title') }}</h2>
+                    <h2 class="title-lg" id="news-section-title">
+                        {{ __('theme-school-of-signals::home.news.title') }}</h2>
                 </div>
-                <a class="btn btn-white" href="{{ $newsIndexUrl }}"><i
+                <a class="btn btn-white" href="{{ $newsIndexUrl }}"
+                    aria-label="{{ __('theme-school-of-signals::home.news.all') }}"><i
                         class="fa-solid fa-newspaper"></i><span>{{ __('theme-school-of-signals::home.news.all') }}</span></a>
             </div>
             <div class="news-grid">
                 @forelse ($latestNews as $news)
                     @php($newsImage = $news->featuredImage ? $mediaUrls->mediumOrOriginal($news->featuredImage) : null)
                     <article class="card news-card reveal">
-                        @if ($newsImage)
-                            <img src="{{ $newsImage }}" alt="{{ $news->title }}">
-                        @endif
+                        <div class="news-card-media">
+                            <img src="{{ $newsImage ?: asset('themes/school-of-signals/assets/images/image-placeholder.svg') }}"
+                                alt="{{ $newsImage ? $news->title : '' }}" loading="lazy">
+                        </div>
                         <div class="card-body">
-                            <p class="date">{{ $news->published_at?->format('d M Y') }}</p>
+                            <div class="news-card-meta">
+                                @if ($news->category)
+                                    <span class="news-category">{{ $news->category->name }}</span>
+                                @endif
+                                @if ($news->published_at)
+                                    <time class="date"
+                                        datetime="{{ $news->published_at->toIso8601String() }}">{{ $news->published_at->format('d M Y') }}</time>
+                                @endif
+                            </div>
                             <h3>{{ $news->title }}</h3>
                             @if ($news->summary)
                                 <p>{{ \Illuminate\Support\Str::limit($news->summary, 145) }}</p>
                             @endif
                             <a class="read-more-btn"
-                                href="{{ $homeLocale === 'en' ? route('news.show', ['slug' => $news->slug]) : route('news.show.localized', ['locale' => $homeLocale, 'slug' => $news->slug]) }}"><span>{{ __('theme-school-of-signals::home.news.read_more') }}</span><i
+                                href="{{ $homeLocale === 'en' ? route('news.show', ['slug' => $news->slug]) : route('news.show.localized', ['locale' => $homeLocale, 'slug' => $news->slug]) }}"
+                                aria-label="{{ __('theme-school-of-signals::home.news.read_more') }}: {{ $news->title }}"><span>{{ __('theme-school-of-signals::home.news.read_more') }}</span><i
                                     class="fa-solid fa-arrow-right"></i></a>
                         </div>
                     </article>
                 @empty
-                    <p>{{ __('theme-school-of-signals::home.news.empty') }}</p>
+                    <div class="news-empty">
+                        <i class="fa-regular fa-newspaper" aria-hidden="true"></i>
+                        <p>{{ __('theme-school-of-signals::home.news.empty') }}</p>
+                        <a class="read-more-btn"
+                            href="{{ $newsIndexUrl }}">{{ __('theme-school-of-signals::home.news.all') }}<i
+                                class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
+                    </div>
                 @endforelse
             </div>
         </div>
     </section>
 
-    @if ($settings?->commander_name || $settings?->commander_message)
-        @php($commanderImage = $settings?->commanderImage ? $mediaUrls->mediumOrOriginal($settings->commanderImage) : null)
+    @if ($schoolLeaders->isNotEmpty())
         <section class="section section-soft" id="leadership">
-            <div class="container about-grid">
-                @if ($commanderImage)
-                    <div class="image-frame reveal"><img src="{{ $commanderImage }}"
-                            alt="{{ $settings->commander_name }}"></div>
-                @endif
-                <div class="about-text reveal">
-                    <p class="kicker">{{ __('theme-school-of-signals::home.leadership.kicker') }}</p>
-                    <h2>{{ $settings->commander_name }}</h2>
-                    @if ($settings->commander_title)
-                        <p class="eyebrow">{{ $settings->commander_title }}</p>
-                    @endif
-                    @if ($settings->commander_message)
-                        <p>{!! nl2br(e($settings->commander_message)) !!}</p>
-                    @endif
+            <div class="container">
+                <div class="section-head reveal">
+                    <div>
+                        <p class="kicker">{{ __('theme-school-of-signals::home.leadership.kicker') }}</p>
+                        <h2 class="title-lg">{{ __('theme-school-of-signals::home.leadership.title') }}</h2>
+                    </div>
+                </div>
+
+                <div class="leadership-grid">
+                    @foreach ($schoolLeaders as $leader)
+                        @php($leaderImage = $leader->image ? $mediaUrls->mediumOrOriginal($leader->image) : null)
+                        <article class="card leader-card reveal">
+                            @if ($leaderImage)
+                                <img src="{{ $leaderImage }}"
+                                    alt="{{ $leader->nameForLocale($homeLocale) ?: $leader->titleForLocale($homeLocale) }}"
+                                    loading="lazy">
+                            @else
+                                <div class="leader-placeholder" aria-hidden="true">
+                                    <i class="fa-solid fa-user-tie"></i>
+                                </div>
+                            @endif
+                            <div class="leader-body">
+                                <p class="role">{{ $leader->titleForLocale($homeLocale) }}</p>
+                                @if ($leader->nameForLocale($homeLocale) !== '')
+                                    <h3>{{ $leader->nameForLocale($homeLocale) }}</h3>
+                                @endif
+                            </div>
+                        </article>
+                    @endforeach
                 </div>
             </div>
         </section>
@@ -311,32 +345,81 @@
         </section>
     @endif
 
-    <section class="section contact-section" id="contact-short">
+    <section class="section contact-section school-contact-cta" id="contact-short">
         <div class="container">
-            <div class="section-head reveal">
-                <div>
-                    <p class="kicker" style="color:var(--green-100);">
-                        {{ __('theme-school-of-signals::home.contact.kicker') }}</p>
-                    <h2 class="title-lg" style="color:#fff;">{{ __('theme-school-of-signals::home.contact.title') }}</h2>
+            <div class="school-contact-panel reveal">
+                <div class="school-contact-intro">
+                    <span class="school-contact-icon" aria-hidden="true">
+                        <i class="fa-solid fa-headset"></i>
+                    </span>
+
+                    <div>
+                        <p class="kicker">
+                            {{ __('theme-school-of-signals::home.contact.kicker') }}
+                        </p>
+
+                        <h2 class="title-lg">
+                            {{ __('theme-school-of-signals::home.contact.title') }}
+                        </h2>
+
+                        <p class="school-contact-description">
+                            Contact the School of Signals for official inquiries,
+                            training information and administrative assistance.
+                        </p>
+                    </div>
                 </div>
-                <a class="btn btn-green" href="{{ route('contact.create') }}"><i
-                        class="fa-solid fa-envelope"></i><span>{{ __('theme-school-of-signals::home.contact.button') }}</span></a>
-            </div>
-            <div class="contact-grid reveal">
-                <div class="contact-box">
-                    <h3>{{ $settings?->site_name ?: config('app.name') }}</h3>
+
+                <div class="school-contact-details">
                     @if ($settings?->address)
-                        <div class="contact-row"><i
-                                class="fa-solid fa-location-dot"></i><span>{{ $settings->address }}</span></div>
+                        <a class="school-contact-item" href="{{ $settings->map_url ?: route('contact.create') }}">
+                            <span class="school-contact-item-icon">
+                                <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
+                            </span>
+
+                            <span>
+                                <small>Location</small>
+                                <strong>{{ $settings->address }}</strong>
+                            </span>
+                        </a>
                     @endif
+
                     @if ($settings?->phone_primary)
-                        <div class="contact-row"><i
-                                class="fa-solid fa-phone"></i><span>{{ $settings->phone_primary }}</span></div>
+                        <a class="school-contact-item"
+                            href="tel:{{ preg_replace('/[^0-9+]/', '', $settings->phone_primary) }}">
+                            <span class="school-contact-item-icon">
+                                <i class="fa-solid fa-phone" aria-hidden="true"></i>
+                            </span>
+
+                            <span>
+                                <small>Telephone</small>
+                                <strong>{{ $settings->phone_primary }}</strong>
+                            </span>
+                        </a>
                     @endif
+
                     @if ($settings?->email)
-                        <div class="contact-row"><i class="fa-solid fa-envelope"></i><span>{{ $settings->email }}</span>
-                        </div>
+                        <a class="school-contact-item" href="mailto:{{ $settings->email }}">
+                            <span class="school-contact-item-icon">
+                                <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                            </span>
+
+                            <span>
+                                <small>Email Address</small>
+                                <strong>{{ $settings->email }}</strong>
+                            </span>
+                        </a>
                     @endif
+                </div>
+
+                <div class="school-contact-action">
+                    <p>Need further assistance?</p>
+
+                    <a class="btn btn-green" href="{{ route('contact.create') }}">
+                        <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
+                        <span>
+                            {{ __('theme-school-of-signals::home.contact.button') }}
+                        </span>
+                    </a>
                 </div>
             </div>
         </div>

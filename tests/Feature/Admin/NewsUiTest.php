@@ -3,8 +3,10 @@
 use App\Enums\NewsStatus;
 use App\Livewire\Admin\News\NewsCreate;
 use App\Livewire\Admin\News\NewsEdit;
+use App\Models\MediaAsset;
 use App\Models\News;
 use App\Models\NewsCategory;
+use App\Models\NewsImage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -255,6 +257,36 @@ test(
             ->toBe(
                 NewsStatus::Draft,
             );
+    },
+);
+
+test(
+    'selected featured image remains after saving the draft',
+    function (): void {
+        $user = newsUser([
+            'admin.access',
+            'news.view',
+            'news.update',
+        ]);
+
+        $news = News::factory()->create([
+            'status' => NewsStatus::Draft,
+            'featured_image_id' => null,
+        ]);
+        $media = MediaAsset::factory()->create();
+        $newsImage = NewsImage::query()->create([
+            'news_id' => $news->id,
+            'media_asset_id' => $media->id,
+            'sort_order' => 0,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test(NewsEdit::class, ['news' => $news])
+            ->call('selectFeaturedImage', $newsImage->id)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        expect($news->refresh()->featured_image_id)->toBe($media->id);
     },
 );
 

@@ -62,7 +62,9 @@ return [
     ],
 
     'leadership' => [
-        'kicker' => 'Leadership Message',
+        'kicker' => 'Our Leadership',
+        'title' => 'School Leadership',
+        'description' => 'Meet the leadership of the School of Signals.',
     ],
 
     'galleries' => [

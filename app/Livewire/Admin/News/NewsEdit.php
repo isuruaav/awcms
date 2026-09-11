@@ -212,6 +212,44 @@ final class NewsEdit extends Component
         );
     }
 
+    public function selectFeaturedImage(int $newsImageId): void
+    {
+        Gate::authorize('news.update');
+
+        $newsImage = NewsImage::query()
+            ->where('news_id', $this->newsId)
+            ->findOrFail($newsImageId);
+
+        app(NewsImageService::class)->setFeaturedImage(
+            newsImage: $newsImage,
+            actor: $this->actor(),
+        );
+
+        $this->featuredImageId = (string) $newsImage->media_asset_id;
+
+        session()->flash(
+            'status',
+            'Featured image selected.',
+        );
+    }
+
+    public function clearFeaturedImage(): void
+    {
+        Gate::authorize('news.update');
+
+        app(NewsImageService::class)->clearFeaturedImage(
+            news: $this->news(),
+            actor: $this->actor(),
+        );
+
+        $this->featuredImageId = '';
+
+        session()->flash(
+            'status',
+            'Featured image cleared.',
+        );
+    }
+
     /**
      * @return array<string, list<mixed>>
      */

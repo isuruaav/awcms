@@ -62,37 +62,6 @@
 @endsection
 
 @section('content')
-    <div class="border-b border-zinc-200 bg-white">
-        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-            <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Page language
-            </p>
-
-            <nav class="flex flex-wrap items-center gap-2" aria-label="Page languages">
-                @foreach ($themeLanguageVersions as $languageVersion)
-                    @if (($languageVersion['available'] ?? false) && isset($languageVersion['url']) && is_string($languageVersion['url']))
-                        <a href="{{ $languageVersion['url'] }}" hreflang="{{ $languageVersion['code'] }}"
-                            @class([
-                                'rounded-lg border px-3 py-1.5 text-xs font-bold transition',
-                                'border-emerald-700 bg-emerald-700 text-white' =>
-                                    $languageVersion['active'],
-                                'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50' => !$languageVersion[
-                                    'active'
-                                ],
-                            ])>
-                            {{ $languageVersion['native_label'] }}
-                        </a>
-                    @else
-                        <span
-                            class="cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-xs font-bold text-zinc-400"
-                            title="This language version has not been published yet.">
-                            {{ $languageVersion['native_label'] }}
-                        </span>
-                    @endif
-                @endforeach
-            </nav>
-        </div>
-    </div>
 
     <article class="theme-page">
         @if ($page->show_title || $page->excerpt)

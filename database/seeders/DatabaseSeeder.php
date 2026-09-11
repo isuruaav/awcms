@@ -15,6 +15,7 @@ final class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
+            SchoolLeadersSeeder::class,
         ]);
 
         SiteSetting::current();

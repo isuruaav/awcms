@@ -1,119 +1,229 @@
-@extends('layouts.public')
+@extends('theme-school-of-signals::layout')
 
-@section('title', $pageTitle)
-@section('description', $metaDescription)
+@php
+    $currentNewsLocale = $news->locale instanceof \BackedEnum
+        ? $news->locale->value
+        : (string) $news->locale;
 
-@if (is_string($canonicalUrl) && $canonicalUrl !== '')
-    @section('canonical', $canonicalUrl)
-@endif
+    $publicNewsUrl = $currentNewsLocale === 'en'
+        ? route('news.show', ['slug' => $news->slug])
+        : route('news.show.localized', [
+            'locale' => $currentNewsLocale,
+            'slug' => $news->slug,
+        ]);
+
+    $publicNewsIndexUrl = $currentNewsLocale === 'en'
+        ? route('news.index')
+        : route('news.index.localized', ['locale' => $currentNewsLocale]);
+
+    $relatedNewsUrl = static function (\App\Models\News $article) use ($currentNewsLocale): string {
+        return $currentNewsLocale === 'en'
+            ? route('news.show', ['slug' => $article->slug])
+            : route('news.show.localized', [
+                'locale' => $currentNewsLocale,
+                'slug' => $article->slug,
+            ]);
+    };
+@endphp
+
+@section('title', ($news->seo_title ?: $news->title).' | '.config('app.name'))
+@section('description', $news->seo_description ?: ($news->summary ?: $news->title))
+@section('meta_description', $news->seo_description ?: ($news->summary ?: $news->title))
+@section('canonical', $publicNewsUrl)
 
 @section('meta')
-    <meta name="robots" content="{{ $robots }}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{ $news->seo_title ?: $news->title }}">
+    <meta property="og:description" content="{{ $news->seo_description ?: ($news->summary ?: $news->title) }}">
+    <meta property="og:url" content="{{ $publicNewsUrl }}">
 
-    @foreach ($languageVersions as $languageVersion)
-        @if ($languageVersion['available'] && is_string($languageVersion['url']))
-            <link rel="alternate" hreflang="{{ $languageVersion['code'] }}" href="{{ $languageVersion['url'] }}">
-        @endif
-    @endforeach
-
-    @if ($socialMetadata)
-        <meta property="og:type" content="{{ $ogType }}">
-        <meta property="og:title" content="{{ $ogTitle }}">
-        <meta property="og:description" content="{{ $ogDescription }}">
-        <meta property="og:url" content="{{ $ogUrl }}">
-
-        @if (is_string($ogImage) && $ogImage !== '')
-            <meta property="og:image" content="{{ $ogImage }}">
-        @endif
-
-        <meta name="twitter:card" content="{{ $twitterCard }}">
-        <meta name="twitter:title" content="{{ $twitterTitle }}">
-        <meta name="twitter:description" content="{{ $twitterDescription }}">
-
-        @if (is_string($twitterImage) && $twitterImage !== '')
-            <meta name="twitter:image" content="{{ $twitterImage }}">
-        @endif
+    @if (is_string($featuredImageUrl) && $featuredImageUrl !== '')
+        <meta property="og:image" content="{{ $featuredImageUrl }}">
     @endif
 @endsection
 
 @section('content')
-    <div class="border-b border-zinc-200 bg-white">
-        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-            <p class="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                Page language
-            </p>
-
-            <nav class="flex flex-wrap items-center gap-2" aria-label="Page languages">
-                @foreach ($languageVersions as $languageVersion)
-                    @if ($languageVersion['available'] && is_string($languageVersion['url']))
-                        <a
-                            href="{{ $languageVersion['url'] }}"
-                            hreflang="{{ $languageVersion['code'] }}"
-                            @class([
-                                'rounded-lg border px-3 py-1.5 text-xs font-bold transition',
-                                'border-emerald-700 bg-emerald-700 text-white' => $languageVersion['active'],
-                                'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50' => ! $languageVersion['active'],
-                            ])
-                        >
-                            {{ $languageVersion['native_label'] }}
+    <main class="school-news-page">
+        <article class="school-news-article">
+            <header class="school-news-header">
+                <div class="school-news-container">
+                    <div class="school-news-toolbar">
+                        <a href="{{ $publicNewsIndexUrl }}" class="school-news-back">
+                            <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                            <span>All News</span>
                         </a>
-                    @else
-                        <span
-                            class="cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-xs font-bold text-zinc-400"
-                            title="This language version has not been published yet."
-                        >
-                            {{ $languageVersion['native_label'] }}
-                        </span>
-                    @endif
-                @endforeach
-            </nav>
-        </div>
-    </div>
 
-    <article>
-        @if ($page->show_title || $page->excerpt)
-            <header class="mx-auto max-w-5xl px-5 py-12 sm:px-6 lg:px-8 lg:py-16">
-                <div class="border-b border-zinc-200 pb-8">
-                    @if ($page->show_title)
-                        <h1 class="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl lg:text-5xl">
-                            {{ $page->title }}
-                        </h1>
-                    @endif
+                        <nav class="school-news-languages" aria-label="Article language">
+                            @foreach ($languageVersions as $version)
+                                @if (($version['available'] ?? false) === true && is_string($version['url'] ?? null))
+                                    <a
+                                        href="{{ $version['url'] }}"
+                                        hreflang="{{ $version['code'] }}"
+                                        @class([
+                                            'school-news-language',
+                                            'active' => ($version['active'] ?? false) === true,
+                                        ])
+                                    >
+                                        {{ $version['native_label'] }}
+                                    </a>
+                                @else
+                                    <span
+                                        class="school-news-language disabled"
+                                        title="This language version has not been published yet."
+                                    >
+                                        {{ $version['native_label'] }}
+                                    </span>
+                                @endif
+                            @endforeach
+                        </nav>
+                    </div>
 
-                    @if ($page->excerpt)
-                        <p class="{{ $page->show_title ? 'mt-5 ' : '' }}max-w-3xl text-lg leading-8 text-zinc-600">
-                            {{ $page->excerpt }}
-                        </p>
+                    <div class="school-news-meta">
+                        @if ($news->category)
+                            <span class="school-news-category">{{ $news->category->name }}</span>
+                        @endif
+
+                        @if ($news->is_featured)
+                            <span class="school-news-featured">
+                                <i class="fa-solid fa-star" aria-hidden="true"></i>
+                                Featured
+                            </span>
+                        @endif
+
+                        @if ($news->published_at)
+                            <time
+                                class="school-news-date"
+                                datetime="{{ $news->published_at->toIso8601String() }}"
+                            >
+                                <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                                {{ $news->published_at->format('d M Y H:i') }}
+                            </time>
+                        @endif
+                    </div>
+
+                    <h1 class="school-news-title">{{ $news->title }}</h1>
+
+                    @if ($news->summary)
+                        <p class="school-news-summary">{{ $news->summary }}</p>
                     @endif
                 </div>
             </header>
-        @endif
 
-        @if ($safeContent !== '')
-            @if ($page->getRawOriginal('editor_mode') === \App\Enums\PageEditorMode::Visual->value)
-                <div
-                    @class([
-                        'mx-auto max-w-5xl px-5 sm:px-6 lg:px-8',
-                        'pb-12 pt-4 lg:pb-16 lg:pt-6' => $page->show_title || $page->excerpt,
-                        'py-12 lg:py-16' => ! ($page->show_title || $page->excerpt),
-                    ])
-                >
-                    <div class="awcms-content">
-                        {!! $safeContent !!}
+            @if ($safeContent !== '')
+                <section class="school-news-body">
+                    <div class="school-news-container">
+                        @if ($news->editor_mode === \App\Enums\NewsEditorMode::Visual)
+                            <div class="school-news-content awcms-content">
+                                {!! $safeContent !!}
+                            </div>
+                        @else
+                            <div class="school-news-content page-html-content">
+                                {!! $safeContent !!}
+                            </div>
+                        @endif
+                    </div>
+                </section>
+            @endif
+
+            @if ($news->images->isNotEmpty())
+                <section class="school-news-gallery-section" aria-labelledby="news-gallery-title">
+                    <div class="school-news-container">
+                        <div class="school-news-section-heading">
+                            <div>
+                                <span class="school-news-section-kicker">Photo Gallery</span>
+                                <h2 id="news-gallery-title">Event Photographs</h2>
+                            </div>
+
+                            <span class="school-news-photo-count">
+                                {{ $news->images->count() }}
+                                {{ $news->images->count() === 1 ? 'Photo' : 'Photos' }}
+                            </span>
+                        </div>
+
+                        <div class="school-news-gallery">
+                            @foreach ($news->images as $newsImage)
+                                @php
+                                    $galleryImageUrl = \App\Http\Controllers\PublicNewsController::imageUrl(
+                                        $newsImage->media,
+                                    );
+
+                                    $galleryAlt = $newsImage->media?->alt_text ?: $news->title;
+                                @endphp
+
+                                @if (is_string($galleryImageUrl) && $galleryImageUrl !== '')
+                                    <figure class="school-news-gallery-item">
+                                        <a
+                                            href="{{ $galleryImageUrl }}"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            aria-label="Open photograph in a new tab"
+                                        >
+                                            <img
+                                                src="{{ $galleryImageUrl }}"
+                                                alt="{{ $galleryAlt }}"
+                                                loading="lazy"
+                                            >
+
+                                            <span class="school-news-image-overlay" aria-hidden="true">
+                                                <i class="fa-solid fa-up-right-and-down-left-from-center"></i>
+                                            </span>
+                                        </a>
+
+                                        @if ($newsImage->media?->caption)
+                                            <figcaption>{{ $newsImage->media->caption }}</figcaption>
+                                        @endif
+                                    </figure>
+                                @endif
+                            @endforeach
+                        </div>
+                    </div>
+                </section>
+            @endif
+        </article>
+
+        @if ($relatedNews->isNotEmpty())
+            <section class="school-related-news" aria-labelledby="related-news-title">
+                <div class="school-news-container">
+                    <div class="school-news-section-heading">
+                        <div>
+                            <span class="school-news-section-kicker">Continue Reading</span>
+                            <h2 id="related-news-title">Related News</h2>
+                        </div>
+
+                        <a href="{{ $publicNewsIndexUrl }}" class="school-news-view-all">
+                            View All News
+                            <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                        </a>
+                    </div>
+
+                    <div class="school-related-news-grid">
+                        @foreach ($relatedNews as $related)
+                            <article class="school-related-news-card">
+                                @if ($related->published_at)
+                                    <time datetime="{{ $related->published_at->toIso8601String() }}">
+                                        <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+                                        {{ $related->published_at->format('d M Y') }}
+                                    </time>
+                                @endif
+
+                                <h3>
+                                    <a href="{{ $relatedNewsUrl($related) }}">
+                                        {{ $related->title }}
+                                    </a>
+                                </h3>
+
+                                <a
+                                    href="{{ $relatedNewsUrl($related) }}"
+                                    class="school-related-news-link"
+                                >
+                                    Read Article
+                                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                                </a>
+                            </article>
+                        @endforeach
                     </div>
                 </div>
-            @else
-                <div class="page-html-content">
-                    {!! $safeContent !!}
-                </div>
-            @endif
+            </section>
         @endif
-
-        {{-- Legacy page blocks remain renderable for existing content, but the builder UI is retired. --}}
-        @if ($pageBlocks !== [])
-            <div class="mx-auto max-w-5xl px-5 pb-12 sm:px-6 lg:px-8 lg:pb-16">
-                <x-page.blocks :blocks="$pageBlocks" />
-            </div>
-        @endif
-    </article>
+    </main>
 @endsection

@@ -120,6 +120,20 @@
         </x-admin.nav-link>
     @endcan
 
+    {{-- School Leadership --}}
+    @can('settings.manage')
+        <x-admin.nav-link :href="route('admin.school-leaders.index')" :active="request()->routeIs('admin.school-leaders.*')">
+            School Leadership
+        </x-admin.nav-link>
+    @endcan
+
+    {{-- Past Commandants --}}
+    @can('settings.manage')
+        <x-admin.nav-link :href="route('admin.past-commandants.index')" :active="request()->routeIs('admin.past-commandants.*')">
+            Past Commandants
+        </x-admin.nav-link>
+    @endcan
+
 
 
     {{-- Site Settings --}}

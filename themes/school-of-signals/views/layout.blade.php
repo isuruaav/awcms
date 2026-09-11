@@ -162,6 +162,26 @@
                             href="{{ $currentLocale === 'en' ? route('news.index') : route('news.index.localized', ['locale' => $currentLocale]) }}">News</a>
                         <a href="{{ route('galleries.index') }}">Gallery</a>
                     @endif
+
+                    <div class="drop">
+                        <a class="drop-toggle"
+                            href="{{ $currentLocale === 'en' ? route('history.past-commandants') : route('history.past-commandants.localized') }}">
+                            {{ $currentLocale === 'si' ? 'ඉතිහාසය' : 'History' }}
+                            <i class="fa-solid fa-chevron-down" aria-hidden="true"></i>
+                        </a>
+                        <div class="dropdown">
+                            <a href="#">
+                                {{ $currentLocale === 'si' ? 'පාසලේ ඉතිහාසය' : 'School History' }}
+                            </a>
+                            <a
+                                href="{{ $currentLocale === 'en' ? route('history.past-commandants') : route('history.past-commandants.localized') }}">
+                                {{ $currentLocale === 'si' ? 'හිටපු සේනාවිධායකවරු' : 'Past Commandants' }}
+                            </a>
+                            <a href="#">
+                                {{ $currentLocale === 'si' ? 'සුවිශේෂී සන්ධිස්ථාන' : 'Milestones' }}
+                            </a>
+                        </div>
+                    </div>
                 </nav>
 
                 <div class="nav-actions">
@@ -238,6 +258,12 @@
                         <a href="{{ route('galleries.index') }}"><span>Gallery</span><i
                                 class="fa-solid fa-arrow-right"></i></a>
                     @endif
+
+                    <a
+                        href="{{ $currentLocale === 'en' ? route('history.past-commandants') : route('history.past-commandants.localized') }}">
+                        <span>{{ $currentLocale === 'si' ? 'හිටපු සේනාවිධායකවරු' : 'Past Commandants' }}</span>
+                        <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                    </a>
                 </div>
             </div>
         </header>

@@ -1,7 +1,9 @@
 <?php
 
 use App\Enums\NewsStatus;
+use App\Models\MediaAsset;
 use App\Models\News;
+use App\Models\NewsImage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -25,6 +27,85 @@ test(
             ->assertSee(
                 'News',
             );
+    },
+);
+
+test(
+    'homepage shows the four newest published news articles for the active locale',
+    function (): void {
+        News::factory()->count(3)->create([
+            'locale' => 'en',
+            'status' => NewsStatus::Published->value,
+            'published_at' => now()->subDays(2),
+            'featured_image_id' => null,
+        ]);
+
+        $newest = News::factory()->create([
+            'title' => 'Newest Homepage Update',
+            'locale' => 'en',
+            'status' => NewsStatus::Published->value,
+            'published_at' => now()->subHour(),
+            'featured_image_id' => null,
+        ]);
+
+        $outsideLimit = News::factory()->create([
+            'locale' => 'en',
+            'status' => NewsStatus::Published->value,
+            'published_at' => now()->subDays(4),
+            'featured_image_id' => null,
+        ]);
+
+        News::factory()->create([
+            'title' => 'Sinhala Homepage Update',
+            'locale' => 'si',
+            'status' => NewsStatus::Published->value,
+            'published_at' => now()->subHour(),
+            'featured_image_id' => null,
+        ]);
+
+        News::factory()->create([
+            'title' => 'Draft Homepage Update',
+            'locale' => 'en',
+            'status' => NewsStatus::Draft->value,
+            'published_at' => now()->subHour(),
+            'featured_image_id' => null,
+        ]);
+
+        $response = $this->get(route('home'));
+
+        $response
+            ->assertOk();
+
+        $latestNews = $response->viewData('latestNews');
+
+        expect($latestNews)
+            ->toHaveCount(4)
+            ->and($latestNews->first()->is($newest))->toBeTrue()
+            ->and($latestNews->pluck('title'))->not->toContain('Sinhala Homepage Update')
+            ->and($latestNews->pluck('title'))->not->toContain('Draft Homepage Update')
+            ->and($latestNews->pluck('title'))->not->toContain($outsideLimit->title);
+    },
+);
+
+test(
+    'homepage renders the selected featured image for published news',
+    function (): void {
+        $media = MediaAsset::factory()->create([
+            'title' => 'Homepage Featured Image',
+            'path' => 'media/news/homepage-featured.jpg',
+        ]);
+
+        News::factory()->create([
+            'title' => 'News With Featured Image',
+            'locale' => 'en',
+            'status' => NewsStatus::Published->value,
+            'published_at' => now()->subHour(),
+            'featured_image_id' => $media->id,
+        ]);
+
+        $this->get(route('home'))
+            ->assertOk()
+            ->assertSee('storage/media/news/homepage-featured.jpg', false);
     },
 );
 
@@ -253,6 +334,49 @@ test(
             ->assertSee(
                 'Public article body content.',
             );
+    },
+);
+
+test(
+    'news detail renders the featured image before the body and all article images after it',
+    function (): void {
+        $featuredImage = MediaAsset::factory()->create([
+            'path' => 'media/news/featured.jpg',
+            'alt_text' => 'Featured news image',
+        ]);
+        $galleryImage = MediaAsset::factory()->create([
+            'path' => 'media/news/gallery.jpg',
+            'alt_text' => 'Gallery news image',
+        ]);
+
+        $news = News::factory()->create([
+            'title' => 'News Detail With Images',
+            'slug' => 'news-detail-with-images',
+            'content' => '<p>NEWS DETAIL BODY</p>',
+            'status' => NewsStatus::Published->value,
+            'published_at' => now()->subHour(),
+            'featured_image_id' => $featuredImage->id,
+        ]);
+
+        NewsImage::query()->create([
+            'news_id' => $news->id,
+            'media_asset_id' => $featuredImage->id,
+            'sort_order' => 0,
+        ]);
+
+        NewsImage::query()->create([
+            'news_id' => $news->id,
+            'media_asset_id' => $galleryImage->id,
+            'sort_order' => 1,
+        ]);
+
+        $this->get(route('news.show', ['slug' => $news->slug]))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'NEWS DETAIL BODY',
+                'storage/media/news/featured.jpg',
+                'storage/media/news/gallery.jpg',
+            ], false);
     },
 );
 

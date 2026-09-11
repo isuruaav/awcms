@@ -1,7 +1,19 @@
-@extends('layouts.public')
+@php
+    $previewLayout = 'layouts.public';
+
+    if (
+        config('awcms.active_theme') === 'school-of-signals'
+        && view()->exists('theme-school-of-signals::layout')
+    ) {
+        $previewLayout = 'theme-school-of-signals::layout';
+    }
+@endphp
+
+@extends($previewLayout)
 
 @section('title', $pageTitle)
 @section('description', $metaDescription)
+@section('meta_description', $metaDescription)
 
 @section('meta')
     <meta name="robots" content="{{ $robots }}">

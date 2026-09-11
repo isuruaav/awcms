@@ -325,6 +325,18 @@ trix-editor.awcms-editor pre code {
     line-height: 1.8;
 }
 
+.news-article-content {
+    max-width: 68rem;
+}
+
+.news-article-content > * + * {
+    margin-top: 0.9rem;
+}
+
+.news-article-content p {
+    line-height: 1.75;
+}
+
 .awcms-content ul {
     list-style-type: disc;
 

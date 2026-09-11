@@ -6,6 +6,7 @@ use App\Models\Document;
 use App\Models\Gallery;
 use App\Models\HeroSlide;
 use App\Models\News;
+use App\Models\SchoolLeader;
 use App\Models\SiteSetting;
 use App\Services\ThemeManager;
 use Illuminate\Contracts\View\View;
@@ -42,10 +43,20 @@ final class PublicHomeController
         $data = [
             'settings' => $settings,
             'slides' => $slides,
+            'schoolLeaders' => Schema::hasTable('school_leaders')
+                ? SchoolLeader::query()
+                    ->active()
+                    ->whereIn('role_key', SchoolLeader::allowedRoles())
+                    ->with('image.variants')
+                    ->get()
+                : collect(),
             'latestNews' => News::query()
                 ->published()
                 ->where('locale', $locale)
-                ->with(['featuredImage.variants'])
+                ->with([
+                    'category',
+                    'featuredImage.variants',
+                ])
                 ->latest('published_at')
                 ->limit(4)
                 ->get(),

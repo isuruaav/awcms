@@ -2,19 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\MediaVariantPreset;
 use App\Enums\NewsEditorMode;
 use App\Enums\NewsLocale;
 use App\Models\MediaAsset;
-use App\Models\MediaVariant;
 use App\Models\News;
+use App\Services\MediaUrlService;
 use App\Services\PageHtmlSanitizer;
+use App\Services\ThemeViewResolver;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\View as ViewFacade;
 
 final class PublicNewsController extends Controller
 {
+    public function __construct(
+        private readonly ThemeViewResolver $themeViewResolver,
+    ) {}
+
     public function index(Request $request): View
     {
         $locale = $this->routeLocale($request);
@@ -32,12 +36,13 @@ final class PublicNewsController extends Controller
             ->orderByDesc('published_at')
             ->paginate(12);
 
-        return view(
-            'public.news.index',
+        return $this->newsView(
+            'index',
             [
                 'news' => $news,
                 'locale' => $locale,
                 'locales' => NewsLocale::cases(),
+                'languageVersions' => $this->indexLanguageVersions(),
             ],
         );
     }
@@ -148,8 +153,8 @@ final class PublicNewsController extends Controller
             ? $sanitizer->sanitizeVisual($rawContent)
             : $sanitizer->sanitize($rawContent);
 
-        return view(
-            'public.news.show',
+        return $this->newsView(
+            'show',
             [
                 'news' => $news,
                 'locale' => $locale,
@@ -165,46 +170,9 @@ final class PublicNewsController extends Controller
 
     public static function imageUrl(?MediaAsset $media): ?string
     {
-        if (
-            ! $media instanceof MediaAsset
-            || $media->trashed()
-            || ! $media->isImage()
-            || ! $media->isPublic()
-        ) {
-            return null;
-        }
-
-        $variant = $media->variants->first(
-            static fn (MediaVariant $variant): bool => $variant->name === MediaVariantPreset::Medium->value,
-        );
-
-        if ($variant instanceof MediaVariant) {
-            $disk = $variant->getAttribute('disk');
-            $path = $variant->getAttribute('path');
-
-            if (
-                is_string($disk)
-                && trim($disk) !== ''
-                && is_string($path)
-                && trim($path) !== ''
-            ) {
-                return Storage::disk($disk)->url($path);
-            }
-        }
-
-        $disk = $media->getAttribute('disk');
-        $path = $media->getAttribute('path');
-
-        if (
-            ! is_string($disk)
-            || trim($disk) === ''
-            || ! is_string($path)
-            || trim($path) === ''
-        ) {
-            return null;
-        }
-
-        return Storage::disk($disk)->url($path);
+        return $media instanceof MediaAsset
+            ? app(MediaUrlService::class)->mediumOrOriginal($media)
+            : null;
     }
 
     private function routeLocale(Request $request): NewsLocale
@@ -223,5 +191,50 @@ final class PublicNewsController extends Controller
         );
 
         return $locale;
+    }
+
+    /**
+     * @return list<array{code: string, available: true, url: string}>
+     */
+    private function indexLanguageVersions(): array
+    {
+        return array_map(
+            static fn (NewsLocale $locale): array => [
+                'code' => $locale->value,
+                'available' => true,
+                'url' => $locale === NewsLocale::English
+                    ? route('news.index')
+                    : route('news.index.localized', ['locale' => $locale->value]),
+            ],
+            NewsLocale::cases(),
+        );
+    }
+
+    /**
+     * @param  'index'|'show'  $view
+     * @param  array<string, mixed>  $data
+     */
+    private function newsView(string $view, array $data): View
+    {
+        $themeViewPath = $this->themeViewResolver->resolve(
+            'news.'.$view,
+        );
+
+        if ($themeViewPath !== null) {
+            return ViewFacade::file(
+                $themeViewPath,
+                $data,
+            );
+        }
+
+        $fallbackView = match ($view) {
+            'index' => 'public.news.index',
+            'show' => 'public.news.show',
+        };
+
+        return view(
+            $fallbackView,
+            $data,
+        );
     }
 }

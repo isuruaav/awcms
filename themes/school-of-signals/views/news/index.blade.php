@@ -3,9 +3,10 @@
 @php
     $currentNewsLocale = $locale->value;
 
-    $publicNewsIndexUrl = $currentNewsLocale === 'en'
-        ? route('news.index')
-        : route('news.index.localized', ['locale' => $currentNewsLocale]);
+    $publicNewsIndexUrl =
+        $currentNewsLocale === 'en'
+            ? route('news.index')
+            : route('news.index.localized', ['locale' => $currentNewsLocale]);
 
     $publicNewsUrl = static function (\App\Models\News $article) use ($currentNewsLocale): string {
         return $currentNewsLocale === 'en'
@@ -17,13 +18,13 @@
     };
 @endphp
 
-@section('title', 'News | '.config('app.name'))
+@section('title', 'News | ' . config('app.name'))
 @section('description', 'Latest published news and official updates.')
 @section('meta_description', 'Latest published news and official updates.')
 @section('canonical', $publicNewsIndexUrl)
 
 @section('content')
-    <main class="school-news-index-page">
+    <div class="school-news-index-page">
         <header class="school-news-index-header">
             <div class="school-news-container school-news-index-header-inner">
                 <div>
@@ -31,23 +32,6 @@
                     <h1>News</h1>
                     <p>Latest published news, announcements and official updates.</p>
                 </div>
-
-                <nav class="school-news-languages" aria-label="News language">
-                    @foreach ($locales as $localeOption)
-                        <a
-                            href="{{ $localeOption === \App\Enums\NewsLocale::English
-                                ? route('news.index')
-                                : route('news.index.localized', ['locale' => $localeOption->value]) }}"
-                            hreflang="{{ $localeOption->value }}"
-                            @class([
-                                'school-news-language',
-                                'active' => $localeOption === $locale,
-                            ])
-                        >
-                            {{ $localeOption->nativeLabel() }}
-                        </a>
-                    @endforeach
-                </nav>
             </div>
         </header>
 
@@ -70,23 +54,16 @@
 
                             <article class="school-news-card">
                                 @if (is_string($imageUrl) && $imageUrl !== '')
-                                    <a
-                                        href="{{ $publicNewsUrl($article) }}"
-                                        class="school-news-card-image"
-                                        aria-label="Read {{ $article->title }}"
-                                    >
-                                        <img
-                                            src="{{ $imageUrl }}"
+                                    <a href="{{ $publicNewsUrl($article) }}" class="school-news-card-image"
+                                        aria-label="Read {{ $article->title }}">
+                                        <img src="{{ $imageUrl }}"
                                             alt="{{ $article->featuredImage?->alt_text ?: $article->title }}"
-                                            loading="lazy"
-                                        >
+                                            loading="lazy">
                                     </a>
                                 @else
-                                    <a
-                                        href="{{ $publicNewsUrl($article) }}"
+                                    <a href="{{ $publicNewsUrl($article) }}"
                                         class="school-news-card-image school-news-card-placeholder"
-                                        aria-label="Read {{ $article->title }}"
-                                    >
+                                        aria-label="Read {{ $article->title }}">
                                         <i class="fa-regular fa-image" aria-hidden="true"></i>
                                     </a>
                                 @endif
@@ -143,5 +120,5 @@
                 @endif
             </div>
         </section>
-    </main>
+    </div>
 @endsection

@@ -14,6 +14,15 @@ final class PagePreviewController extends Controller
     public function __invoke(
         Page $page,
     ): View {
+        $pageLocale = $page->getRawOriginal('locale');
+
+        if (
+            is_string($pageLocale)
+            && in_array($pageLocale, ['en', 'si', 'ta'], true)
+        ) {
+            app()->setLocale($pageLocale);
+        }
+
         $safeContent = app(
             PageHtmlSanitizer::class,
         )->sanitize(
@@ -21,6 +30,8 @@ final class PagePreviewController extends Controller
                 ? $page->content
                 : null,
         );
+
+        // Existing code continues here.
 
         $pageBlocks = app(
             PageBlockRenderer::class,

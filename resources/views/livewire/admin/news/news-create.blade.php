@@ -1,11 +1,8 @@
 <div class="mx-auto max-w-7xl space-y-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-            <a
-                href="{{ route('admin.news.index') }}"
-                wire:navigate
-                class="text-sm font-semibold text-emerald-700 hover:text-emerald-800"
-            >
+            <a href="{{ route('admin.news.index') }}" wire:navigate
+                class="text-sm font-semibold text-emerald-700 hover:text-emerald-800">
                 ← Back to News
             </a>
 
@@ -19,11 +16,8 @@
         </div>
 
         @if ($canManageCategories ?? auth()->user()?->can('news.categories.manage'))
-            <a
-                href="{{ route('admin.news.categories.index') }}"
-                wire:navigate
-                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
-            >
+            <a href="{{ route('admin.news.categories.index') }}" wire:navigate
+                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
                 Manage Categories
             </a>
         @endif
@@ -57,7 +51,7 @@
                     @if ($translationSourceNewsId !== null)
                         @php
                             $selectedLocale = collect($locales)->first(
-                                fn (\App\Enums\NewsLocale $option): bool => $option->value === $locale,
+                                fn(\App\Enums\NewsLocale $option): bool => $option->value === $locale,
                             );
                         @endphp
 
@@ -77,10 +71,8 @@
                             </p>
                         </div>
                     @else
-                        <select
-                            wire:model.live="locale"
-                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                        >
+                        <select wire:model.live="locale"
+                            class="mt-2 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10">
                             @foreach ($locales as $localeOption)
                                 <option value="{{ $localeOption->value }}">
                                     {{ $localeOption->label() }} — {{ $localeOption->nativeLabel() }}
@@ -99,13 +91,9 @@
                         News title
                     </label>
 
-                    <input
-                        id="news-title"
-                        type="text"
-                        wire:model.live.debounce.300ms="title"
+                    <input id="news-title" type="text" wire:model.live.debounce.300ms="title"
                         placeholder="Example: Annual Training Programme Begins"
-                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                    >
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10">
 
                     @error('title')
                         <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
@@ -117,11 +105,8 @@
                         Category
                     </label>
 
-                    <select
-                        id="news-category"
-                        wire:model="categoryId"
-                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                    >
+                    <select id="news-category" wire:model="categoryId"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10">
                         <option value="">Select category</option>
 
                         @foreach ($categories as $category)
@@ -138,27 +123,21 @@
                     <div class="mb-2 flex items-center justify-between gap-3">
                         <label for="news-slug" class="text-sm font-semibold text-zinc-800">URL slug</label>
 
-                        <button
-                            type="button"
-                            wire:click="regenerateSlug"
-                            class="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
-                        >
+                        <button type="button" wire:click="regenerateSlug"
+                            class="text-xs font-semibold text-emerald-700 hover:text-emerald-800">
                             Generate from title
                         </button>
                     </div>
 
-                    <div class="flex overflow-hidden rounded-xl border border-zinc-300 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
+                    <div
+                        class="flex overflow-hidden rounded-xl border border-zinc-300 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/10">
                         <span class="flex items-center border-r border-zinc-300 bg-zinc-50 px-3 text-sm text-zinc-500">
                             /{{ $locale }}/news/
                         </span>
 
-                        <input
-                            id="news-slug"
-                            type="text"
-                            wire:model.live.debounce.300ms="slug"
+                        <input id="news-slug" type="text" wire:model.live.debounce.300ms="slug"
                             placeholder="annual-training-programme"
-                            class="min-w-0 flex-1 border-0 bg-white px-4 py-3 text-sm outline-none focus:ring-0"
-                        >
+                            class="min-w-0 flex-1 border-0 bg-white px-4 py-3 text-sm outline-none focus:ring-0">
                     </div>
 
                     <p class="mt-2 text-xs text-zinc-500">
@@ -175,14 +154,9 @@
                         Summary
                     </label>
 
-                    <textarea
-                        id="news-summary"
-                        wire:model="summary"
-                        rows="3"
-                        maxlength="2000"
+                    <textarea id="news-summary" wire:model="summary" rows="3" maxlength="2000"
                         placeholder="Short summary shown in news listings."
-                        class="w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                    ></textarea>
+                        class="w-full resize-y rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"></textarea>
 
                     @error('summary')
                         <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
@@ -208,13 +182,8 @@
             </div>
 
             <div class="p-6">
-                <x-forms.page-content-editor
-                    id="news-content"
-                    model="content"
-                    mode-model="editorMode"
-                    :value="$content"
-                    :editor-mode="$editorMode"
-                />
+                <x-forms.page-content-editor id="news-content" model="content" mode-model="editorMode" :value="$content"
+                    :editor-mode="$editorMode" />
 
                 @error('content')
                     <p class="mt-3 text-sm font-medium text-red-600">{{ $message }}</p>
@@ -227,7 +196,8 @@
             <div class="border-b border-zinc-200 px-6 py-5">
                 <h2 class="font-bold text-zinc-950">Article images</h2>
                 <p class="mt-1 text-sm text-zinc-600">
-                    Upload multiple images for this article. They are shown after the Body in a four-column grid on desktop.
+                    Upload multiple images for this article. They are shown after the Body in a four-column grid on
+                    desktop.
                 </p>
             </div>
 
@@ -237,17 +207,13 @@
                         Upload images
                     </label>
 
-                    <input
-                        id="news-gallery-uploads"
-                        type="file"
-                        wire:model="galleryUploads"
-                        multiple
+                    <input id="news-gallery-uploads" type="file" wire:model="galleryUploads" multiple
                         accept="image/jpeg,image/png,image/webp"
-                        class="block w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-zinc-700 hover:file:bg-zinc-200"
-                    >
+                        class="block w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm file:mr-4 file:rounded-lg file:border-0 file:bg-zinc-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-zinc-700 hover:file:bg-zinc-200">
 
                     <p class="mt-2 text-xs leading-5 text-zinc-500">
-                        Select up to 20 images at once. Maximum 8 MB per image. Selected files are uploaded to the Public Media Library when the draft is saved.
+                        Select up to 20 images at once. Maximum 8 MB per image. Selected files are uploaded to the
+                        Public Media Library when the draft is saved.
                     </p>
 
                     <div wire:loading wire:target="galleryUploads" class="mt-3 text-sm font-semibold text-blue-700">
@@ -264,11 +230,8 @@
                                 @foreach ($galleryUploads as $upload)
                                     <figure class="overflow-hidden rounded-lg border border-zinc-200 bg-white">
                                         <div class="aspect-[4/3] overflow-hidden bg-zinc-100">
-                                            <img
-                                                src="{{ $upload->temporaryUrl() }}"
-                                                alt="Selected news image"
-                                                class="h-full w-full object-cover"
-                                            >
+                                            <img src="{{ $upload->temporaryUrl() }}" alt="Selected news image"
+                                                class="h-full w-full object-cover">
                                         </div>
 
                                         <figcaption class="truncate px-3 py-2 text-xs font-medium text-zinc-600">
@@ -297,47 +260,17 @@
 
         <section class="rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 px-6 py-5">
-                <h2 class="font-bold text-zinc-950">Image & publication options</h2>
+                <h2 class="font-bold text-zinc-950">Publication options</h2>
             </div>
 
-            <div class="grid gap-5 p-6 lg:grid-cols-2">
-                <div>
-                    <label for="featured-image" class="mb-2 block text-sm font-semibold text-zinc-800">
-                        Featured image
-                    </label>
-
-                    <select
-                        id="featured-image"
-                        wire:model="featuredImageId"
-                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                    >
-                        <option value="">No featured image</option>
-
-                        @foreach ($images as $image)
-                            <option value="{{ $image->id }}">
-                                {{ $image->title ?: $image->original_name }} (#{{ $image->id }})
-                            </option>
-                        @endforeach
-                    </select>
-
-                    <p class="mt-2 text-xs text-zinc-500">Only Public images from Media Library are listed.</p>
-
-                    @error('featuredImageId')
-                        <p class="mt-2 text-sm font-medium text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
+            <div class="grid gap-5 p-6">
                 <div>
                     <label for="published-at" class="mb-2 block text-sm font-semibold text-zinc-800">
                         Publication date/time
                     </label>
 
-                    <input
-                        id="published-at"
-                        type="datetime-local"
-                        wire:model="publishedAt"
-                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10"
-                    >
+                    <input id="published-at" type="datetime-local" wire:model="publishedAt"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10">
 
                     <p class="mt-2 text-xs text-zinc-500">
                         Optional. If blank, Publish uses the current time. A future value schedules public visibility.
@@ -348,36 +281,29 @@
                     @enderror
                 </div>
 
-                <label class="lg:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
-                    <input
-                        type="checkbox"
-                        wire:model="isFeatured"
-                        class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-700 focus:ring-emerald-500"
-                    >
+                <label
+                    class="lg:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+                    <input type="checkbox" wire:model="isFeatured"
+                        class="mt-0.5 h-4 w-4 rounded border-zinc-300 text-emerald-700 focus:ring-emerald-500">
 
                     <span>
                         <span class="block text-sm font-semibold text-zinc-900">Featured news article</span>
-                        <span class="mt-1 block text-xs leading-5 text-zinc-500">Featured articles may be prioritised on the public news listing.</span>
+                        <span class="mt-1 block text-xs leading-5 text-zinc-500">Featured articles may be prioritised
+                            on the public news listing.</span>
                     </span>
                 </label>
             </div>
         </section>
 
-        <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
-            <a
-                href="{{ route('admin.news.index') }}"
-                wire:navigate
-                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
-            >
+        <div
+            class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+            <a href="{{ route('admin.news.index') }}" wire:navigate
+                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
                 Cancel
             </a>
 
-            <button
-                type="submit"
-                wire:loading.attr="disabled"
-                wire:target="save"
-                class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
+            <button type="submit" wire:loading.attr="disabled" wire:target="save"
+                class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
                 <span wire:loading.remove wire:target="save">Save Draft</span>
                 <span wire:loading wire:target="save">Saving...</span>
             </button>

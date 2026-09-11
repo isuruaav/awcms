@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\NewsPreviewController;
 use App\Http\Controllers\Admin\PagePreviewController;
+use App\Http\Controllers\PastCommandantController;
 use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\PublicGalleryController;
@@ -275,6 +276,20 @@ Route::post(
 )
     ->middleware('throttle:5,1')
     ->name('contact.store');
+
+Route::get(
+    '/en/history/past-commandants',
+    PastCommandantController::class,
+)
+    ->defaults('locale', 'en')
+    ->name('history.past-commandants');
+
+Route::get(
+    '/si/history/past-commandants',
+    PastCommandantController::class,
+)
+    ->defaults('locale', 'si')
+    ->name('history.past-commandants.localized');
 
 /*
 |--------------------------------------------------------------------------
@@ -772,6 +787,26 @@ Route::middleware([
             )
                 ->middleware('can:settings.manage')
                 ->name('hero-slides.index');
+
+            /*
+            |--------------------------------------------------------------------------
+            | School Leadership
+            |--------------------------------------------------------------------------
+            */
+
+            Route::livewire(
+                '/school-leaders',
+                'admin.school-leaders.school-leader-index',
+            )
+                ->middleware('can:settings.manage')
+                ->name('school-leaders.index');
+
+            Route::livewire(
+                '/past-commandants',
+                'admin.past-commandants.past-commandant-index',
+            )
+                ->middleware('can:settings.manage')
+                ->name('past-commandants.index');
 
             /*
             |--------------------------------------------------------------------------
