@@ -1,8 +1,12 @@
 @extends('theme-school-of-signals::layout')
 
-@section('title', $settings?->default_seo_title ?: $settings?->site_name ?: config('app.name'))
-@section('meta_description', $settings?->default_seo_description ?: $settings?->site_tagline ?:
-    __('theme-school-of-signals::home.meta_description'))
+@section('title', app()->getLocale() === 'si'
+    ? ($settings?->localized('site_name') ?: config('app.name'))
+    : ($settings?->default_seo_title ?: $settings?->localized('site_name') ?: config('app.name')))
+@section('meta_description', app()->getLocale() === 'si'
+    ? ($settings?->localized('site_tagline') ?: __('theme-school-of-signals::home.meta_description'))
+    : ($settings?->default_seo_description ?: $settings?->localized('site_tagline') ?:
+    __('theme-school-of-signals::home.meta_description')))
 
     @php
         $mediaUrls = app(\App\Services\MediaUrlService::class);
@@ -46,7 +50,7 @@
                                 <span class="badge">
                                     <i class="fa-solid fa-tower-broadcast" aria-hidden="true"></i>
 
-                                    {{ $settings?->site_tagline ?: __('theme-school-of-signals::home.sri_lanka_army') }}
+                                    {{ $settings?->localized('site_tagline') ?: __('theme-school-of-signals::home.sri_lanka_army') }}
                                 </span>
 
                                 @if ($loop->first)
@@ -83,8 +87,8 @@
                             <div class="hero-text reveal">
                                 <span class="badge"><i class="fa-solid fa-tower-broadcast"
                                         aria-hidden="true"></i>{{ __('theme-school-of-signals::home.sri_lanka_army') }}</span>
-                                <h1>{{ $settings?->site_name ?: config('app.name') }}</h1>
-                                <p>{{ $settings?->site_tagline ?: __('theme-school-of-signals::home.hero.fallback_description') }}
+                                <h1>{{ $settings?->localized('site_name') ?: config('app.name') }}</h1>
+                                <p>{{ $settings?->localized('site_tagline') ?: __('theme-school-of-signals::home.hero.fallback_description') }}
                                 </p>
                             </div>
                         </div>
@@ -290,7 +294,7 @@
         </section>
     @endif
 
-    <section class="section" id="media">
+    {{-- <section class="section" id="media">
         <div class="container">
             <div class="section-head reveal">
                 <div>
@@ -317,7 +321,7 @@
                 @endforelse
             </div>
         </div>
-    </section>
+    </section> --}}
 
     @if ($latestDocuments->isNotEmpty())
         <section class="section white" id="documents">
@@ -370,7 +374,7 @@
                 </div>
 
                 <div class="school-contact-details">
-                    @if ($settings?->address)
+                    @if ($settings?->localized('address'))
                         <a class="school-contact-item" href="{{ $settings->map_url ?: route('contact.create') }}">
                             <span class="school-contact-item-icon">
                                 <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
@@ -378,7 +382,7 @@
 
                             <span>
                                 <small>Location</small>
-                                <strong>{{ $settings->address }}</strong>
+                                <strong>{{ $settings->localized('address') }}</strong>
                             </span>
                         </a>
                     @endif

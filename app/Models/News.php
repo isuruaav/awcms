@@ -119,6 +119,7 @@ final class News extends Model
             'editor_mode' => NewsEditorMode::class,
             'status' => NewsStatus::class,
             'is_featured' => 'boolean',
+            'show_in_gallery' => 'boolean',
             'published_at' => 'datetime',
             'submitted_at' => 'datetime',
             'approved_at' => 'datetime',

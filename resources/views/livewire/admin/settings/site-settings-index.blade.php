@@ -2,8 +2,7 @@
     <div>
         <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Site Management</p>
         <h1 class="mt-1 text-2xl font-black text-zinc-950">Site Settings</h1>
-        <p class="mt-1 text-sm text-zinc-500">Manage identity, contact details, theme family, social links and
-            maintenance mode.</p>
+        <p class="mt-1 text-sm text-zinc-500">Manage English and Sinhala site details, theme family, social links and maintenance mode.</p>
     </div>
 
     @if (session('status'))
@@ -31,9 +30,17 @@
                 <div><label class="mb-1.5 block text-sm font-semibold">Site Name</label><input wire:model="siteName"
                         type="text" maxlength="180"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></div>
+                <div class=""><label for="site-siteName-si" class="mb-1.5 block text-sm font-semibold">Site Name (සිංහල)</label>
+                    <input id="site-siteName-si" lang="si" wire:model="siteNameSi" type="text" maxlength="180" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                    @error('siteNameSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
                 <div><label class="mb-1.5 block text-sm font-semibold">Tagline</label><input wire:model="siteTagline"
                         type="text" maxlength="255"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></div>
+                <div class=""><label for="site-siteTagline-si" class="mb-1.5 block text-sm font-semibold">Tagline (සිංහල)</label>
+                    <input id="site-siteTagline-si" lang="si" wire:model="siteTaglineSi" type="text" maxlength="255" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                    @error('siteTaglineSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
                 <div><label class="mb-1.5 block text-sm font-semibold">Theme Family</label><select
                         wire:model="themeFamily" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
                         <option value="army-unit">Army Unit</option>
@@ -79,6 +86,10 @@
                 <div class="lg:col-span-2"><label class="mb-1.5 block text-sm font-semibold">Address</label>
                     <textarea wire:model="address" rows="3" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
                 </div>
+                <div class="lg:col-span-2"><label for="site-address-si" class="mb-1.5 block text-sm font-semibold">ලිපිනය (සිංහල)</label>
+                    <textarea id="site-address-si" lang="si" wire:model="addressSi" rows="3" maxlength="2000" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
+                    @error('addressSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
                 <div><label class="mb-1.5 block text-sm font-semibold">Primary Phone</label><input
                         wire:model="phonePrimary" type="text"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></div>
@@ -93,6 +104,10 @@
                     <textarea wire:model="footerText" rows="3" maxlength="2000"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
                 </div>
+                <div class="lg:col-span-2"><label for="site-footerText-si" class="mb-1.5 block text-sm font-semibold">Footer Text (සිංහල)</label>
+                    <textarea id="site-footerText-si" lang="si" wire:model="footerTextSi" rows="3" maxlength="2000" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
+                    @error('footerTextSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
             </div>
         </section>
 
@@ -104,9 +119,17 @@
                 <div><label class="mb-1.5 block text-sm font-semibold">Name</label><input wire:model="commanderName"
                         type="text" maxlength="180"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></div>
+                <div class=""><label for="site-commanderName-si" class="mb-1.5 block text-sm font-semibold">නම (සිංහල)</label>
+                    <input id="site-commanderName-si" lang="si" wire:model="commanderNameSi" type="text" maxlength="180" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                    @error('commanderNameSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
                 <div><label class="mb-1.5 block text-sm font-semibold">Title / Appointment</label><input
                         wire:model="commanderTitle" type="text" maxlength="180"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></div>
+                <div class=""><label for="site-commanderTitle-si" class="mb-1.5 block text-sm font-semibold">තනතුර (සිංහල)</label>
+                    <input id="site-commanderTitle-si" lang="si" wire:model="commanderTitleSi" type="text" maxlength="180" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                    @error('commanderTitleSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+                </div>
                 <div class="lg:col-span-2"><label class="mb-1.5 block text-sm font-semibold">Profile
                         Image</label><select wire:model="commanderImageMediaId"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
@@ -121,20 +144,9 @@
                     <textarea wire:model="commanderMessage" rows="6" maxlength="5000"
                         class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
                 </div>
-            </div>
-        </section>
-
-        <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-            <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
-                <h2 class="font-bold text-zinc-900">Default SEO</h2>
-            </div>
-            <div class="grid gap-5 p-6 lg:grid-cols-2">
-                <div><label class="mb-1.5 block text-sm font-semibold">SEO Title</label><input
-                        wire:model="defaultSeoTitle" type="text" maxlength="255"
-                        class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></div>
-                <div><label class="mb-1.5 block text-sm font-semibold">SEO Description</label>
-                    <textarea wire:model="defaultSeoDescription" rows="3" maxlength="320"
-                        class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
+                <div class="lg:col-span-2"><label for="site-commanderMessage-si" class="mb-1.5 block text-sm font-semibold">පණිවිඩය (සිංහල)</label>
+                    <textarea id="site-commanderMessage-si" lang="si" wire:model="commanderMessageSi" rows="3" maxlength="5000" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"></textarea>
+                    @error('commanderMessageSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                 </div>
             </div>
         </section>
@@ -147,6 +159,10 @@
                         page. Authenticated administrators can still preview the site.</p>
                     <textarea wire:model="maintenanceMessage" rows="3" maxlength="2000" placeholder="Optional maintenance message"
                         class="mt-4 w-full rounded-xl border border-amber-300 bg-white px-3 py-2.5 text-sm"></textarea>
+                    <label for="site-maintenanceMessage-si" class="mt-4 block text-sm font-semibold text-amber-900">නඩත්තු පණිවිඩය (සිංහල)</label>
+                    <textarea id="site-maintenanceMessage-si" lang="si" wire:model="maintenanceMessageSi" rows="3" maxlength="2000"
+                        class="mt-2 w-full rounded-xl border border-amber-300 bg-white px-3 py-2.5 text-sm"></textarea>
+                    @error('maintenanceMessageSi')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
                 </div>
             </div>
         </section>

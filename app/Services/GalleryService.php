@@ -35,6 +35,7 @@ final class GalleryService
         ?DateTimeInterface $publishedAt = null,
         ?string $seoTitle = null,
         ?string $seoDescription = null,
+        ?string $titleSi = null,
     ): Gallery {
         Gate::forUser(
             $actor,
@@ -105,6 +106,7 @@ final class GalleryService
             function () use (
                 $actor,
                 $safeTitle,
+                $titleSi,
                 $safeSlug,
                 $eventDate,
                 $safeDescription,
@@ -115,6 +117,7 @@ final class GalleryService
                 $gallery =
                     Gallery::query()->create([
                         'title' => $safeTitle,
+                        'title_si' => $titleSi === null ? null : $this->normaliseSinhalaTitle($titleSi),
 
                         'slug' => $safeSlug,
 
@@ -167,6 +170,7 @@ final class GalleryService
 
                     newValues: [
                         'title' => $safeTitle,
+                        'title_si' => $titleSi === null ? null : $this->normaliseSinhalaTitle($titleSi),
 
                         'slug' => $safeSlug,
 
@@ -207,6 +211,7 @@ final class GalleryService
         ?DateTimeInterface $publishedAt = null,
         ?string $seoTitle = null,
         ?string $seoDescription = null,
+        ?string $titleSi = null,
     ): Gallery {
         Gate::forUser(
             $actor,
@@ -294,6 +299,7 @@ final class GalleryService
                 $galleryId,
                 $actor,
                 $safeTitle,
+                $titleSi,
                 $safeSlug,
                 $eventDate,
                 $safeDescription,
@@ -334,6 +340,7 @@ final class GalleryService
                 }
 
                 $oldValues = [
+                    'title_si' => $gallery->getAttribute('title_si'),
                     'title' => $this->stringValue(
                         $gallery->getAttribute(
                             'title',
@@ -367,6 +374,7 @@ final class GalleryService
 
                 $gallery->forceFill([
                     'title' => $safeTitle,
+                    'title_si' => $titleSi === null ? $gallery->getAttribute('title_si') : $this->normaliseSinhalaTitle($titleSi),
 
                     'slug' => $safeSlug,
 
@@ -402,6 +410,7 @@ final class GalleryService
 
                     newValues: [
                         'title' => $safeTitle,
+                        'title_si' => $gallery->getAttribute('title_si'),
 
                         'slug' => $safeSlug,
 
@@ -1157,6 +1166,42 @@ final class GalleryService
     |--------------------------------------------------------------------------
     */
 
+    public function unpublish(Gallery $gallery, User $actor): Gallery
+    {
+        Gate::forUser($actor)->authorize('galleries.publish');
+
+        return DB::transaction(function () use ($gallery, $actor): Gallery {
+            $locked = Gallery::query()
+                ->whereKey((int) $gallery->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+            $status = $this->status($locked);
+            if ($status === GalleryStatus::Draft) {
+                return $locked;
+            }
+
+            $locked->forceFill([
+                'status' => GalleryStatus::Draft->value,
+                'published_at' => null,
+                'published_by' => null,
+                'archived_at' => null,
+                'archived_by' => null,
+                'updated_by' => $actor->id,
+            ])->save();
+
+            app(AuditLogger::class)->log(
+                event: 'galleries.unpublished',
+                description: 'A gallery was unpublished and returned to Draft.',
+                actor: $actor,
+                subject: $locked,
+                oldValues: ['status' => $status->value],
+                newValues: ['status' => GalleryStatus::Draft->value],
+            );
+
+            return $locked->refresh();
+        }, 3);
+    }
+
     public function archive(
         Gallery $gallery,
         User $actor,
@@ -1273,7 +1318,7 @@ final class GalleryService
                     GalleryStatus::Published
                 ) {
                     throw ValidationException::withMessages([
-                        'gallery' => 'Archive the gallery before deleting it.',
+                        'gallery' => 'Unpublish the gallery before deleting it.',
                     ]);
                 }
 
@@ -1577,4 +1622,14 @@ final class GalleryService
             )
             : null;
     }
+    private function normaliseSinhalaTitle(string $title): ?string
+    {
+        $title = trim($title);
+        if (mb_strlen($title) > 255) {
+            throw ValidationException::withMessages(['titleSi' => 'The Sinhala title must not exceed 255 characters.']);
+        }
+
+        return $title === '' ? null : $title;
+    }
+
 }

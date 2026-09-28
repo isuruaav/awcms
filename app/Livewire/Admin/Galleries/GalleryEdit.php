@@ -11,19 +11,32 @@ use App\Models\MediaAsset;
 use App\Models\MediaVariant;
 use App\Models\User;
 use App\Services\GalleryService;
+use App\Services\MediaUploadService;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 final class GalleryEdit extends Component
 {
+    use WithFileUploads;
+
+    /** @var array<int, TemporaryUploadedFile> */
+    public array $uploads = [];
+
+    #[Locked]
     public int $galleryId;
 
     public string $title = '';
+
+    public string $titleSi = '';
 
     public string $slug = '';
 
@@ -115,6 +128,7 @@ final class GalleryEdit extends Component
                 actor: $this->actor(),
 
                 title: $this->title,
+                titleSi: $this->titleSi,
 
                 eventDate: $this->eventDateValue(),
 
@@ -319,6 +333,7 @@ final class GalleryEdit extends Component
             actor: $this->actor(),
         );
 
+        $this->coverMediaId = (string) ($this->gallery()->cover_media_id ?? '');
         $this->loadImageMetadata();
 
         session()->flash(
@@ -361,6 +376,13 @@ final class GalleryEdit extends Component
 
     public function publish(): void
     {
+        Gate::authorize('galleries.publish');
+        if ($this->uploads !== []) {
+            throw ValidationException::withMessages([
+                'uploads' => 'Upload the selected images before publishing.',
+            ]);
+        }
+        $this->save();
         Gate::authorize(
             'galleries.publish',
         );
@@ -390,16 +412,16 @@ final class GalleryEdit extends Component
     |--------------------------------------------------------------------------
     */
 
-    public function archive(): void
+    public function unpublish(): void
     {
         Gate::authorize(
-            'galleries.archive',
+            'galleries.publish',
         );
 
         $gallery =
             app(
                 GalleryService::class,
-            )->archive(
+            )->unpublish(
                 gallery: $this->gallery(),
 
                 actor: $this->actor(),
@@ -411,7 +433,7 @@ final class GalleryEdit extends Component
 
         session()->flash(
             'status',
-            'Gallery archived successfully.',
+            'Gallery unpublished. You can now edit it.',
         );
     }
 
@@ -420,6 +442,48 @@ final class GalleryEdit extends Component
     | Render
     |--------------------------------------------------------------------------
     */
+
+    public function uploadImages(): void
+    {
+        Gate::authorize('galleries.update');
+        Gate::authorize('media.upload');
+        $gallery = $this->gallery();
+        abort_unless($gallery->isEditable(), 409, 'Unpublish the gallery before editing.');
+        $this->validate([
+            'uploads' => ['required', 'array', 'min:1', 'max:20'],
+            'uploads.*' => ['required', 'file', 'image', 'mimes:jpg,jpeg,png,webp', 'max:8192'],
+        ]);
+        foreach ($this->uploads as $index => $file) {
+            $media = app(MediaUploadService::class)->upload(
+                file: $file, type: MediaType::Image, visibility: MediaVisibility::Public,
+                actor: $this->actor(), title: mb_substr($gallery->title, 0, 240).' - '.($index + 1),
+                altText: $gallery->title, caption: null,
+            );
+            app(GalleryService::class)->addImage(gallery: $gallery, media: $media, actor: $this->actor());
+            unset($this->uploads[$index]);
+        }
+        $this->uploads = [];
+        $this->loadGallery($gallery->refresh());
+        $this->loadImageMetadata();
+        session()->flash('status', 'Images added. Save changes and publish when ready.');
+    }
+
+    public function selectCover(int $galleryImageId): void
+    {
+        Gate::authorize('galleries.update');
+        abort_unless($this->gallery()->isEditable(), 409, 'Unpublish the gallery before editing.');
+        $image = $this->galleryImage($galleryImageId);
+        $this->coverMediaId = (string) $image->media_asset_id;
+        $this->save();
+    }
+
+    public function delete(): void
+    {
+        Gate::authorize('galleries.delete');
+        app(GalleryService::class)->delete(gallery: $this->gallery(), actor: $this->actor());
+        session()->flash('status', 'Gallery deleted successfully.');
+        $this->redirectRoute('admin.galleries.index', navigate: true);
+    }
 
     public function render(): View
     {
@@ -558,6 +622,7 @@ final class GalleryEdit extends Component
     protected function rules(): array
     {
         return [
+            'titleSi' => ['nullable', 'string', 'max:255'],
             'title' => [
                 'required',
                 'string',
@@ -617,6 +682,8 @@ final class GalleryEdit extends Component
     ): void {
         $this->galleryId =
             (int) $gallery->getKey();
+
+        $this->titleSi = $this->stringValue($gallery->getAttribute('title_si'));
 
         $this->title =
             $this->stringValue(

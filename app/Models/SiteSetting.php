@@ -9,6 +9,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property string $site_name
  * @property string|null $site_tagline
+ * @property string|null $site_name_si
+ * @property string|null $site_tagline_si
+ * @property string|null $address_si
+ * @property string|null $commander_name_si
+ * @property string|null $commander_title_si
+ * @property string|null $commander_message_si
+ * @property string|null $footer_text_si
+ * @property string|null $maintenance_message_si
  * @property string $theme_family
  * @property int|null $logo_media_id
  * @property int|null $favicon_media_id
@@ -35,28 +43,52 @@ final class SiteSetting extends Model
     /** @var list<string> */
     protected $fillable = [
         'site_name',
+        'site_name_si',
         'site_tagline',
+        'site_tagline_si',
         'theme_family',
         'logo_media_id',
         'favicon_media_id',
         'address',
+        'address_si',
         'phone_primary',
         'phone_secondary',
         'email',
         'map_url',
         'commander_name',
+        'commander_name_si',
         'commander_title',
+        'commander_title_si',
         'commander_message',
+        'commander_message_si',
         'commander_image_media_id',
         'primary_color',
         'accent_color',
         'footer_text',
+        'footer_text_si',
         'default_seo_title',
         'default_seo_description',
         'maintenance_mode',
         'maintenance_message',
+        'maintenance_message_si',
         'updated_by',
     ];
+
+    /** @param 'site_name'|'site_tagline'|'address'|'commander_name'|'commander_title'|'commander_message'|'footer_text'|'maintenance_message' $field */
+    public function localized(string $field, ?string $locale = null): ?string
+    {
+        $locale ??= app()->getLocale();
+        if ($locale === 'si') {
+            $translated = $this->getAttribute($field.'_si');
+            if (is_string($translated) && trim($translated) !== '') {
+                return $translated;
+            }
+        }
+
+        $english = $this->getAttribute($field);
+
+        return is_string($english) && trim($english) !== '' ? $english : null;
+    }
 
     /** @return array<string, string> */
     protected function casts(): array

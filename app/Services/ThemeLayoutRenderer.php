@@ -85,11 +85,18 @@ final class ThemeLayoutRenderer
         }
 
         $locale = $requestedLocale->value;
+        $siteName = $siteSettings?->localized('site_name', $locale) ?? $siteName;
+        $siteTagline = $siteSettings?->localized('site_tagline', $locale) ?? $siteTagline;
 
         $replacements = [
             '[[site_logo]]' => $this->siteLogo($logoUrl, $siteName),
             '[[site_name]]' => $this->escape($siteName),
             '[[site_tagline]]' => $this->escape($siteTagline),
+            '[[footer_text]]' => nl2br(
+                $this->escape($siteSettings?->localized('footer_text', $locale) ?? ''),
+                false,
+            ),
+            '[[primary_menu]]' => $this->primaryMenu($primaryMenu, $locale),
             '[[responsive_primary_navigation]]' => $this->responsivePrimaryNavigation(
                 $primaryMenu,
                 $locale,
@@ -101,7 +108,7 @@ final class ThemeLayoutRenderer
                 $themeSlug,
             ),
             '[[social_links]]' => $this->socialLinks($socialLinks),
-            '[[contact_details]]' => $this->contactDetails($siteSettings),
+            '[[contact_details]]' => $this->contactDetails($siteSettings, $locale),
             '[[copyright_year]]' => (string) now()->year,
         ];
         $renderedHtml = str_ireplace(
@@ -479,21 +486,19 @@ final class ThemeLayoutRenderer
                 .'</nav>';
     }
 
-    private function contactDetails(?SiteSetting $settings): string
+    private function contactDetails(?SiteSetting $settings, string $locale): string
     {
         if (! $settings instanceof SiteSetting) {
             return '';
         }
 
         $details = '';
+        $address = $settings->localized('address', $locale);
 
-        if (
-            is_string($settings->address)
-            && trim($settings->address) !== ''
-        ) {
+        if ($address !== null) {
             $details .= '<p class="cms-contact-address">'
                 .nl2br(
-                    $this->escape($settings->address),
+                    $this->escape($address),
                     false,
                 )
                 .'</p>';

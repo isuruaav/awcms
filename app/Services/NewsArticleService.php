@@ -37,6 +37,7 @@ final class NewsArticleService
         NewsLocale $locale = NewsLocale::English,
         ?string $translationGroup = null,
         NewsEditorMode $editorMode = NewsEditorMode::Visual,
+        bool $showInGallery = false,
     ): News {
         Gate::forUser(
             $actor,
@@ -108,6 +109,7 @@ final class NewsArticleService
                 $safeContent,
                 $featuredImageId,
                 $isFeatured,
+                $showInGallery,
                 $publishedAt,
                 $safeSeoTitle,
                 $safeSeoDescription,
@@ -146,6 +148,7 @@ final class NewsArticleService
                         'status' => NewsStatus::Draft->value,
 
                         'is_featured' => $isFeatured,
+                        'show_in_gallery' => $showInGallery,
 
                         /*
                          * At Draft stage this represents the
@@ -204,6 +207,7 @@ final class NewsArticleService
                         'featured_image_id' => $featuredImageId,
 
                         'is_featured' => $isFeatured,
+                        'show_in_gallery' => $showInGallery,
 
                         'published_at' => $publishedAt?->format(
                             DATE_ATOM,
@@ -248,6 +252,7 @@ final class NewsArticleService
         ?string $seoTitle = null,
         ?string $seoDescription = null,
         ?NewsEditorMode $editorMode = null,
+        ?bool $showInGallery = null,
     ): News {
         Gate::forUser(
             $actor,
@@ -372,6 +377,8 @@ final class NewsArticleService
                 ? (int) $featuredImage->getKey()
                 : null;
 
+        $showInGallery ??= (bool) $news->getAttribute('show_in_gallery');
+
         return DB::transaction(
             function () use (
                 $news,
@@ -383,6 +390,7 @@ final class NewsArticleService
                 $safeContent,
                 $featuredImageId,
                 $isFeatured,
+                $showInGallery,
                 $publishedAt,
                 $safeSeoTitle,
                 $safeSeoDescription,
@@ -421,6 +429,8 @@ final class NewsArticleService
                     $news->getAttribute(
                         'content',
                     );
+
+                $oldShowInGallery = (bool) $news->getAttribute('show_in_gallery');
 
                 $oldIsFeatured =
                     (bool) $news->getAttribute(
@@ -466,6 +476,7 @@ final class NewsArticleService
                     'featured_image_id' => $featuredImageId,
 
                     'is_featured' => $isFeatured,
+                    'show_in_gallery' => $showInGallery,
 
                     'published_at' => $publishedAt,
 
@@ -520,6 +531,7 @@ final class NewsArticleService
                                 : null,
 
                         'is_featured' => $oldIsFeatured,
+                        'show_in_gallery' => $oldShowInGallery,
 
                         'published_at' => $this->dateValue(
                             $oldPublishedAt,
@@ -552,6 +564,7 @@ final class NewsArticleService
                         'featured_image_id' => $featuredImageId,
 
                         'is_featured' => $isFeatured,
+                        'show_in_gallery' => $showInGallery,
 
                         'published_at' => $publishedAt?->format(
                             DATE_ATOM,

@@ -292,6 +292,18 @@
                             on the public news listing.</span>
                     </span>
                 </label>
+                <label class="lg:col-span-2 flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                    <input type="checkbox" wire:model="showInGallery"
+                        class="mt-1 h-4 w-4 rounded border-zinc-300 text-emerald-700 focus:ring-emerald-500">
+                    <span>
+                        <span class="block text-sm font-semibold text-zinc-900">Show these images in Gallery</span>
+                        <span class="mt-1 block text-xs leading-5 text-zinc-600">Display this article's uploaded images as a gallery album using its news title. Only published articles and public images appear. Unticking keeps the images in News.</span>
+                    </span>
+                </label>
+                @error('showInGallery')
+                    <p class="text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
             </div>
         </section>
 

@@ -154,6 +154,24 @@ final class GalleryIndex extends Component
         $this->resetPage();
     }
 
+    public function publish(int $galleryId): void
+    {
+        Gate::authorize('galleries.publish');
+        app(GalleryService::class)->publish(
+            gallery: Gallery::query()->findOrFail($galleryId), actor: $this->actor(),
+        );
+        session()->flash('status', 'Gallery published.');
+    }
+
+    public function unpublish(int $galleryId): void
+    {
+        Gate::authorize('galleries.publish');
+        app(GalleryService::class)->unpublish(
+            gallery: Gallery::query()->findOrFail($galleryId), actor: $this->actor(),
+        );
+        session()->flash('status', 'Gallery unpublished. You can now edit or delete it.');
+    }
+
     public function render(): View
     {
         Gate::authorize(
@@ -247,7 +265,7 @@ final class GalleryIndex extends Component
             [
                 'galleries' => $galleries,
 
-                'statuses' => GalleryStatus::cases(),
+                'statuses' => [GalleryStatus::Draft, GalleryStatus::Published],
 
                 'totalCount' => Gallery::query()
                     ->count(),

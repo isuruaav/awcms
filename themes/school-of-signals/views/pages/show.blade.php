@@ -62,7 +62,30 @@
 @endsection
 
 @section('content')
+    @php
+        $contactPattern = '~<(div|p)\b[^>]*>\s*\[\[contact_page\]\]\s*</\1>~i';
 
+        if (preg_match($contactPattern, $safeContent) === 1) {
+            $contactWidget = view('theme-school-of-signals::partials.cms-contact')->render();
+
+            $contactRendered = false;
+
+            $safeContent =
+                preg_replace_callback(
+                    $contactPattern,
+                    static function (array $matches) use ($contactWidget, &$contactRendered): string {
+                        if ($contactRendered) {
+                            return '';
+                        }
+
+                        $contactRendered = true;
+
+                        return $contactWidget;
+                    },
+                    $safeContent,
+                ) ?? $safeContent;
+        }
+    @endphp
     <article class="theme-page">
         @if ($page->show_title || $page->excerpt)
             <header class="section section-soft">

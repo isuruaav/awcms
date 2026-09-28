@@ -320,6 +320,11 @@ final class NewsRevisionService
                             ? (int) $featuredImage->getKey()
                             : null,
 
+                    // Old revisions predate the gallery preference: preserve it.
+                    'show_in_gallery' => $lockedRevision->getAttribute('show_in_gallery') === null
+                        ? (bool) $lockedNews->getAttribute('show_in_gallery')
+                        : (bool) $lockedRevision->getAttribute('show_in_gallery'),
+
                     'is_featured' => (bool) $lockedRevision->getAttribute(
                         'is_featured',
                     ),
@@ -455,74 +460,79 @@ final class NewsRevisionService
                 $news,
             );
 
-        return NewsRevision::query()
-            ->create([
-                'news_id' => (int) $news->getKey(),
+        $revision = new NewsRevision;
 
-                'revision_number' => $revisionNumber,
+        $revision->forceFill([
+            'news_id' => (int) $news->getKey(),
 
-                'locale' => $this->newsLocale($news)->value,
+            'revision_number' => $revisionNumber,
 
-                'translation_group' => $this->nullableString(
-                    $news->getAttribute('translation_group'),
+            'locale' => $this->newsLocale($news)->value,
+
+            'translation_group' => $this->nullableString(
+                $news->getAttribute('translation_group'),
+            ),
+
+            'category_id' => $news->getAttribute(
+                'category_id',
+            ),
+
+            'title' => (string) $news->getAttribute(
+                'title',
+            ),
+
+            'slug' => (string) $news->getAttribute(
+                'slug',
+            ),
+
+            'summary' => $this->nullableString(
+                $news->getAttribute(
+                    'summary',
                 ),
+            ),
 
-                'category_id' => $news->getAttribute(
-                    'category_id',
+            'content' => (string) $news->getAttribute(
+                'content',
+            ),
+
+            'editor_mode' => $this->newsEditorMode($news)->value,
+
+            'featured_image_id' => $news->getAttribute(
+                'featured_image_id',
+            ),
+
+            'show_in_gallery' => (bool) $news->getAttribute('show_in_gallery'),
+
+            'is_featured' => (bool) $news->getAttribute(
+                'is_featured',
+            ),
+
+            'status' => $status->value,
+
+            'published_at' => $news->getAttribute(
+                'published_at',
+            ),
+
+            'seo_title' => $this->nullableString(
+                $news->getAttribute(
+                    'seo_title',
                 ),
+            ),
 
-                'title' => (string) $news->getAttribute(
-                    'title',
+            'seo_description' => $this->nullableString(
+                $news->getAttribute(
+                    'seo_description',
                 ),
+            ),
 
-                'slug' => (string) $news->getAttribute(
-                    'slug',
-                ),
+            'created_by' => (int) $actor->getKey(),
 
-                'summary' => $this->nullableString(
-                    $news->getAttribute(
-                        'summary',
-                    ),
-                ),
+            'reason' => $this->normaliseReason(
+                $reason,
+            ),
+        ])->save();
 
-                'content' => (string) $news->getAttribute(
-                    'content',
-                ),
-
-                'editor_mode' => $this->newsEditorMode($news)->value,
-
-                'featured_image_id' => $news->getAttribute(
-                    'featured_image_id',
-                ),
-
-                'is_featured' => (bool) $news->getAttribute(
-                    'is_featured',
-                ),
-
-                'status' => $status->value,
-
-                'published_at' => $news->getAttribute(
-                    'published_at',
-                ),
-
-                'seo_title' => $this->nullableString(
-                    $news->getAttribute(
-                        'seo_title',
-                    ),
-                ),
-
-                'seo_description' => $this->nullableString(
-                    $news->getAttribute(
-                        'seo_description',
-                    ),
-                ),
-
-                'created_by' => (int) $actor->getKey(),
-
-                'reason' => $this->normaliseReason(
-                    $reason,
-                ),
-            ]);
+        return $revision;
     }
 
     private function restorableCategory(

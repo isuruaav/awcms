@@ -43,6 +43,8 @@ final class NewsCreate extends Component
 
     public bool $isFeatured = false;
 
+    public bool $showInGallery = false;
+
     public string $publishedAt = '';
 
     public string $locale = NewsLocale::English->value;
@@ -204,6 +206,7 @@ final class NewsCreate extends Component
             slug: $this->nullable($this->slug),
             featuredImage: $this->featuredImage(),
             isFeatured: $this->isFeatured,
+            showInGallery: $this->showInGallery,
             publishedAt: $this->publicationDate(),
             seoTitle: $this->nullable($this->seoTitle),
             seoDescription: $this->nullable($this->seoDescription),
@@ -247,6 +250,7 @@ final class NewsCreate extends Component
             'categoryId' => ['required', 'integer', 'exists:news_categories,id'],
             'featuredImageId' => ['nullable', 'integer', 'exists:media_assets,id'],
             'isFeatured' => ['boolean'],
+            'showInGallery' => ['boolean'],
             'publishedAt' => ['nullable', 'date'],
             'locale' => ['required', Rule::enum(NewsLocale::class)],
             'editorMode' => ['required', Rule::enum(NewsEditorMode::class)],

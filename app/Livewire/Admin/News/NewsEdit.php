@@ -48,6 +48,8 @@ final class NewsEdit extends Component
 
     public bool $isFeatured = false;
 
+    public bool $showInGallery = false;
+
     public string $publishedAt = '';
 
     public string $editorMode = NewsEditorMode::Visual->value;
@@ -125,6 +127,7 @@ final class NewsEdit extends Component
             slug: $this->nullable($this->slug),
             featuredImage: $this->featuredImage(),
             isFeatured: $this->isFeatured,
+            showInGallery: $this->showInGallery,
             publishedAt: $this->publicationDate(),
             seoTitle: $this->nullable($this->seoTitle),
             seoDescription: $this->nullable($this->seoDescription),
@@ -263,6 +266,7 @@ final class NewsEdit extends Component
             'categoryId' => ['required', 'integer', 'exists:news_categories,id'],
             'featuredImageId' => ['nullable', 'integer', 'exists:media_assets,id'],
             'isFeatured' => ['boolean'],
+            'showInGallery' => ['boolean'],
             'publishedAt' => ['nullable', 'date'],
             'editorMode' => ['required', Rule::enum(NewsEditorMode::class)],
             'galleryUploads' => ['array', 'max:20'],
@@ -339,6 +343,7 @@ final class NewsEdit extends Component
             : '';
 
         $this->isFeatured = (bool) $news->getAttribute('is_featured');
+        $this->showInGallery = (bool) $news->getAttribute('show_in_gallery');
 
         $publishedAt = $news->getAttribute('published_at');
         $this->publishedAt = $publishedAt instanceof DateTimeInterface

@@ -164,6 +164,17 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configurePublicViewData(): void
     {
+        View::composer('public.maintenance', static function (ViewInstance $view): void {
+            $settings = $view->getData()['settings'] ?? null;
+            if (! $settings instanceof SiteSetting || app()->getLocale() !== 'si') {
+                return;
+            }
+
+            $localized = clone $settings;
+            $localized->setAttribute('maintenance_message', $settings->localized('maintenance_message', 'si'));
+            $view->with('settings', $localized);
+        });
+
         View::composer(
             [
                 'layouts.public',

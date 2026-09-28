@@ -1,6 +1,8 @@
 @php
-    $publicSiteName = $siteSettings?->site_name ?: config('app.name', 'AWCMS');
-    $publicDescription = $siteSettings?->site_tagline ?: 'Sri Lanka School of Signals';
+    $publicSiteName = $siteSettings?->localized('site_name') ?: config('app.name', 'AWCMS');
+    $publicDescription = $siteSettings?->localized('site_tagline') ?: 'Sri Lanka School of Signals';
+    $publicAddress = $siteSettings?->localized('address');
+    $publicFooterText = $siteSettings?->localized('footer_text');
     $currentLocale = in_array(app()->getLocale(), ['en', 'si', 'ta'], true) ? app()->getLocale() : 'en';
     $themeAssetBase = asset('themes/school-of-signals/assets');
     $mediaUrls = app(\App\Services\MediaUrlService::class);
@@ -160,7 +162,7 @@
                         <a href="{{ url('/') }}">Home</a>
                         <a
                             href="{{ $currentLocale === 'en' ? route('news.index') : route('news.index.localized', ['locale' => $currentLocale]) }}">News</a>
-                        <a href="{{ route('galleries.index') }}">Gallery</a>
+                        <a href="{{ \App\Services\GalleryLocale::indexUrl($currentLocale) }}">{{ $currentLocale === 'si' ? 'ඡායාරූප ගැලරිය' : 'Gallery' }}</a>
                     @endif
 
                     <div class="drop">
@@ -259,7 +261,7 @@
                         <a href="{{ url('/') }}"><span>Home</span><i class="fa-solid fa-arrow-right"></i></a>
                         <a href="{{ route('news.index') }}"><span>News</span><i
                                 class="fa-solid fa-arrow-right"></i></a>
-                        <a href="{{ route('galleries.index') }}"><span>Gallery</span><i
+                        <a href="{{ \App\Services\GalleryLocale::indexUrl($currentLocale) }}"><span>{{ $currentLocale === 'si' ? 'ඡායාරූප ගැලරිය' : 'Gallery' }}</span><i
                                 class="fa-solid fa-arrow-right"></i></a>
                     @endif
 
@@ -287,14 +289,14 @@
             <div class="container footer-grid">
                 <section>
                     <h2>{{ $publicSiteName }}</h2>
-                    <p>{{ $publicDescription }}</p>
+                    <p>{{ $publicFooterText ?: $publicDescription }}</p>
                 </section>
                 <section>
                     <h2>Quick Links</h2>
                     <a href="{{ url('/') }}">Home</a>
                     <a
                         href="{{ $currentLocale === 'en' ? route('news.index') : route('news.index.localized', ['locale' => $currentLocale]) }}">News</a>
-                    <a href="{{ route('galleries.index') }}">Gallery</a>
+                    <a href="{{ \App\Services\GalleryLocale::indexUrl($currentLocale) }}">{{ $currentLocale === 'si' ? 'ඡායාරූප ගැලරිය' : 'Gallery' }}</a>
                 </section>
                 <section>
                     <h2>Contact</h2>
@@ -304,8 +306,8 @@
                     @if ($siteSettings?->phone_primary)
                         <a href="tel:{{ $siteSettings->phone_primary }}">{{ $siteSettings->phone_primary }}</a>
                     @endif
-                    @if ($siteSettings?->address)
-                        <p>{{ $siteSettings->address }}</p>
+                    @if ($publicAddress)
+                        <p>{{ $publicAddress }}</p>
                     @endif
                 </section>
                 @if ($publicSocialLinks->isNotEmpty())

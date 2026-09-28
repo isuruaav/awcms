@@ -1,4 +1,8 @@
-/* AWCMS dynamic navigation refinements for the School of Signals theme. */
+/* =========================================================
+   School of Signals — Navigation
+   ========================================================= */
+
+/* ---------- Desktop navigation ---------- */
 
 .desktop-nav {
     flex: 1 1 auto;
@@ -14,6 +18,8 @@
     z-index: 30;
 }
 
+/* ---------- Mobile navigation ---------- */
+
 .mobile-submenu-link {
     padding-left: 24px !important;
     color: var(--muted) !important;
@@ -24,6 +30,118 @@
     color: var(--blue-700) !important;
 }
 
+/* ---------- Managed mega menu ---------- */
+
+/*
+ * Keep existing menu positioning from theme.css / CMS styles.
+ * Do not override the panel's horizontal transform.
+ */
+
+.managed-school-header .managed-mega-menu > .managed-mega-panel {
+    z-index: 1100;
+}
+
+/* Covers a small gap between the Courses link and its panel. */
+.managed-school-header .managed-mega-menu > .managed-mega-panel::before {
+    content: "";
+    position: absolute;
+    top: -24px;
+    right: 0;
+    left: 0;
+    height: 24px;
+    background: transparent;
+}
+
+.managed-school-header .managed-mega-menu:hover > .managed-mega-panel,
+.managed-school-header .managed-mega-menu:focus-within > .managed-mega-panel {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Keyboard access for ordinary dropdowns. */
+.managed-school-header .drop:focus-within > .dropdown:not(.managed-mega-panel) {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ---------- Header actions ---------- */
+
+.managed-school-header .managed-school-header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ---------- Language switcher ---------- */
+
+.managed-school-header .managed-school-languages {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+}
+
+.managed-school-header .managed-school-mobile-languages {
+    display: none;
+}
+
+.managed-school-header .cms-language-switcher {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border, #dce5f2);
+    border-radius: 14px;
+    background: #f8fafc;
+}
+
+.managed-school-header .cms-language-option,
+.managed-school-header .cms-language-current {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 0;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--navy-800, #162052);
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.4;
+    letter-spacing: normal;
+    white-space: nowrap;
+    text-decoration: none;
+    transition:
+        background-color 180ms ease,
+        color 180ms ease;
+}
+
+.managed-school-header .cms-language-option.active,
+.managed-school-header .cms-language-option[aria-current="page"],
+.managed-school-header .cms-language-current {
+    background: var(--blue-700, #005c8c);
+    color: #ffffff;
+}
+
+.managed-school-header .cms-language-option:not(.active):not([aria-current="page"]):hover {
+    background: var(--blue-50, #eaf8ff);
+    color: var(--blue-700, #005c8c);
+}
+
+.managed-school-header .cms-language-option:focus-visible {
+    outline: 3px solid #ffcb45;
+    outline-offset: 2px;
+}
+
+/* ---------- Compact desktop ---------- */
+
 @media (max-width: 1180px) {
     .desktop-nav > a,
     .drop-toggle {
@@ -32,27 +150,59 @@
         font-size: 14px;
     }
 
-    .portal-button {
+    .portal-button,
+    .managed-school-header .managed-school-portal {
         padding-right: 17px;
         padding-left: 17px;
     }
 }
 
-@media (max-width: 980px) {
+/*
+ * Match the main theme's 1120px navigation breakpoint.
+ * Keep the existing header language switcher accessible on mobile.
+ */
+@media (max-width: 1120px) {
     .desktop-nav,
-    .portal-button {
+    .portal-button,
+    .managed-school-header .managed-school-desktop-nav,
+    .managed-school-header .managed-school-portal {
         display: none;
     }
 
-    .mobile-btn {
+    .mobile-btn,
+    .managed-school-header .cms-mobile-menu-toggle {
         display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .mobile-language {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
+
+    .managed-school-header .managed-school-header-actions {
+        flex: 0 0 auto;
+        gap: 8px;
+    }
+
+    .managed-school-header .cms-mobile-menu-toggle {
+        flex: 0 0 44px;
+        width: 44px;
+        height: 44px;
+        padding: 0;
+        border: 1px solid var(--border, #dce5f2);
+        border-radius: 12px;
+        background: #ffffff;
+        color: var(--navy-800, #162052);
+    }
+
+    .managed-school-header .cms-mobile-menu-toggle-label {
+        display: none;
+    }
 }
+
+/* ---------- Small screens ---------- */
 
 @media (max-width: 620px) {
     .topbar-right .motto,
@@ -62,6 +212,7 @@
 
     .nav-wrap {
         min-height: 72px;
+        gap: 10px;
     }
 
     .brand {
@@ -94,36 +245,54 @@
     .mobile-language {
         grid-template-columns: 1fr;
     }
+
+    .managed-school-header .managed-school-navbar-inner {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .managed-school-header .managed-school-brand {
+        flex: 1 1 180px;
+        min-width: 0;
+    }
+
+    .managed-school-header .managed-school-brand-copy {
+        min-width: 0;
+    }
+
+    .managed-school-header .managed-school-brand-title {
+        font-size: 18px;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+    }
+
+    .managed-school-header .managed-school-header-actions {
+        margin-left: auto;
+        gap: 6px;
+    }
+
+    .managed-school-header .cms-language-switcher {
+        gap: 2px;
+        padding: 3px;
+        border-radius: 12px;
+    }
+
+    .managed-school-header .cms-language-option,
+    .managed-school-header .cms-language-current {
+        min-height: 36px;
+        padding: 0 9px;
+        border-radius: 8px;
+        font-size: 12px;
+    }
 }
 
-/* Managed header language visibility */
-.managed-school-mobile-languages {
-    display: none;
-}
+/* ---------- Reduced motion ---------- */
 
-@media (max-width: 980px) {
-    .managed-school-languages {
-        display: none;
-    }
-
-    .managed-school-mobile-languages {
-        display: block;
-        padding: 12px 0;
-    }
-
-    .managed-school-header-actions {
-        flex: 0 0 auto;
-        gap: 0;
-    }
-
-    .cms-mobile-menu-toggle {
-        flex: 0 0 48px;
-        width: 48px;
-        height: 48px;
-        padding: 0;
-    }
-
-    .cms-mobile-menu-toggle-label {
-        display: none;
+@media (prefers-reduced-motion: reduce) {
+    .managed-school-header .cms-language-option,
+    .managed-school-header .cms-language-current {
+        transition: none;
     }
 }

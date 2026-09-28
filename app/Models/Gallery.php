@@ -25,6 +25,7 @@ final class Gallery extends Model
      */
     protected $fillable = [
         'title',
+        'title_si',
         'slug',
         'event_date',
         'description',
@@ -54,6 +55,16 @@ final class Gallery extends Model
 
             'archived_at' => 'datetime',
         ];
+    }
+
+    public function titleForLocale(string $locale): string
+    {
+        $translated = $this->getAttribute('title_si');
+        if ($locale === 'si' && is_string($translated) && trim($translated) !== '') {
+            return $translated;
+        }
+
+        return (string) $this->getAttribute('title');
     }
 
     protected static function booted(): void

@@ -162,6 +162,13 @@ Route::get(
 |
 */
 
+Route::get('/{locale}/galleries', [PublicGalleryController::class, 'localizedIndex'])
+    ->whereIn('locale', ['en', 'si'])->name('galleries.index.localized');
+Route::get('/{locale}/galleries/news/{newsId}', [PublicGalleryController::class, 'localizedNews'])
+    ->whereIn('locale', ['en', 'si'])->whereNumber('newsId')->name('galleries.news.localized');
+Route::get('/{locale}/galleries/{slug}', [PublicGalleryController::class, 'localizedShow'])
+    ->whereIn('locale', ['en', 'si'])->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')->name('galleries.show.localized');
+
 Route::get(
     '/galleries',
     [
@@ -171,6 +178,10 @@ Route::get(
 )->name(
     'galleries.index',
 );
+
+Route::get('/galleries/news/{newsId}', [PublicGalleryController::class, 'newsAlbum'])
+    ->whereNumber('newsId')
+    ->name('galleries.news');
 
 Route::get(
     '/galleries/{slug}',
