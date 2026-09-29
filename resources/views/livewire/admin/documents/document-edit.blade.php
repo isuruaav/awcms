@@ -200,7 +200,7 @@
                        text-xs leading-5
                        text-amber-700">
                 Only Draft documents can have their title,
-                slug, category, dates, description and SEO
+                slug, category, dates and bilingual document
                 information edited.
             </p>
 
@@ -259,7 +259,7 @@
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            Document Title
+                            English Title
                         </label>
 
                         <input id="document-title" type="text" wire:model="title" maxlength="255"
@@ -389,7 +389,7 @@
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            Description
+                            English Description
                         </label>
 
                         <textarea id="document-description" wire:model="description" rows="7" maxlength="10000"
@@ -888,7 +888,7 @@
 
 
             {{-- =============================================
-                 SEO
+                 Sinhala Translation
             ============================================== --}}
 
             <section
@@ -902,21 +902,21 @@
                            bg-zinc-50
                            px-6 py-4">
                     <h2 class="font-bold text-zinc-900">
-                        Search Engine Information
+                        Sinhala Translation (Optional)
                     </h2>
                 </div>
 
                 <div class="space-y-5 p-6">
 
                     <div>
-                        <label for="document-seo-title"
+                        <label for="document-title-si"
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            SEO Title
+                            Sinhala Title (සිංහල මාතෘකාව)
                         </label>
 
-                        <input id="document-seo-title" type="text" wire:model="seoTitle" maxlength="255"
+                        <input id="document-title-si" type="text" wire:model="titleSi" lang="si" maxlength="255"
                             @disabled(!$editable)
                             class="w-full
                                    rounded-xl
@@ -926,7 +926,7 @@
                                    text-sm
                                    disabled:bg-zinc-100">
 
-                        @error('seoTitle')
+                        @error('titleSi')
                             <p class="mt-1.5 text-sm text-red-600">
                                 {{ $message }}
                             </p>
@@ -935,14 +935,14 @@
 
 
                     <div>
-                        <label for="document-seo-description"
+                        <label for="document-description-si"
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            SEO Description
+                            Sinhala Description (සිංහල විස්තරය)
                         </label>
 
-                        <textarea id="document-seo-description" wire:model="seoDescription" rows="4" maxlength="320"
+                        <textarea id="document-description-si" wire:model="descriptionSi" lang="si" rows="4" maxlength="10000"
                             @disabled(!$editable)
                             class="w-full
                                    rounded-xl
@@ -957,10 +957,10 @@
                                    text-right
                                    text-xs
                                    text-zinc-400">
-                            {{ mb_strlen($seoDescription) }}/320
+                            {{ mb_strlen($descriptionSi) }}/10000
                         </p>
 
-                        @error('seoDescription')
+                        @error('descriptionSi')
                             <p class="mt-1.5 text-sm text-red-600">
                                 {{ $message }}
                             </p>

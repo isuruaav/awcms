@@ -20,9 +20,11 @@ final class Document extends Model
      */
     protected $fillable = [
         'title',
+        'title_si',
         'slug',
         'document_category_id',
         'description',
+        'description_si',
         'document_date',
         'current_version',
         'status',
@@ -43,37 +45,26 @@ final class Document extends Model
     {
         return [
             'document_date' => 'date',
-
             'current_version' => 'integer',
-
+            'current_version_si' => 'integer',
             'status' => DocumentStatus::class,
-
             'published_at' => 'datetime',
-
             'archived_at' => 'datetime',
         ];
     }
 
     protected static function booted(): void
     {
-        self::creating(
-            static function (Document $document): void {
-                $uuid =
-                    $document->getAttribute(
-                        'uuid',
-                    );
+        self::creating(static function (Document $document): void {
+            $uuid = $document->getAttribute('uuid');
 
-                if (
-                    ! is_string($uuid)
-                    || trim($uuid) === ''
-                ) {
-                    $document->setAttribute(
-                        'uuid',
-                        Str::uuid()->toString(),
-                    );
-                }
-            },
-        );
+            if (! is_string($uuid) || trim($uuid) === '') {
+                $document->setAttribute(
+                    'uuid',
+                    Str::uuid()->toString(),
+                );
+            }
+        });
     }
 
     /**
@@ -92,15 +83,9 @@ final class Document extends Model
      */
     public function versions(): HasMany
     {
-        return $this->hasMany(
-            DocumentVersion::class,
-        )
-            ->orderByDesc(
-                'version',
-            )
-            ->orderByDesc(
-                'id',
-            );
+        return $this->hasMany(DocumentVersion::class)
+            ->orderByDesc('version')
+            ->orderByDesc('id');
     }
 
     /**
@@ -108,10 +93,7 @@ final class Document extends Model
      */
     public function creator(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'created_by',
-        );
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**
@@ -119,10 +101,7 @@ final class Document extends Model
      */
     public function updater(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'updated_by',
-        );
+        return $this->belongsTo(User::class, 'updated_by');
     }
 
     /**
@@ -130,10 +109,7 @@ final class Document extends Model
      */
     public function publisher(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'published_by',
-        );
+        return $this->belongsTo(User::class, 'published_by');
     }
 
     /**
@@ -141,87 +117,94 @@ final class Document extends Model
      */
     public function archiver(): BelongsTo
     {
-        return $this->belongsTo(
-            User::class,
-            'archived_by',
-        );
+        return $this->belongsTo(User::class, 'archived_by');
+    }
+
+    public function titleForLocale(?string $locale = null): string
+    {
+        $locale ??= app()->getLocale();
+
+        if ($locale === 'si') {
+            $sinhalaTitle = $this->getAttribute('title_si');
+
+            if (is_string($sinhalaTitle) && trim($sinhalaTitle) !== '') {
+                return trim($sinhalaTitle);
+            }
+        }
+
+        $title = $this->getAttribute('title');
+
+        return is_string($title) ? trim($title) : '';
+    }
+
+    public function descriptionForLocale(?string $locale = null): ?string
+    {
+        $locale ??= app()->getLocale();
+
+        if ($locale === 'si') {
+            $sinhalaDescription = $this->getAttribute('description_si');
+
+            if (
+                is_string($sinhalaDescription)
+                && trim($sinhalaDescription) !== ''
+            ) {
+                return trim($sinhalaDescription);
+            }
+        }
+
+        $description = $this->getAttribute('description');
+
+        if (! is_string($description) || trim($description) === '') {
+            return null;
+        }
+
+        return trim($description);
     }
 
     /**
      * @param  Builder<Document>  $query
      * @return Builder<Document>
      */
-    public function scopePublished(
-        Builder $query,
-    ): Builder {
+    public function scopePublished(Builder $query): Builder
+    {
         return $query
-            ->where(
-                'status',
-                DocumentStatus::Published->value,
-            )
-            ->whereNotNull(
-                'published_at',
-            )
-            ->where(
-                'published_at',
-                '<=',
-                now(),
-            );
+            ->where('status', DocumentStatus::Published->value)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
     /**
      * @param  Builder<Document>  $query
      * @return Builder<Document>
      */
-    public function scopeRecent(
-        Builder $query,
-    ): Builder {
+    public function scopeRecent(Builder $query): Builder
+    {
         return $query
-            ->orderByDesc(
-                'document_date',
-            )
-            ->orderByDesc(
-                'published_at',
-            )
-            ->orderByDesc(
-                'id',
-            );
+            ->orderByDesc('document_date')
+            ->orderByDesc('published_at')
+            ->orderByDesc('id');
     }
 
     public function isPublished(): bool
     {
-        $status =
-            $this->getAttribute(
-                'status',
-            );
+        $status = $this->getAttribute('status');
 
-        if (
-            ! $status instanceof DocumentStatus
-            || ! $status->isPublic()
-        ) {
+        if (! $status instanceof DocumentStatus || ! $status->isPublic()) {
             return false;
         }
 
-        $publishedAt =
-            $this->getAttribute(
-                'published_at',
-            );
+        $publishedAt = $this->getAttribute('published_at');
 
         if (! $publishedAt instanceof CarbonInterface) {
             return false;
         }
 
-        return $publishedAt->lessThanOrEqualTo(
-            now(),
-        );
+        return $publishedAt->lessThanOrEqualTo(now());
     }
 
     public function isEditable(): bool
     {
-        $status =
-            $this->getAttribute(
-                'status',
-            );
+        $status = $this->getAttribute('status');
 
         return $status instanceof DocumentStatus
             && $status->isEditable();

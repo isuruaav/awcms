@@ -40,9 +40,9 @@ final class DocumentEdit extends Component
 
     public string $publishedAt = '';
 
-    public string $seoTitle = '';
+    public string $titleSi = '';
 
-    public string $seoDescription = '';
+    public string $descriptionSi = '';
 
     /*
     |--------------------------------------------------------------------------
@@ -117,12 +117,12 @@ final class DocumentEdit extends Component
 
                 publishedAt: $this->publicationDateValue(),
 
-                seoTitle: $this->nullableString(
-                    $this->seoTitle,
+                titleSi: $this->nullableString(
+                    $this->titleSi,
                 ),
 
-                seoDescription: $this->nullableString(
-                    $this->seoDescription,
+                descriptionSi: $this->nullableString(
+                    $this->descriptionSi,
                 ),
             );
 
@@ -496,16 +496,16 @@ final class DocumentEdit extends Component
                 'date',
             ],
 
-            'seoTitle' => [
+            'titleSi' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
 
-            'seoDescription' => [
+            'descriptionSi' => [
                 'nullable',
                 'string',
-                'max:320',
+                'max:10000',
             ],
         ];
     }
@@ -579,17 +579,17 @@ final class DocumentEdit extends Component
             )
             : '';
 
-        $this->seoTitle =
+        $this->titleSi =
             $this->stringValue(
                 $document->getAttribute(
-                    'seo_title',
+                    'title_si',
                 ),
             );
 
-        $this->seoDescription =
+        $this->descriptionSi =
             $this->stringValue(
                 $document->getAttribute(
-                    'seo_description',
+                    'description_si',
                 ),
             );
     }
@@ -686,14 +686,14 @@ final class DocumentEdit extends Component
                 $this->publishedAt,
             );
 
-        $this->seoTitle =
+        $this->titleSi =
             trim(
-                $this->seoTitle,
+                $this->titleSi,
             );
 
-        $this->seoDescription =
+        $this->descriptionSi =
             trim(
-                $this->seoDescription,
+                $this->descriptionSi,
             );
     }
 

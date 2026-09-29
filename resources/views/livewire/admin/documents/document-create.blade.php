@@ -122,7 +122,7 @@
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            Document Title
+                            English Title
 
                             <span class="text-red-600">
                                 *
@@ -297,7 +297,7 @@
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            Description
+                            English Description
                         </label>
 
                         <textarea id="document-description" wire:model="description" rows="7" maxlength="10000"
@@ -382,7 +382,7 @@
             </section>
 
 
-            {{-- SEO --}}
+            {{-- Sinhala Translation --}}
 
             <section
                 class="rounded-2xl
@@ -395,23 +395,23 @@
                            px-6 py-4">
                     <h2 class="font-bold
                                text-zinc-900">
-                        Search Engine Information
+                        Sinhala Translation (Optional)
                     </h2>
                 </div>
 
                 <div class="space-y-5 p-6">
 
-                    {{-- SEO Title --}}
+                    {{-- Sinhala Title (සිංහල මාතෘකාව) --}}
 
                     <div>
-                        <label for="document-seo-title"
+                        <label for="document-title-si"
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            SEO Title
+                            Sinhala Title (සිංහල මාතෘකාව)
                         </label>
 
-                        <input id="document-seo-title" type="text" wire:model="seoTitle" maxlength="255"
+                        <input id="document-title-si" type="text" wire:model="titleSi" lang="si" maxlength="255"
                             class="w-full
                                    rounded-xl
                                    border border-zinc-300
@@ -420,7 +420,7 @@
                                    text-sm
                                    text-zinc-900">
 
-                        @error('seoTitle')
+                        @error('titleSi')
                             <p
                                 class="mt-1.5
                                        text-sm font-medium
@@ -431,17 +431,17 @@
                     </div>
 
 
-                    {{-- SEO Description --}}
+                    {{-- Sinhala Description (සිංහල විස්තරය) --}}
 
                     <div>
-                        <label for="document-seo-description"
+                        <label for="document-description-si"
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            SEO Description
+                            Sinhala Description (සිංහල විස්තරය)
                         </label>
 
-                        <textarea id="document-seo-description" wire:model="seoDescription" maxlength="320" rows="4"
+                        <textarea id="document-description-si" wire:model="descriptionSi" lang="si" maxlength="10000" rows="4"
                             class="w-full
                                    rounded-xl
                                    border border-zinc-300
@@ -456,10 +456,10 @@
                                    text-right
                                    text-xs
                                    text-zinc-400">
-                            {{ mb_strlen($seoDescription) }}/320
+                            {{ mb_strlen($descriptionSi) }}/10000
                         </div>
 
-                        @error('seoDescription')
+                        @error('descriptionSi')
                             <p
                                 class="mt-1.5
                                        text-sm font-medium

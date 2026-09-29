@@ -53,19 +53,10 @@
         </x-admin.nav-link>
     @endcan
 
-
-    {{-- Documents --}}
+    {{-- Document Uploads --}}
     @can('documents.view')
-        <x-admin.nav-link :href="route('admin.documents.index')" :active="request()->routeIs('admin.documents.index', 'admin.documents.create', 'admin.documents.edit')">
-            Documents
-        </x-admin.nav-link>
-    @endcan
-
-
-    {{-- Document Categories --}}
-    @can('documents.categories.manage')
-        <x-admin.nav-link :href="route('admin.documents.categories.index')" :active="request()->routeIs('admin.documents.categories.*')">
-            Document Categories
+        <x-admin.nav-link :href="route('admin.documents.index')" :active="request()->routeIs('admin.documents.*')">
+            Document Uploads
         </x-admin.nav-link>
     @endcan
 

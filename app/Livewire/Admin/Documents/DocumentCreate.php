@@ -25,9 +25,9 @@ final class DocumentCreate extends Component
 
     public string $publishedAt = '';
 
-    public string $seoTitle = '';
+    public string $titleSi = '';
 
-    public string $seoDescription = '';
+    public string $descriptionSi = '';
 
     public function mount(): void
     {
@@ -68,12 +68,12 @@ final class DocumentCreate extends Component
 
                 publishedAt: $this->publicationDate(),
 
-                seoTitle: $this->nullableString(
-                    $this->seoTitle,
+                titleSi: $this->nullableString(
+                    $this->titleSi,
                 ),
 
-                seoDescription: $this->nullableString(
-                    $this->seoDescription,
+                descriptionSi: $this->nullableString(
+                    $this->descriptionSi,
                 ),
             );
 
@@ -156,16 +156,16 @@ final class DocumentCreate extends Component
                 'date',
             ],
 
-            'seoTitle' => [
+            'titleSi' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
 
-            'seoDescription' => [
+            'descriptionSi' => [
                 'nullable',
                 'string',
-                'max:320',
+                'max:10000',
             ],
         ];
     }
@@ -202,14 +202,14 @@ final class DocumentCreate extends Component
                 $this->publishedAt,
             );
 
-        $this->seoTitle =
+        $this->titleSi =
             trim(
-                $this->seoTitle,
+                $this->titleSi,
             );
 
-        $this->seoDescription =
+        $this->descriptionSi =
             trim(
-                $this->seoDescription,
+                $this->descriptionSi,
             );
     }
 

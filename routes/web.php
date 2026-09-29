@@ -12,6 +12,7 @@ use App\Http\Controllers\PublicHomeController;
 use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicRedirectController;
+use App\Livewire\Admin\Documents\DocumentUploads;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -713,54 +714,33 @@ Route::middleware([
 | Documents
 |--------------------------------------------------------------------------
 */
-
             Route::livewire(
                 '/documents',
-                'admin.documents.document-index',
+                DocumentUploads::class,
             )
-                ->middleware(
-                    'can:documents.view',
-                )
-                ->name(
-                    'documents.index',
-                );
+                ->middleware('can:documents.view')
+                ->name('documents.index');
 
             Route::livewire(
                 '/documents/create',
-                'admin.documents.document-create',
+                DocumentUploads::class,
             )
-                ->middleware(
+                ->middleware([
+                    'can:documents.view',
                     'can:documents.create',
-                )
-                ->name(
-                    'documents.create',
-                );
-
-            Route::livewire(
-                '/documents/categories',
-                'admin.documents.document-category-index',
-            )
-                ->middleware(
-                    'can:documents.categories.manage',
-                )
-                ->name(
-                    'documents.categories.index',
-                );
+                ])
+                ->name('documents.create');
 
             Route::livewire(
                 '/documents/{document}/edit',
-                'admin.documents.document-edit',
+                DocumentUploads::class,
             )
-                ->whereNumber(
-                    'document',
-                )
+                ->whereNumber('document')
                 ->middleware([
                     'can:documents.view',
                     'can:documents.update',
                 ])
-                ->name(
-                    'documents.edit',
-                );
+                ->name('documents.edit');
 
             /*
             |--------------------------------------------------------------------------
@@ -899,6 +879,21 @@ Route::middleware([
         });
 });
 
+Route::get(
+    '/document-files/{locale}/{slug}/view',
+    [PublicDocumentController::class, 'viewFile'],
+)
+    ->where('locale', 'en|si')
+    ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('document-files.view');
+
+Route::get(
+    '/document-files/{locale}/{slug}/download',
+    [PublicDocumentController::class, 'downloadFile'],
+)
+    ->where('locale', 'en|si')
+    ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('document-files.download');
 /*
 |--------------------------------------------------------------------------
 | Account / Profile Settings

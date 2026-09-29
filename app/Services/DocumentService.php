@@ -36,6 +36,8 @@ final class DocumentService
         ?DateTimeInterface $publishedAt = null,
         ?string $seoTitle = null,
         ?string $seoDescription = null,
+        ?string $titleSi = null,
+        ?string $descriptionSi = null,
     ): Document {
         Gate::forUser(
             $actor,
@@ -69,6 +71,18 @@ final class DocumentService
                 maximumLength: 10000,
             );
 
+        $safeTitleSi = $this->plainText(
+            value: $titleSi,
+            field: 'title_si',
+            maximumLength: 255,
+        );
+
+        $safeDescriptionSi = $this->plainText(
+            value: $descriptionSi,
+            field: 'description_si',
+            maximumLength: 10000,
+        );
+
         $safeSeoTitle =
             $this->plainText(
                 value: $seoTitle,
@@ -100,6 +114,8 @@ final class DocumentService
             function () use (
                 $actor,
                 $safeTitle,
+                $safeTitleSi,
+                $safeDescriptionSi,
                 $safeSlug,
                 $categoryId,
                 $safeDescription,
@@ -124,6 +140,8 @@ final class DocumentService
                 $document =
                     Document::query()->create([
                         'title' => $safeTitle,
+                        'title_si' => $safeTitleSi,
+                        'description_si' => $safeDescriptionSi,
 
                         'slug' => $safeSlug,
 
@@ -171,6 +189,8 @@ final class DocumentService
 
                     newValues: [
                         'title' => $safeTitle,
+                        'title_si' => $safeTitleSi,
+                        'description_si' => $safeDescriptionSi,
 
                         'slug' => $safeSlug,
 
@@ -213,6 +233,8 @@ final class DocumentService
         ?DateTimeInterface $publishedAt = null,
         ?string $seoTitle = null,
         ?string $seoDescription = null,
+        ?string $titleSi = null,
+        ?string $descriptionSi = null,
     ): Document {
         Gate::forUser(
             $actor,
@@ -245,6 +267,18 @@ final class DocumentService
                 field: 'description',
                 maximumLength: 10000,
             );
+
+        $safeTitleSi = $this->plainText(
+            value: $titleSi,
+            field: 'title_si',
+            maximumLength: 255,
+        );
+
+        $safeDescriptionSi = $this->plainText(
+            value: $descriptionSi,
+            field: 'description_si',
+            maximumLength: 10000,
+        );
 
         $safeSeoTitle =
             $this->plainText(
@@ -294,6 +328,8 @@ final class DocumentService
                 $documentId,
                 $actor,
                 $safeTitle,
+                $safeTitleSi,
+                $safeDescriptionSi,
                 $safeSlug,
                 $categoryId,
                 $safeDescription,
@@ -327,6 +363,8 @@ final class DocumentService
                 }
 
                 $oldValues = [
+                    'title_si' => $this->stringValue($document->getAttribute('title_si')),
+                    'description_si' => $this->stringValue($document->getAttribute('description_si')),
                     'title' => $this->stringValue(
                         $document->getAttribute(
                             'title',
@@ -378,6 +416,8 @@ final class DocumentService
 
                 $document->forceFill([
                     'title' => $safeTitle,
+                    'title_si' => $safeTitleSi,
+                    'description_si' => $safeDescriptionSi,
 
                     'slug' => $safeSlug,
 
@@ -413,6 +453,8 @@ final class DocumentService
 
                     newValues: [
                         'title' => $safeTitle,
+                        'title_si' => $safeTitleSi,
+                        'description_si' => $safeDescriptionSi,
 
                         'slug' => $safeSlug,
 
@@ -1063,6 +1105,8 @@ final class DocumentService
                 }
 
                 $oldValues = [
+                    'title_si' => $this->stringValue($document->getAttribute('title_si')),
+                    'description_si' => $this->stringValue($document->getAttribute('description_si')),
                     'title' => $this->stringValue(
                         $document->getAttribute(
                             'title',

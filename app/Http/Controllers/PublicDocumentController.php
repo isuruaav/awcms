@@ -1,367 +1,273 @@
 <?php
-
 namespace App\Http\Controllers;
-
-use App\Enums\DocumentStatus;
-use App\Enums\MediaSource;
-use App\Enums\MediaType;
-use App\Enums\MediaVisibility;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\MediaAsset;
+use App\Services\DocumentUploadManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class PublicDocumentController extends Controller
 {
-    public function index(): View
+    public function __construct(
+        private readonly DocumentUploadManager $uploads,
+    ) {}
+
+    public function index(string $locale = 'en'): View
     {
-        $documents =
-            $this->publicDocumentsQuery()
-                ->with([
-                    'category',
-                ])
-                ->orderByDesc(
-                    'document_date',
-                )
-                ->orderByDesc(
-                    'published_at',
-                )
-                ->orderByDesc(
-                    'id',
-                )
-                ->paginate(
-                    15,
-                )
-                ->withQueryString();
+        $this->setLocale($locale);
 
-        return view(
-            'public.documents.index',
-            [
-                'documents' => $documents,
-            ],
-        );
+        $documents = $this->query($locale)
+            ->recent()
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('public.documents.upload-index', [
+            'documents' => $documents,
+            'currentLocale' => $locale,
+            'languageVersions' => $this->languageVersions($locale),
+        ]);
     }
 
-    public function show(
+    public function show(string $slug): View
+    {
+        return $this->showLocalized('en', $slug);
+    }
+
+    public function showLocalized(string $locale, string $slug): View
+    {
+        $this->setLocale($locale);
+
+        $document = $this->query($locale)
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        return $this->detail($document, $locale);
+    }
+
+    public function view(string $slug): StreamedResponse
+    {
+        $document = $this->query('en')
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        return $this->stream($document, 'en', false);
+    }
+
+    public function download(string $slug): StreamedResponse
+    {
+        $document = $this->query('en')
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        return $this->stream($document, 'en', true);
+    }
+
+    public function viewFile(
+        string $locale,
         string $slug,
-    ): View {
-        $document =
-            $this->publicDocument(
-                $slug,
-            );
+    ): View|StreamedResponse {
+        $this->setLocale($locale);
 
-        $currentVersion =
-            $this->currentVersion(
-                $document,
-            );
+        $document = $this->query($locale)
+            ->where('slug', $slug)
+            ->firstOrFail();
 
-        return view(
-            'public.documents.show',
-            [
-                'document' => $document,
+        $version = $this->version($document, $locale);
+        $media = $version->media;
 
-                'currentVersion' => $currentVersion,
-            ],
-        );
+        abort_unless($media instanceof MediaAsset, 404);
+
+        if ($media->getAttribute('extension') === 'pdf') {
+            return $this->stream($document, $locale, false);
+        }
+
+        return $this->detail($document, $locale);
     }
 
-    public function view(
-        string $slug,
-    ): StreamedResponse {
-        $document =
-            $this->publicDocument(
-                $slug,
-            );
-
-        $version =
-            $this->currentVersion(
-                $document,
-            );
-
-        $media =
-            $version->media;
-
-        abort_unless(
-            $media instanceof MediaAsset,
-            404,
-        );
-
-        $disk =
-            $this->requiredString(
-                $media->getAttribute(
-                    'disk',
-                ),
-            );
-
-        $path =
-            $this->requiredString(
-                $media->getAttribute(
-                    'path',
-                ),
-            );
-
-        abort_unless(
-            Storage::disk(
-                $disk,
-            )->exists(
-                $path,
-            ),
-            404,
-        );
-
-        return Storage::disk(
-            $disk,
-        )->response(
-            $path,
-            $this->filename(
-                document: $document,
-                version: $version,
-            ),
-            [
-                'Content-Type' => 'application/pdf',
-
-                'X-Content-Type-Options' => 'nosniff',
-            ],
-            'inline',
-        );
-    }
-
-    public function download(
+    public function downloadFile(
+        string $locale,
         string $slug,
     ): StreamedResponse {
-        $document =
-            $this->publicDocument(
-                $slug,
-            );
+        $this->setLocale($locale);
 
-        $version =
-            $this->currentVersion(
-                $document,
-            );
+        $document = $this->query($locale)
+            ->where('slug', $slug)
+            ->firstOrFail();
 
-        $media =
-            $version->media;
-
-        abort_unless(
-            $media instanceof MediaAsset,
-            404,
-        );
-
-        $disk =
-            $this->requiredString(
-                $media->getAttribute(
-                    'disk',
-                ),
-            );
-
-        $path =
-            $this->requiredString(
-                $media->getAttribute(
-                    'path',
-                ),
-            );
-
-        abort_unless(
-            Storage::disk(
-                $disk,
-            )->exists(
-                $path,
-            ),
-            404,
-        );
-
-        return Storage::disk(
-            $disk,
-        )->download(
-            $path,
-            $this->filename(
-                document: $document,
-                version: $version,
-            ),
-            [
-                'Content-Type' => 'application/pdf',
-
-                'X-Content-Type-Options' => 'nosniff',
-            ],
-        );
+        return $this->stream($document, $locale, true);
     }
 
     /**
      * @return Builder<Document>
      */
-    private function publicDocumentsQuery(): Builder
+    private function query(string $locale): Builder
     {
+        $primary = $locale === 'si'
+            ? 'current_version_si'
+            : 'current_version';
+
+        $fallback = $locale === 'si'
+            ? 'current_version'
+            : 'current_version_si';
+
         return Document::query()
-            ->where(
-                'status',
-                DocumentStatus::Published->value,
-            )
-            ->whereNotNull(
-                'published_at',
-            )
-            ->where(
-                'published_at',
-                '<=',
-                now(),
-            )
-            ->where(
-                'current_version',
-                '>',
-                0,
-            )
-            ->whereHas(
-                'versions',
-                static function (
-                    Builder $query,
-                ): void {
-                    $query
-                        ->whereColumn(
-                            'document_versions.version',
-                            'documents.current_version',
-                        )
-                        ->whereHas(
-                            'media',
-                            static function (
-                                Builder $mediaQuery,
-                            ): void {
-                                self::applyPublicPdfRules(
-                                    $mediaQuery,
-                                );
-                            },
-                        );
-                },
-            );
+            ->published()
+            ->where(function (Builder $query) use ($primary, $fallback): void {
+                $query
+                    ->where(function (Builder $preferred) use ($primary): void {
+                        $preferred
+                            ->where($primary, '>', 0)
+                            ->whereHas('versions', function (Builder $versions) use ($primary): void {
+                                $versions
+                                    ->whereColumn(
+                                        'document_versions.version',
+                                        'documents.'.$primary,
+                                    )
+                                    ->whereHas('media', function (Builder $media): void {
+                                        /** @var Builder<MediaAsset> $media */
+                                        $this->uploads->applyFileRules($media);
+                                    });
+                            });
+                    })
+                    ->orWhere(function (Builder $other) use ($primary, $fallback): void {
+                        $other
+                            ->where($primary, 0)
+                            ->where($fallback, '>', 0)
+                            ->whereHas('versions', function (Builder $versions) use ($fallback): void {
+                                $versions
+                                    ->whereColumn(
+                                        'document_versions.version',
+                                        'documents.'.$fallback,
+                                    )
+                                    ->whereHas('media', function (Builder $media): void {
+                                        /** @var Builder<MediaAsset> $media */
+                                        $this->uploads->applyFileRules($media);
+                                    });
+                            });
+                    });
+            });
     }
 
-    private function publicDocument(
-        string $slug,
-    ): Document {
-        return $this->publicDocumentsQuery()
-            ->where(
-                'slug',
-                $slug,
-            )
-            ->with([
-                'category',
-            ])
-            ->firstOrFail();
+    private function detail(Document $document, string $locale): View
+    {
+        return view('public.documents.upload-show', [
+            'document' => $document,
+            'currentVersion' => $this->version($document, $locale),
+            'currentLocale' => $locale,
+            'languageVersions' => $this->languageVersions($locale, $document),
+        ]);
     }
 
-    private function currentVersion(
+    private function version(Document $document, string $locale): DocumentVersion
+    {
+        $version = $this->uploads->currentVersion($document, $locale);
+
+        abort_unless($version instanceof DocumentVersion, 404);
+
+        return $version;
+    }
+
+    private function stream(
         Document $document,
-    ): DocumentVersion {
-        return DocumentVersion::query()
-            ->where(
-                'document_id',
-                (int) $document->getKey(),
-            )
-            ->where(
-                'version',
-                $document->current_version,
-            )
-            ->whereHas(
-                'media',
-                static function (
-                    Builder $query,
-                ): void {
-                    self::applyPublicPdfRules(
-                        $query,
-                    );
-                },
-            )
-            ->with([
-                'media',
-                'uploader',
-            ])
-            ->firstOrFail();
+        string $locale,
+        bool $download,
+    ): StreamedResponse {
+        $version = $this->version($document, $locale);
+        $media = $version->media;
+
+        abort_unless($media instanceof MediaAsset, 404);
+
+        $disk = $this->requiredString($media->getAttribute('disk'));
+        $path = $this->requiredString($media->getAttribute('path'));
+        $extension = $this->requiredString($media->getAttribute('extension'));
+
+        $mime = DocumentUploadManager::TYPES[$extension] ?? null;
+
+        abort_unless(is_string($mime), 404);
+        abort_unless(Storage::disk($disk)->exists($path), 404);
+
+        $base = Str::slug($document->titleForLocale('en'));
+
+        $filename = ($base !== '' ? $base : 'document')
+            .'-v'.$version->version
+            .'.'.$extension;
+
+        $headers = [
+            'Content-Type' => $mime,
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
+        ];
+
+        if ($download || $extension !== 'pdf') {
+            return Storage::disk($disk)->download($path, $filename, $headers);
+        }
+
+        return Storage::disk($disk)->response(
+            $path,
+            $filename,
+            $headers,
+            'inline',
+        );
     }
 
     /**
-     * @param  Builder<Model>  $query
+     * @return list<array{
+     *     code: string,
+     *     label: string,
+     *     native_label: string,
+     *     available: bool,
+     *     active: bool,
+     *     url: string
+     * }>
      */
-    private static function applyPublicPdfRules(
-        Builder $query,
-    ): void {
-        $query
-            ->where(
-                'type',
-                MediaType::Document->value,
-            )
-            ->where(
-                'visibility',
-                MediaVisibility::Public->value,
-            )
-            ->where(
-                'source',
-                '!=',
-                MediaSource::External->value,
-            )
-            ->where(
-                'mime_type',
-                'application/pdf',
-            )
-            ->where(
-                'extension',
-                'pdf',
-            )
-            ->whereNotNull(
-                'disk',
-            )
-            ->where(
-                'disk',
-                '!=',
-                '',
-            )
-            ->whereNotNull(
-                'path',
-            )
-            ->where(
-                'path',
-                '!=',
-                '',
-            );
-    }
+    private function languageVersions(
+        string $locale,
+        ?Document $document = null,
+    ): array {
+        $versions = [];
 
-    private function filename(
-        Document $document,
-        DocumentVersion $version,
-    ): string {
-        $baseName =
-            Str::slug(
-                $document->title,
-            );
+        foreach (['en' => 'English', 'si' => 'සිංහල'] as $code => $label) {
+            if ($document === null) {
+                $url = $code === 'en'
+                    ? route('documents.index')
+                    : route('documents.index.localized', ['locale' => $code]);
+            } else {
+                $url = $code === 'en'
+                    ? route('documents.show', ['slug' => $document->slug])
+                    : route('documents.show.localized', [
+                        'locale' => $code,
+                        'slug' => $document->slug,
+                    ]);
+            }
 
-        if ($baseName === '') {
-            $baseName =
-                'document';
+            $versions[] = [
+                'code' => $code,
+                'label' => $code === 'si' ? 'Sinhala' : 'English',
+                'native_label' => $label,
+                'available' => true,
+                'active' => $code === $locale,
+                'url' => $url,
+            ];
         }
 
-        return $baseName
-            .'-v'
-            .$version->version
-            .'.pdf';
+        return $versions;
     }
 
-    private function requiredString(
-        mixed $value,
-    ): string {
-        abort_unless(
-            is_string(
-                $value,
-            )
-            && trim(
-                $value,
-            ) !== '',
-            404,
-        );
+    private function setLocale(string $locale): void
+    {
+        abort_unless(in_array($locale, ['en', 'si'], true), 404);
 
-        return trim(
-            $value,
-        );
+        app()->setLocale($locale);
+    }
+
+    private function requiredString(mixed $value): string
+    {
+        abort_unless(is_string($value) && trim($value) !== '', 404);
+
+        return trim($value);
     }
 }
