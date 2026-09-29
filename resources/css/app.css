@@ -11,16 +11,42 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* English */
+@font-face {
+    font-family: "AWCMS Exo 2";
+    src: url("../fonts/Exo2-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+
+    /* Sinhala characters use the next font in the stack. */
+    unicode-range: U+0000-0D7F, U+0E00-10FFFF;
+}
+
+/* Sinhala */
+@font-face {
+    font-family: "AWCMS Noto Serif Sinhala";
+    src: url("../fonts/NotoSerifSinhala-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --awcms-font-family:
+        "AWCMS Exo 2",
+        "AWCMS Noto Serif Sinhala",
+        sans-serif;
+}
 @theme {
     --font-sans:
-        'Instrument Sans',
-        ui-sans-serif,
-        system-ui,
+        "AWCMS Exo 2",
+        "AWCMS Noto Serif Sinhala",
         sans-serif,
-        'Apple Color Emoji',
-        'Segoe UI Emoji',
-        'Segoe UI Symbol',
-        'Noto Color Emoji';
+        "Apple Color Emoji",
+        "Segoe UI Emoji",
+        "Segoe UI Symbol",
+        "Noto Color Emoji";
 
     --color-zinc-50: #fafafa;
     --color-zinc-100: #f5f5f5;
@@ -131,6 +157,21 @@ trix-editor.awcms-editor:focus {
 |--------------------------------------------------------------------------
 */
 
+/* Admin and shared application typography */
+html,
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button,
+input,
+select,
+textarea {
+    font-family: var(--awcms-font-family);
+}
 trix-toolbar {
     margin-bottom: 0.75rem;
 }

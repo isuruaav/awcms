@@ -40,10 +40,77 @@
   --shadow-blue: 0 18px 48px -18px rgba(0, 147, 221, .50);
   --shadow-green: 0 18px 48px -18px rgba(0, 194, 111, .50);
 
-  --font: "Rajdhani", Arial, Helvetica, sans-serif;
+  --font: var(--awcms-font-family);
   --radius-xl: 28px;
   --radius-lg: 22px;
   --radius-md: 16px;
+}
+
+/* English */
+@font-face {
+    font-family: "AWCMS Exo 2";
+    src: url("../fonts/Exo2-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+
+    /* Sinhala characters use the next font in the stack. */
+    unicode-range: U+0000-0D7F, U+0E00-10FFFF;
+}
+
+/* Sinhala */
+@font-face {
+    font-family: "AWCMS Noto Serif Sinhala";
+    src: url("../fonts/NotoSerifSinhala-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+
+/* Public website typography */
+:root {
+    --sos-site-font: var(--awcms-font-family);
+}
+
+html,
+body {
+    font-family: var(--awcms-font-family);
+}
+
+body :where(
+    h1, h2, h3, h4, h5, h6,
+    p, a, span, strong, small,
+    li, dt, dd, label,
+    button, input, select, textarea,
+    table, th, td, summary, figcaption
+) {
+    font-family: var(--awcms-font-family);
+}
+
+/* Replace earlier Sinhala history font overrides. */
+.sos-history-page,
+.sos-history-page:lang(si),
+.sos-history-page:lang(si) :is(
+    h1, h2, h3, p, span, strong, time, div
+) {
+    font-family: var(--awcms-font-family);
+}
+
+.sos-history-page:lang(si) :is(h1, h2, h3) {
+    line-height: 1.6;
+    letter-spacing: normal;
+}
+
+.sos-history-page:lang(si) p {
+    line-height: 1.9;
+    letter-spacing: normal;
+}
+:root {
+    --awcms-font-family:
+        "AWCMS Exo 2",
+        "AWCMS Noto Serif Sinhala",
+        sans-serif;
 }
 
 /* ---------- Reset / Base ---------- */
@@ -217,7 +284,7 @@ button {
 
 .brand-title {
   display: block;
-  font-size: 23px;
+  font-size: 20px;
   font-weight: 900;
   line-height: 1.05;
   color: var(--navy-900);
@@ -5079,7 +5146,7 @@ img.image-fallback {
 .sos-history-milestone-content p,
 .sos-history-card > p,
 .sos-history-prose p {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--awcms-font-family);
     font-size: 16px;
     line-height: 1.9;
     text-align: justify;
@@ -5176,7 +5243,7 @@ img.image-fallback {
 
 .sos-history-leader > p:last-child {
     color: #526079;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--awcms-font-family);
     font-size: 15px;
     line-height: 1.8;
 }
@@ -5237,7 +5304,7 @@ img.image-fallback {
 
 /* Sinhala typography — preserve the existing history layout */
 .sos-history-page:lang(si) {
-    font-family: "Noto Sans Sinhala", "Iskoola Pota", sans-serif;
+    font-family: var(--awcms-font-family);
 }
 
 .sos-history-page:lang(si) :is(h1, h2, h3, p, span, strong, time, div) {

@@ -323,7 +323,7 @@
         </div>
     </section> --}}
 
-    @if ($latestDocuments->isNotEmpty())
+    {{-- @if ($latestDocuments->isNotEmpty())
         <section class="section white" id="documents">
             <div class="container">
                 <div class="section-head reveal">
@@ -347,7 +347,7 @@
                 </div>
             </div>
         </section>
-    @endif
+    @endif --}}
 
     <section class="section contact-section school-contact-cta" id="contact-short">
         <div class="container">
