@@ -4908,3 +4908,356 @@ img.image-fallback {
     margin-inline: auto;
   }
 }
+
+
+
+
+
+/* School History page */
+
+.sos-history-page {
+    --history-navy: #0d1536;
+    --history-blue: #0076b3;
+    --history-green: #007634;
+    --history-text: #34405a;
+    --history-border: #dce5f2;
+
+    background: #fff;
+    color: var(--history-text);
+    line-height: 1.8;
+}
+
+.sos-history-page,
+.sos-history-page *,
+.sos-history-page *::before,
+.sos-history-page *::after {
+    box-sizing: border-box;
+}
+
+.sos-history-page .sos-history-container {
+    width: min(1120px, calc(100% - 40px));
+    margin-inline: auto;
+}
+
+.sos-history-page p {
+    margin: 0;
+}
+
+.sos-history-page h1,
+.sos-history-page h2,
+.sos-history-page h3 {
+    margin: 0;
+    color: var(--history-navy);
+    overflow-wrap: break-word;
+}
+
+.sos-history-page .sos-history-kicker {
+    margin-bottom: 12px;
+    color: var(--history-green);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.sos-history-hero {
+    padding: 68px 0 48px;
+    border-bottom: 1px solid var(--history-border);
+    background:
+        radial-gradient(
+            circle at 95% 5%,
+            rgba(0, 194, 111, 0.09),
+            transparent 45%
+        ),
+        linear-gradient(135deg, #eaf8ff, #f8fcff 65%, #fff);
+}
+
+.sos-history-hero h1 {
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 800;
+    line-height: 1.15;
+}
+
+.sos-history-page .sos-history-intro {
+    max-width: 730px;
+    margin-top: 22px;
+    color: #526079;
+    font-size: 19px;
+    line-height: 1.8;
+}
+
+.sos-history-highlights {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+    margin-top: 36px;
+}
+
+.sos-history-highlights > div {
+    padding: 18px 22px;
+    border: 1px solid rgba(0, 118, 179, 0.14);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.sos-history-highlights strong,
+.sos-history-highlights span {
+    display: block;
+}
+
+.sos-history-highlights strong {
+    color: var(--history-blue);
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.sos-history-highlights span {
+    margin-top: 6px;
+    color: #526079;
+    font-size: 15px;
+}
+
+.sos-history-section {
+    padding: 56px 0;
+}
+
+.sos-history-section-soft {
+    background: #f5f8fc;
+    border-block: 1px solid #e7edf5;
+}
+
+.sos-history-section-heading {
+    margin-bottom: 28px;
+}
+
+.sos-history-page h2 {
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.sos-history-section-heading > p:last-child:not(.sos-history-kicker) {
+    max-width: 760px;
+    margin-top: 16px;
+    font-size: 17px;
+}
+
+.sos-history-timeline {
+    display: grid;
+    gap: 20px;
+}
+
+.sos-history-milestone {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 26px;
+    align-items: start;
+    padding: 26px;
+    border: 1px solid var(--history-border);
+    border-radius: 16px;
+    background: #fff;
+}
+
+.sos-history-date {
+    padding: 12px 10px;
+    border-radius: 12px;
+    background: #eaf8ff;
+    color: var(--history-blue);
+    font-size: 24px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.sos-history-page h3 {
+    margin-bottom: 14px;
+    font-size: 23px;
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.sos-history-milestone-content p,
+.sos-history-card > p,
+.sos-history-prose p {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    line-height: 1.9;
+    text-align: justify;
+    text-align-last: start;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+.sos-history-motto {
+    margin-top: 24px;
+    padding: 26px;
+    border-radius: 16px;
+    background: linear-gradient(110deg, #0d1536, #005c8c);
+    text-align: center;
+}
+
+.sos-history-motto > span {
+    color: #a6e7ff;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.sos-history-page .sos-history-motto > p {
+    margin-top: 8px;
+    color: #fff;
+    font-size: clamp(26px, 3vw, 36px);
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.sos-history-card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.sos-history-card {
+    min-width: 0;
+    padding: 26px;
+    border: 1px solid var(--history-border);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 26px -20px rgba(13, 21, 54, 0.3);
+}
+
+.sos-history-card-number {
+    display: inline-grid;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 20px;
+    place-items: center;
+    border-radius: 12px;
+    background: #eafff4;
+    color: var(--history-green);
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.sos-history-card > p + p,
+.sos-history-prose p + p {
+    margin-top: 18px;
+}
+
+.sos-history-community {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.6fr);
+    gap: 46px;
+    align-items: start;
+}
+
+.sos-history-leaders {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.sos-history-leader {
+    padding: 26px;
+    border: 1px solid var(--history-border);
+    border-top: 3px solid var(--history-green);
+    border-radius: 14px;
+    background: #fff;
+}
+
+.sos-history-page .sos-history-role {
+    margin-bottom: 12px;
+    color: var(--history-green);
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+}
+
+.sos-history-leader > p:last-child {
+    color: #526079;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+@media (max-width: 960px) {
+    .sos-history-card-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sos-history-community {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .sos-history-page .sos-history-container {
+        width: calc(100% - 32px);
+    }
+
+    .sos-history-hero {
+        padding: 42px 0 32px;
+    }
+
+    .sos-history-section {
+        padding: 36px 0;
+    }
+
+    .sos-history-page .sos-history-intro {
+        font-size: 17px;
+    }
+
+    .sos-history-highlights,
+    .sos-history-leaders {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .sos-history-milestone {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        padding: 20px;
+    }
+
+    .sos-history-date {
+        width: fit-content;
+        min-width: 90px;
+        padding-inline: 18px;
+    }
+
+    .sos-history-card,
+    .sos-history-leader {
+        padding: 22px;
+    }
+}
+
+
+
+/* Sinhala typography — preserve the existing history layout */
+.sos-history-page:lang(si) {
+    font-family: "Noto Sans Sinhala", "Iskoola Pota", sans-serif;
+}
+
+.sos-history-page:lang(si) :is(h1, h2, h3, p, span, strong, time, div) {
+    font-family: inherit;
+    letter-spacing: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+    hyphens: none;
+}
+
+.sos-history-page:lang(si) :is(h1, h2, h3) {
+    line-height: 1.6;
+}
+
+.sos-history-page:lang(si) p,
+.sos-history-page:lang(si) .sos-history-highlights span {
+    line-height: 1.9;
+}
+
+.sos-history-page:lang(si) .sos-history-date {
+    font-size: 16px;
+    line-height: 1.6;
+}

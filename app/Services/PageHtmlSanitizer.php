@@ -27,6 +27,8 @@ final class PageHtmlSanitizer
         'aside',
         'figure',
         'figcaption',
+        'details',
+        'summary',
         'span',
         'p',
         'br',
@@ -72,39 +74,33 @@ final class PageHtmlSanitizer
 
         if (
             ! is_dir($cachePath)
-            && ! mkdir(
-                $cachePath,
-                0755,
-                true,
-            )
+            && ! mkdir($cachePath, 0755, true)
             && ! is_dir($cachePath)
         ) {
             throw new RuntimeException(
                 'Unable to create the page HTML Purifier cache directory.',
             );
         }
+
         $this->htmlPurifier = $this->makePurifier(
             cachePath: $cachePath,
             definitionId: 'awcms-page-tailwind-html',
-            definitionRev: 6,
+            definitionRev: 7,
             allowVisualStyles: false,
         );
 
         $this->visualPurifier = $this->makePurifier(
             cachePath: $cachePath,
             definitionId: 'awcms-page-visual-html',
-            definitionRev: 3,
+            definitionRev: 4,
             allowVisualStyles: true,
         );
     }
 
     /**
-     * Sanitize developer-authored HTML + Tailwind content.
+     * Sanitize HTML content while preserving CSS classes.
      *
-     * Tailwind classes are preserved. A deliberately small set of safe
-     * presentation styles is also allowed so Visual Editor formatting
-     * survives switching to HTML mode: color, background-color and text-align.
-     * The <style> element remains forbidden.
+     * Inline styles and style elements remain forbidden in HTML mode.
      */
     public function sanitize(?string $html): string
     {
@@ -115,10 +111,10 @@ final class PageHtmlSanitizer
     }
 
     /**
-     * Sanitize Word-like visual editor content.
+     * Sanitize visual editor content.
      *
-     * Only the small inline-CSS subset required by the visual toolbar is
-     * allowed: text colour, background colour and text alignment.
+     * Only text colour, background colour and text alignment
+     * are allowed as inline styles.
      */
     public function sanitizeVisual(?string $html): string
     {
@@ -136,15 +132,8 @@ final class PageHtmlSanitizer
     ): HTMLPurifier {
         $config = HTMLPurifier_Config::createDefault();
 
-        $config->set(
-            'Core.Encoding',
-            'UTF-8',
-        );
-
-        $config->set(
-            'Core.RemoveProcessingInstructions',
-            true,
-        );
+        $config->set('Core.Encoding', 'UTF-8');
+        $config->set('Core.RemoveProcessingInstructions', true);
 
         $config->set(
             'HTML.AllowedElements',
@@ -217,6 +206,8 @@ final class PageHtmlSanitizer
             'onkeydown',
             'onkeyup',
             'onkeypress',
+            'ontoggle',
+            'onbeforetoggle',
         ];
 
         if (! $allowVisualStyles) {
@@ -238,10 +229,7 @@ final class PageHtmlSanitizer
             ],
         );
 
-        $config->set(
-            'Attr.EnableID',
-            true,
-        );
+        $config->set('Attr.EnableID', true);
 
         $config->set(
             'CSS.AllowedProperties',
@@ -254,31 +242,10 @@ final class PageHtmlSanitizer
                 : [],
         );
 
-        $config->set(
-            'AutoFormat.RemoveEmpty',
-            false,
-        );
-
-        $config->set(
-            'Cache.SerializerPath',
-            $cachePath,
-        );
-
-        /*
-         * HTML Purifier's default class attribute uses NMTOKENS, which is
-         * stricter than Tailwind class syntax. A class value is inert here,
-         * so permit it as text while HTML, URLs and event handlers remain
-         * strongly sanitised.
-         */
-        $config->set(
-            'HTML.DefinitionID',
-            $definitionId,
-        );
-
-        $config->set(
-            'HTML.DefinitionRev',
-            $definitionRev,
-        );
+        $config->set('AutoFormat.RemoveEmpty', false);
+        $config->set('Cache.SerializerPath', $cachePath);
+        $config->set('HTML.DefinitionID', $definitionId);
+        $config->set('HTML.DefinitionRev', $definitionRev);
 
         $definition = $config->maybeGetRawHTMLDefinition();
 
@@ -308,6 +275,32 @@ final class PageHtmlSanitizer
                 );
             }
 
+            /*
+             * Native disclosure controls for mobile navigation.
+             * No JavaScript or event attributes are permitted.
+             */
+            if (! isset($definition->info['details'])) {
+                $definition->addElement(
+                    'details',
+                    'Block',
+                    'Flow',
+                    'Common',
+                );
+            }
+
+            if (! isset($definition->info['summary'])) {
+                $definition->addElement(
+                    'summary',
+                    'Block',
+                    'Inline',
+                    'Common',
+                );
+            }
+
+            /*
+             * Preserve Tailwind and theme class names.
+             * HTML, URLs and event attributes remain sanitised.
+             */
             foreach ($this->allowedElements as $elementName) {
                 if (! isset($definition->info[$elementName])) {
                     continue;
@@ -318,9 +311,7 @@ final class PageHtmlSanitizer
             }
         }
 
-        return new HTMLPurifier(
-            $config,
-        );
+        return new HTMLPurifier($config);
     }
 
     private function purify(
@@ -338,9 +329,7 @@ final class PageHtmlSanitizer
         }
 
         $cleanHtml = trim(
-            $purifier->purify(
-                $html,
-            ),
+            $purifier->purify($html),
         );
 
         if ($cleanHtml === '') {
