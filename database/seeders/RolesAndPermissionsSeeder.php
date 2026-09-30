@@ -69,7 +69,6 @@ final class RolesAndPermissionsSeeder extends Seeder
             'pages.submit',
             'pages.approve',
             'pages.publish',
-            'pages.archive',
 
             'pages.revisions.view',
             'pages.revisions.restore',
@@ -92,7 +91,6 @@ final class RolesAndPermissionsSeeder extends Seeder
             'news.request-changes',
             'news.approve',
             'news.publish',
-            'news.archive',
 
             /*
              * News administration.
@@ -110,7 +108,6 @@ final class RolesAndPermissionsSeeder extends Seeder
             'galleries.update',
             'galleries.delete',
             'galleries.publish',
-            'galleries.archive',
 
             /*
             |--------------------------------------------------------------------------
@@ -123,7 +120,6 @@ final class RolesAndPermissionsSeeder extends Seeder
             'documents.update',
             'documents.delete',
             'documents.publish',
-            'documents.archive',
 
             /*
              * Document administration.
@@ -151,6 +147,22 @@ final class RolesAndPermissionsSeeder extends Seeder
             'menus.manage',
             'theme-layouts.manage',
             'settings.manage',
+
+            // School modules
+            'hero-slides.view',
+            'hero-slides.create',
+            'hero-slides.update',
+            'hero-slides.delete',
+            'school-leaders.view',
+            'school-leaders.update',
+            'past-commandants.view',
+            'past-commandants.create',
+            'past-commandants.update',
+            'past-commandants.delete',
+            'past-chief-instructors.view',
+            'past-chief-instructors.create',
+            'past-chief-instructors.update',
+            'past-chief-instructors.delete',
             'contacts.manage',
             'redirects.manage',
 
@@ -233,7 +245,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.submit',
                 'pages.approve',
                 'pages.publish',
-                'pages.archive',
 
                 'pages.revisions.view',
                 'pages.revisions.restore',
@@ -250,7 +261,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.request-changes',
                 'news.approve',
                 'news.publish',
-                'news.archive',
 
                 'news.categories.manage',
 
@@ -262,7 +272,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'galleries.update',
                 'galleries.delete',
                 'galleries.publish',
-                'galleries.archive',
 
                 /*
                  * Documents
@@ -272,7 +281,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'documents.update',
                 'documents.delete',
                 'documents.publish',
-                'documents.archive',
 
                 'documents.categories.manage',
 
@@ -291,6 +299,22 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'menus.manage',
                 'theme-layouts.manage',
                 'settings.manage',
+
+                // School modules
+                'hero-slides.view',
+                'hero-slides.create',
+                'hero-slides.update',
+                'hero-slides.delete',
+                'school-leaders.view',
+                'school-leaders.update',
+                'past-commandants.view',
+                'past-commandants.create',
+                'past-commandants.update',
+                'past-commandants.delete',
+                'past-chief-instructors.view',
+                'past-chief-instructors.create',
+                'past-chief-instructors.update',
+                'past-chief-instructors.delete',
                 'contacts.manage',
                 'redirects.manage',
 
@@ -327,7 +351,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'pages.submit',
                 'pages.approve',
                 'pages.publish',
-                'pages.archive',
 
                 'pages.revisions.view',
                 'pages.revisions.restore',
@@ -343,7 +366,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'news.request-changes',
                 'news.approve',
                 'news.publish',
-                'news.archive',
 
                 'news.categories.manage',
 
@@ -354,7 +376,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'galleries.create',
                 'galleries.update',
                 'galleries.publish',
-                'galleries.archive',
 
                 /*
                  * Documents
@@ -363,7 +384,6 @@ final class RolesAndPermissionsSeeder extends Seeder
                 'documents.create',
                 'documents.update',
                 'documents.publish',
-                'documents.archive',
 
                 'documents.categories.manage',
 

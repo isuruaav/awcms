@@ -13,6 +13,10 @@ use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicRedirectController;
 use App\Livewire\Admin\Documents\DocumentUploads;
+use App\Livewire\Admin\HeroSlides\HeroSlideIndex;
+use App\Livewire\Admin\PastChiefInstructors\PastChiefInstructorIndex;
+use App\Livewire\Admin\PastCommandants\PastCommandantIndex;
+use App\Livewire\Admin\SchoolLeaders\SchoolLeaderIndex;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -787,11 +791,11 @@ Route::middleware([
             |--------------------------------------------------------------------------
             */
 
-            Route::livewire(
+            Route::get(
                 '/hero-slides',
-                'admin.hero-slides.hero-slide-index',
+                HeroSlideIndex::class,
             )
-                ->middleware('can:settings.manage')
+                ->middleware('can:hero-slides.view')
                 ->name('hero-slides.index');
 
             /*
@@ -800,26 +804,26 @@ Route::middleware([
             |--------------------------------------------------------------------------
             */
 
-            Route::livewire(
-                '/school-leaders',
-                'admin.school-leaders.school-leader-index',
-            )
-                ->middleware('can:settings.manage')
-                ->name('school-leaders.index');
-
-            Route::livewire(
+            Route::get(
                 '/past-commandants',
-                'admin.past-commandants.past-commandant-index',
+                PastCommandantIndex::class,
             )
-                ->middleware('can:settings.manage')
+                ->middleware('can:past-commandants.view')
                 ->name('past-commandants.index');
 
-            Route::livewire(
+            Route::get(
                 '/past-chief-instructors',
-                'admin.past-chief-instructors.past-chief-instructor-index',
+                PastChiefInstructorIndex::class,
             )
-                ->middleware('can:settings.manage')
+                ->middleware('can:past-chief-instructors.view')
                 ->name('past-chief-instructors.index');
+
+            Route::get(
+                '/school-leaders',
+                SchoolLeaderIndex::class,
+            )
+                ->middleware('can:school-leaders.view')
+                ->name('school-leaders.index');
 
             /*
             |--------------------------------------------------------------------------

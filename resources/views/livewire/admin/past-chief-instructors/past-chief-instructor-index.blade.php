@@ -1,6 +1,11 @@
 <div class="space-y-6">
+    @php
+        $canCreate = \Illuminate\Support\Facades\Gate::allows('past-chief-instructors.create');
+        $canUpdate = \Illuminate\Support\Facades\Gate::allows('past-chief-instructors.update');
+        $canManageForm = $canCreate || $canUpdate;
+        $canSave = $editingId === null ? $canCreate : $canUpdate;
+    @endphp
     @php($mediaUrls = app(\App\Services\MediaUrlService::class))
-
     <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
             <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">History</p>
@@ -8,16 +13,16 @@
             <p class="mt-1 text-sm text-zinc-500">Add and manage the former Chief Instructors shown on the public history
                 page.</p>
         </div>
-        <button type="button" wire:click="create"
-            class="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800">New Past Chief
-            Instructor</button>
+        @can('past-chief-instructors.create')
+            <button type="button" wire:click="create"
+                class="rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800">New Past Chief
+                Instructor</button>
+        @endcan
     </div>
-
     @if (session('status'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
             {{ session('status') }}</div>
     @endif
-
     @if ($errors->any())
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             <p class="font-bold">Please correct the following errors:</p>
@@ -28,8 +33,10 @@
             </ul>
         </div>
     @endif
-
-    <div class="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_390px]">
+    <div @class([
+        'grid min-w-0 gap-6',
+        'xl:grid-cols-[minmax(0,1fr)_390px]' => $canManageForm,
+    ])>
         <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
                 <h2 class="font-bold text-zinc-900">Past Chief Instructors</h2>
@@ -78,13 +85,17 @@
                                                 class="font-bold text-zinc-700">{{ $instructor->to_date->format('d.m.Y') }}</strong></span></span>
                                 </div>
                                 <div class="mt-4 flex flex-wrap gap-2">
-                                    <button type="button" wire:click="edit({{ $instructor->id }})"
-                                        class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"><i
-                                            class="fa-solid fa-pen" aria-hidden="true"></i> Edit</button>
-                                    <button type="button" wire:click="delete({{ $instructor->id }})"
-                                        wire:confirm="Delete this past chief instructor?"
-                                        class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:border-red-300 hover:bg-red-100"><i
-                                            class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+                                    @can('past-chief-instructors.update')
+                                        <button type="button" wire:click="edit({{ $instructor->id }})"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"><i
+                                                class="fa-solid fa-pen" aria-hidden="true"></i> Edit</button>
+                                    @endcan
+                                    @can('past-chief-instructors.delete')
+                                        <button type="button" wire:click="delete({{ $instructor->id }})"
+                                            wire:confirm="Delete this past chief instructor?"
+                                            class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:border-red-300 hover:bg-red-100"><i
+                                                class="fa-solid fa-trash" aria-hidden="true"></i> Delete</button>
+                                    @endcan
                                 </div>
                             </div>
                         </div>
@@ -95,8 +106,9 @@
                 @endforelse
             </div>
         </section>
-
+        @if ($canManageForm)
         <aside>
+            @if ($canSave)
             <form wire:submit="save"
                 class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm xl:sticky xl:top-6">
                 <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
@@ -141,7 +153,8 @@
                         <p class="mt-1 text-xs text-zinc-500">Select a public Media Library image or upload a new one.
                         </p>
                     </div>
-                    <div class="rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
+                    @can('media.upload')
+<div class="rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
                         <label for="past-chief-instructor-image" class="block cursor-pointer text-center">
                             @if ($newImage instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile)
                                 <img src="{{ $newImage->temporaryUrl() }}" alt="New chief instructor image preview"
@@ -166,6 +179,8 @@
                             <p class="mt-2 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+@endcan
+
                     <div><label for="chief-library-image" class="mb-1 block text-xs font-bold text-zinc-700">Media
                             Library Image</label><select id="chief-library-image" wire:model="imageMediaId"
                             @disabled($newImage)
@@ -186,6 +201,12 @@
                             wire:target="save">Saving...</span></button>
                 </div>
             </form>
+            @else
+                <div class="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+                    Select an existing record using its Edit button, or use New if you have permission to create records.
+                </div>
+            @endif
         </aside>
+        @endif
     </div>
 </div>

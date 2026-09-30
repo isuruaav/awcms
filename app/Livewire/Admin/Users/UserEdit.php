@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Livewire\Admin\Users;
-
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\UserManagementRules;
@@ -17,119 +15,82 @@ use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
-
 final class UserEdit extends Component
 {
     #[Locked]
     public int $userId;
-
     public string $name = '';
-
     public string $email = '';
-
     public string $role = '';
-
     public bool $isActive = true;
-
     public string $administrator_password = '';
-
     public string $new_password = '';
-
     public string $new_password_confirmation = '';
-
     public function mount(User $user): void
     {
         Gate::authorize('users.update');
-
         $actor = $this->actor();
-
         $user->loadMissing('roles');
-
         UserManagementRules::assertTargetManageable(
             $actor,
             $user,
         );
-
         $assignedRole = $user->roles->first();
-
         $this->userId = $user->id;
         $this->name = $user->name;
         $this->email = $user->email;
-
         $this->role = $assignedRole instanceof Role
             ? $assignedRole->name
             : '';
-
         $this->isActive = (bool) $user->is_active;
     }
-
     public function save(): void
     {
         Gate::authorize('users.update');
-
         $actor = $this->actor();
-        $target = $this->target();
-
-        UserManagementRules::assertTargetManageable(
-            $actor,
-            $target,
-        );
-
         $this->normaliseInput();
 
-        $this->validate($this->profileRules());
-
-        $assignedRole = $target->roles->first();
-
-        $currentRole = $assignedRole instanceof Role
-            ? $assignedRole->name
-            : null;
-
-        $nameChanged = $target->name !== $this->name;
-        $emailChanged = $target->email !== $this->email;
-        $roleChanged = $currentRole !== $this->role;
-
-        $statusChanged = (bool) $target->is_active
-            !== $this->isActive;
-
-        if ($roleChanged) {
-            Gate::authorize('users.assign-role');
-
-            UserManagementRules::ensureRoleChangeAllowed(
+        $target = DB::transaction(function () use ($actor): User {
+            UserManagementRules::lockSuperAdministrators();
+            $target = User::query()->with('roles')->lockForUpdate()->findOrFail($this->userId);
+            UserManagementRules::assertTargetManageable(
                 $actor,
                 $target,
-                $this->role,
             );
-        }
-
-        if ($statusChanged) {
-            UserManagementRules::ensureStatusChangeAllowed(
-                $actor,
-                $target,
-                $this->isActive,
-            );
-        }
-
-        DB::transaction(function () use (
-            $actor,
-            $target,
-            $currentRole,
-            $nameChanged,
-            $emailChanged,
-            $roleChanged,
-            $statusChanged,
-        ): void {
+            $assignedRole = $target->roles->first();
+            $currentRole = $assignedRole instanceof Role
+                ? $assignedRole->name
+                : '';
+            $nameChanged = $target->name !== $this->name;
+            $emailChanged = $target->email !== $this->email;
+            $roleChanged = $currentRole !== $this->role;
+            $statusChanged = (bool) $target->is_active
+                !== $this->isActive;
+            if ($roleChanged) {
+                Gate::authorize('users.assign-role');
+                UserManagementRules::ensureRoleChangeAllowed(
+                    $actor,
+                    $target,
+                    $this->role,
+                );
+            }
+            if ($statusChanged) {
+                UserManagementRules::ensureStatusChangeAllowed(
+                    $actor,
+                    $target,
+                    $this->isActive,
+                );
+            }
+            $this->validate($this->profileRules($currentRole));
             $oldName = $target->name;
             $oldEmail = $target->email;
             $oldStatus = (bool) $target->is_active;
-
             $attributes = [
                 'name' => $this->name,
                 'email' => $this->email,
                 'is_active' => $this->isActive,
                 'updated_by' => $actor->id,
             ];
-
             /*
              * An administrator-entered email address is treated as
              * verified. Change this to null if email re-verification
@@ -138,22 +99,18 @@ final class UserEdit extends Component
             if ($emailChanged) {
                 $attributes['email_verified_at'] = Carbon::now();
             }
-
             /*
              * Rotate the remember token when disabling an account.
              */
             if ($statusChanged && ! $this->isActive) {
                 $attributes['remember_token'] = Str::random(60);
             }
-
             $target->forceFill($attributes)->save();
-
             if ($roleChanged) {
                 $target->syncRoles([
                     $this->role,
                 ]);
             }
-
             /*
              * Terminate all database sessions when the account
              * is disabled.
@@ -163,9 +120,7 @@ final class UserEdit extends Component
                     ->where('user_id', $target->id)
                     ->delete();
             }
-
             $auditLogger = app(AuditLogger::class);
-
             if ($nameChanged || $emailChanged) {
                 $auditLogger->log(
                     event: 'users.profile-updated',
@@ -182,7 +137,6 @@ final class UserEdit extends Component
                     ],
                 );
             }
-
             if ($roleChanged) {
                 $auditLogger->log(
                     event: 'users.role-changed',
@@ -197,7 +151,6 @@ final class UserEdit extends Component
                     ],
                 );
             }
-
             if ($statusChanged) {
                 $auditLogger->log(
                     event: $this->isActive
@@ -217,26 +170,23 @@ final class UserEdit extends Component
                     ],
                 );
             }
+
+            return $target;
         });
 
-        session()->flash(
-            'status',
-            "{$target->name}'s account was updated successfully.",
-        );
+        session()->flash('status', "{$target->name}'s account was updated successfully.");
     }
 
     public function resetPassword(): void
     {
+        Gate::authorize('users.update');
         Gate::authorize('users.reset-password');
-
         $actor = $this->actor();
         $target = $this->target();
-
         UserManagementRules::ensurePasswordResetAllowed(
             $actor,
             $target,
         );
-
         $this->validate(
             [
                 'administrator_password' => [
@@ -244,7 +194,6 @@ final class UserEdit extends Component
                     'string',
                     'current_password:web',
                 ],
-
                 'new_password' => [
                     'required',
                     'string',
@@ -259,30 +208,29 @@ final class UserEdit extends Component
                 'administrator_password.current_password' => 'Your administrator password is incorrect.',
             ],
         );
-
         DB::transaction(function () use (
             $actor,
             $target,
         ): void {
+            $target = User::query()->with('roles')->lockForUpdate()->findOrFail($this->userId);
+            UserManagementRules::ensurePasswordResetAllowed($actor, $target);
+
             $target->forceFill([
                 'password' => $this->new_password,
                 'remember_token' => Str::random(60),
                 'updated_by' => $actor->id,
             ])->save();
-
             /*
              * Terminate all active database sessions.
              */
             DB::table('sessions')
                 ->where('user_id', $target->id)
                 ->delete();
-
             /*
              * Invalidate outstanding password reset links.
              */
             PasswordBroker::broker()
                 ->deleteToken($target);
-
             /*
              * Password values are deliberately excluded from
              * the audit event.
@@ -300,24 +248,29 @@ final class UserEdit extends Component
                 ],
             );
         });
-
         $this->reset([
             'administrator_password',
             'new_password',
             'new_password_confirmation',
         ]);
-
         session()->flash(
             'password_status',
             "{$target->name}'s password was reset and active sessions were terminated.",
         );
     }
-
     /**
      * @return array<string, list<mixed>>
      */
-    private function profileRules(): array
+    private function profileRules(string $currentRole): array
     {
+        $roleRules = $this->role === $currentRole
+            ? ['nullable', 'string', Rule::in([$currentRole])]
+            : [
+                'required',
+                'string',
+                Rule::in(UserManagementRules::assignableRoleNames($this->actor())),
+            ];
+
         return [
             'name' => [
                 'required',
@@ -325,7 +278,6 @@ final class UserEdit extends Component
                 'min:2',
                 'max:255',
             ],
-
             'email' => [
                 'required',
                 'string',
@@ -335,30 +287,24 @@ final class UserEdit extends Component
                 Rule::unique('users', 'email')
                     ->ignore($this->userId),
             ],
-
-            'role' => [
-                'required',
-                'string',
-                Rule::in(
-                    UserManagementRules::assignableRoleNames(
-                        $this->actor(),
-                    ),
-                ),
-            ],
-
+            'role' => $roleRules,
             'isActive' => [
                 'boolean',
             ],
         ];
     }
-
     public function render(): View
     {
+        Gate::authorize('users.update');
         $target = $this->target();
-
+        UserManagementRules::assertTargetManageable($this->actor(), $target);
         $roles = UserManagementRules::assignableRoleNames(
             $this->actor(),
         );
+        $assignedRole = $target->roles->first();
+        if ($assignedRole instanceof Role && ! in_array($assignedRole->name, $roles, true)) {
+            $roles[] = $assignedRole->name;
+        }
 
         return view(
             'livewire.admin.users.user-edit',
@@ -373,34 +319,27 @@ final class UserEdit extends Component
             ],
         );
     }
-
     private function actor(): User
     {
         $actor = Auth::user();
-
         abort_unless(
             $actor instanceof User,
             403,
         );
-
         return $actor;
     }
-
     private function target(): User
     {
         return User::query()
             ->with('roles')
             ->findOrFail($this->userId);
     }
-
     private function normaliseInput(): void
     {
         $this->name = trim($this->name);
-
         $this->email = mb_strtolower(
             trim($this->email),
         );
-
         $this->role = trim($this->role);
     }
 }

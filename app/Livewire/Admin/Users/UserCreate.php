@@ -40,17 +40,13 @@ final class UserCreate extends Component
         Gate::authorize('users.assign-role');
 
         $actor = $this->actor();
-
         $this->normaliseInput();
-
         $this->validate();
-
-        UserManagementRules::ensureRoleCanBeAssigned(
-            $actor,
-            $this->role,
-        );
+        UserManagementRules::ensureRoleCanBeAssigned($actor, $this->role);
 
         $user = DB::transaction(function () use ($actor): User {
+            UserManagementRules::ensureRoleCanBeAssigned($actor, $this->role);
+
             $user = User::query()->create([
                 'name' => $this->name,
                 'email' => $this->email,
@@ -60,22 +56,10 @@ final class UserCreate extends Component
                 'updated_by' => $actor->id,
             ]);
 
-            /*
-             * Administrator-created accounts are considered verified.
-             * Change this to null if deployments require the new user
-             * to verify their email address before accessing AWCMS.
-             */
-            $user->forceFill([
-                'email_verified_at' => Carbon::now(),
-            ])->saveQuietly();
+            // Preserve the existing administrator-created email verification policy.
+            $user->forceFill(['email_verified_at' => Carbon::now()])->saveQuietly();
+            $user->syncRoles([$this->role]);
 
-            $user->syncRoles([
-                $this->role,
-            ]);
-
-            /*
-             * The password is deliberately excluded from audit values.
-             */
             app(AuditLogger::class)->log(
                 event: 'users.created',
                 description: 'Administrator account created.',
@@ -93,93 +77,50 @@ final class UserCreate extends Component
             return $user;
         });
 
-        session()->flash(
-            'status',
-            "{$user->name}'s account was created successfully.",
-        );
+        $this->reset(['password', 'password_confirmation']);
+        session()->flash('status', "{$user->name}'s account was created successfully.");
 
-        $this->redirectRoute(
-            'admin.users.edit',
-            [
-                'user' => $user->id,
-            ],
-            navigate: true,
-        );
+        if (Gate::allows('users.update') && UserManagementRules::canManageTarget($actor, $user)) {
+            $this->redirectRoute('admin.users.edit', ['user' => $user->id], navigate: true);
+
+            return;
+        }
+
+        if (Gate::allows('users.view')) {
+            $this->redirectRoute('admin.users.index', navigate: true);
+
+            return;
+        }
+
+        $this->reset(['name', 'email', 'role', 'isActive']);
     }
 
-    /**
-     * @return array<string, list<mixed>>
-     */
+    /** @return array<string, list<mixed>> */
     protected function rules(): array
     {
         return [
-            'name' => [
-                'required',
-                'string',
-                'min:2',
-                'max:255',
-            ],
-
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email:rfc',
-                'max:255',
-                Rule::unique('users', 'email'),
-            ],
-
-            'role' => [
-                'required',
-                'string',
-                Rule::in(
-                    UserManagementRules::assignableRoleNames(
-                        $this->actor(),
-                    ),
-                ),
-            ],
-
-            'isActive' => [
-                'boolean',
-            ],
-
-            'password' => [
-                'required',
-                'string',
-                'confirmed',
-                Password::min(12)
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols(),
-            ],
+            'name' => ['required', 'string', 'min:2', 'max:255'],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc', 'max:255', Rule::unique('users', 'email')],
+            'role' => ['required', 'string', Rule::in(UserManagementRules::assignableRoleNames($this->actor()))],
+            'isActive' => ['boolean'],
+            'password' => ['required', 'string', 'confirmed', Password::min(12)->mixedCase()->numbers()->symbols()],
         ];
     }
 
     public function render(): View
     {
-        $roles = UserManagementRules::assignableRoleNames(
-            $this->actor(),
-        );
+        Gate::authorize('users.create');
+        Gate::authorize('users.assign-role');
+        $roles = UserManagementRules::assignableRoleNames($this->actor());
 
-        return view(
-            'livewire.admin.users.user-create',
-            compact('roles'),
-        )->layout(
-            'components.layouts.admin',
-            [
-                'title' => 'Create User',
-            ],
-        );
+        return view('livewire.admin.users.user-create', compact('roles'))
+            ->layout('components.layouts.admin', ['title' => 'Create User']);
     }
 
     private function actor(): User
     {
         $actor = Auth::user();
-
-        abort_unless(
-            $actor instanceof User,
-            403,
-        );
+        abort_unless($actor instanceof User, 403);
 
         return $actor;
     }
@@ -187,11 +128,7 @@ final class UserCreate extends Component
     private function normaliseInput(): void
     {
         $this->name = trim($this->name);
-
-        $this->email = mb_strtolower(
-            trim($this->email),
-        );
-
+        $this->email = mb_strtolower(trim($this->email));
         $this->role = trim($this->role);
     }
 }

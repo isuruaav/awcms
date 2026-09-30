@@ -510,7 +510,7 @@
                                         @foreach ($mediaAssets as $asset)
                                             <option value="{{ $asset->id }}">
                                                 #{{ $asset->id }}
-                                                —
+                                                â€”
                                                 {{ $asset->title ?: $asset->original_name }}
                                             </option>
                                         @endforeach
@@ -620,7 +620,7 @@
                                                text-sm font-semibold
                                                text-emerald-700
                                                hover:text-emerald-800">
-                                        Open Media Library →
+                                        Open Media Library â†’
                                     </a>
                                 @endcan
                             </div>
@@ -786,7 +786,7 @@
                text-zinc-500">
                                                 <p>
                                                     Added:
-                                                    {{ $version->created_at?->format('d M Y H:i') ?? '—' }}
+                                                    {{ $version->created_at?->format('d M Y H:i') ?? 'â€”' }}
                                                 </p>
 
                                                 <p>
@@ -913,7 +913,7 @@
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            Sinhala Title (සිංහල මාතෘකාව)
+                            Sinhala Title (à·ƒà·’à¶‚à·„à¶½ à¶¸à·à¶­à·˜à¶šà·à·€)
                         </label>
 
                         <input id="document-title-si" type="text" wire:model="titleSi" lang="si" maxlength="255"
@@ -939,7 +939,7 @@
                             class="mb-1.5 block
                                    text-sm font-semibold
                                    text-zinc-800">
-                            Sinhala Description (සිංහල විස්තරය)
+                            Sinhala Description (à·ƒà·’à¶‚à·„à¶½ à·€à·’à·ƒà·Šà¶­à¶»à¶º)
                         </label>
 
                         <textarea id="document-description-si" wire:model="descriptionSi" lang="si" rows="4" maxlength="10000"
@@ -1010,7 +1010,7 @@
                                text-xs leading-5
                                text-zinc-500">
                         Published:
-                        {{ $document->published_at?->format('d M Y H:i') ?? '—' }}
+                        {{ $document->published_at?->format('d M Y H:i') ?? 'â€”' }}
                     </p>
                 @endif
 
@@ -1020,7 +1020,7 @@
                                text-xs leading-5
                                text-zinc-500">
                         Archived:
-                        {{ $document->archived_at?->format('d M Y H:i') ?? '—' }}
+                        {{ $document->archived_at?->format('d M Y H:i') ?? 'â€”' }}
                     </p>
                 @endif
             </section>
@@ -1370,27 +1370,6 @@
                                     publishing this document.
                                 </div>
                             @endif
-                        @endif
-                    @endcan
-
-
-                    @can('documents.archive')
-                        @if ($status === \App\Enums\DocumentStatus::Published)
-                            <button type="button" wire:click="archive" wire:confirm="Archive this document?"
-                                wire:loading.attr="disabled" wire:target="archive"
-                                class="inline-flex
-                                       w-full
-                                       items-center
-                                       justify-center
-                                       rounded-xl
-                                       bg-amber-600
-                                       px-5 py-3
-                                       text-sm font-bold
-                                       text-white
-                                       hover:bg-amber-700
-                                       disabled:opacity-60">
-                                Archive Document
-                            </button>
                         @endif
                     @endcan
 

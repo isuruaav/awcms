@@ -1206,75 +1206,9 @@ final class GalleryService
         Gallery $gallery,
         User $actor,
     ): Gallery {
-        Gate::forUser(
-            $actor,
-        )->authorize(
-            'galleries.archive',
-        );
-
-        $galleryId =
-            (int) $gallery->getKey();
-
-        return DB::transaction(
-            function () use (
-                $galleryId,
-                $actor,
-            ): Gallery {
-                $gallery =
-                    Gallery::query()
-                        ->lockForUpdate()
-                        ->findOrFail(
-                            $galleryId,
-                        );
-
-                $status =
-                    $this->status(
-                        $gallery,
-                    );
-
-                if (
-                    $status !==
-                    GalleryStatus::Published
-                ) {
-                    throw ValidationException::withMessages([
-                        'workflow' => 'Only Published galleries can be archived.',
-                    ]);
-                }
-
-                $gallery->forceFill([
-                    'status' => GalleryStatus::Archived->value,
-
-                    'archived_at' => now(),
-
-                    'archived_by' => $actor->id,
-
-                    'updated_by' => $actor->id,
-                ])->save();
-
-                app(
-                    AuditLogger::class,
-                )->log(
-                    event: 'galleries.archived',
-
-                    description: 'A gallery was archived.',
-
-                    actor: $actor,
-
-                    subject: $gallery,
-
-                    oldValues: [
-                        'status' => GalleryStatus::Published->value,
-                    ],
-
-                    newValues: [
-                        'status' => GalleryStatus::Archived->value,
-                    ],
-                );
-
-                return $gallery->refresh();
-            },
-            3,
-        );
+        throw ValidationException::withMessages([
+            'workflow' => 'Archiving is no longer available.',
+        ]);
     }
 
     /*

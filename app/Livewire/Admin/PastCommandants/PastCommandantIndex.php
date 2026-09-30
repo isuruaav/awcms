@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -22,6 +23,7 @@ final class PastCommandantIndex extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public string $imageMediaId = '';
@@ -42,30 +44,20 @@ final class PastCommandantIndex extends Component
 
     public function mount(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-commandants.view');
     }
 
     public function create(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-commandants.view');
+        Gate::authorize('past-commandants.create');
 
-        $this->reset([
-            'editingId',
-            'imageMediaId',
-            'newImage',
-            'newImageTitle',
-            'newImageAltText',
-            'nameEn',
-            'nameSi',
-            'fromDate',
-            'toDate',
-        ]);
-        $this->resetValidation();
+        $this->resetForm();
     }
 
     public function edit(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-commandants.view');
 
         $commandant = PastCommandant::query()->findOrFail($id);
 
@@ -83,7 +75,12 @@ final class PastCommandantIndex extends Component
 
     public function save(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-commandants.view');
+        Gate::authorize(
+            $this->editingId === null
+                ? 'past-commandants.create'
+                : 'past-commandants.update',
+        );
 
         $validated = $this->validate([
             'imageMediaId' => ['nullable', 'integer', 'exists:media_assets,id'],
@@ -137,7 +134,8 @@ final class PastCommandantIndex extends Component
 
     public function delete(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-commandants.view');
+        Gate::authorize('past-commandants.delete');
 
         $commandant = PastCommandant::query()->findOrFail($id);
         $actor = $this->actor();
@@ -151,7 +149,7 @@ final class PastCommandantIndex extends Component
         );
 
         if ($this->editingId === $id) {
-            $this->create();
+            $this->resetForm();
         }
 
         session()->flash('status', 'Past commandant deleted successfully.');
@@ -159,13 +157,15 @@ final class PastCommandantIndex extends Component
 
     public function clearNewImage(): void
     {
+        Gate::authorize('past-commandants.view');
+
         $this->newImage = null;
         $this->resetValidation('newImage');
     }
 
     public function render(): View
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-commandants.view');
 
         return view('livewire.admin.past-commandants.past-commandant-index', [
             'pastCommandants' => PastCommandant::query()
@@ -227,6 +227,22 @@ final class PastCommandantIndex extends Component
                 'imageMediaId' => 'Select a valid public image.',
             ]);
         }
+    }
+
+    private function resetForm(): void
+    {
+        $this->reset([
+            'editingId',
+            'imageMediaId',
+            'newImage',
+            'newImageTitle',
+            'newImageAltText',
+            'nameEn',
+            'nameSi',
+            'fromDate',
+            'toDate',
+        ]);
+        $this->resetValidation();
     }
 
     private function actor(): User

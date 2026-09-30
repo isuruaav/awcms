@@ -994,72 +994,9 @@ final class DocumentService
         Document $document,
         User $actor,
     ): Document {
-        Gate::forUser(
-            $actor,
-        )->authorize(
-            'documents.archive',
-        );
-
-        $documentId =
-            (int) $document->getKey();
-
-        return DB::transaction(
-            function () use (
-                $documentId,
-                $actor,
-            ): Document {
-                $document =
-                    Document::query()
-                        ->lockForUpdate()
-                        ->findOrFail(
-                            $documentId,
-                        );
-
-                $status =
-                    $this->status(
-                        $document,
-                    );
-
-                if ($status !== DocumentStatus::Published) {
-                    throw ValidationException::withMessages([
-                        'workflow' => 'Only Published documents can be archived.',
-                    ]);
-                }
-
-                $document->forceFill([
-                    'status' => DocumentStatus::Archived->value,
-
-                    'archived_at' => now(),
-
-                    'archived_by' => $actor->id,
-
-                    'updated_by' => $actor->id,
-                ])->save();
-
-                app(
-                    AuditLogger::class,
-                )->log(
-                    event: 'documents.archived',
-
-                    description: 'A document was archived.',
-
-                    actor: $actor,
-
-                    subject: $document,
-
-                    oldValues: [
-                        'status' => DocumentStatus::Published->value,
-                    ],
-
-                    newValues: [
-                        'status' => DocumentStatus::Archived->value,
-                    ],
-                );
-
-                return $document->refresh();
-            },
-            3,
-        );
+        throw ValidationException::withMessages([
+            'workflow' => 'Archiving is no longer available.',
+        ]);
     }
 
     /*

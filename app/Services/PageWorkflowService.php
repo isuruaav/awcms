@@ -160,11 +160,9 @@ final class PageWorkflowService
 
     public function archive(Page $page, User $actor): Page
     {
-        return $this->transition(
-            page: $page,
-            actor: $actor,
-            targetStatus: PageStatus::Archived,
-        );
+        throw ValidationException::withMessages([
+            'workflow' => 'Archiving is no longer available.',
+        ]);
     }
 
     public function returnToDraft(Page $page, User $actor): Page
@@ -296,14 +294,18 @@ final class PageWorkflowService
             PageStatus::Submitted => 'pages.submit',
             PageStatus::Approved => 'pages.approve',
             PageStatus::Published => 'pages.publish',
-            PageStatus::Archived => 'pages.archive',
+            PageStatus::Archived => throw ValidationException::withMessages([
+                'workflow' => 'The legacy archive workflow is no longer available.',
+            ]),
 
             PageStatus::Draft => match ($currentStatus) {
                 PageStatus::Submitted,
                 PageStatus::Approved => 'pages.approve',
 
                 PageStatus::Published => 'pages.publish',
-                PageStatus::Archived => 'pages.archive',
+                PageStatus::Archived => throw ValidationException::withMessages([
+                    'workflow' => 'The legacy archive workflow is no longer available.',
+                ]),
                 PageStatus::Draft => 'pages.update',
             },
         };

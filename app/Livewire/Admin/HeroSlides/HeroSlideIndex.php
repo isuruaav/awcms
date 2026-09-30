@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -24,6 +25,7 @@ final class HeroSlideIndex extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public string $imageMediaId = '';
@@ -58,12 +60,17 @@ final class HeroSlideIndex extends Component
 
     public function mount(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('hero-slides.view');
     }
 
     public function save(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('hero-slides.view');
+        Gate::authorize(
+            $this->editingId === null
+                ? 'hero-slides.create'
+                : 'hero-slides.update',
+        );
 
         $validated = $this->validate([
             'imageMediaId' => [
@@ -258,7 +265,7 @@ final class HeroSlideIndex extends Component
 
     public function edit(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('hero-slides.view');
 
         $slide = HeroSlide::query()
             ->with('translations')
@@ -314,12 +321,15 @@ final class HeroSlideIndex extends Component
 
     public function cancelEdit(): void
     {
+        Gate::authorize('hero-slides.view');
+
         $this->resetForm();
     }
 
     public function toggleActive(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('hero-slides.view');
+        Gate::authorize('hero-slides.update');
 
         $slide = HeroSlide::query()->findOrFail($id);
 
@@ -338,17 +348,22 @@ final class HeroSlideIndex extends Component
 
     public function moveUp(int $id): void
     {
+        Gate::authorize('hero-slides.view');
+
         $this->move($id, 'up');
     }
 
     public function moveDown(int $id): void
     {
+        Gate::authorize('hero-slides.view');
+
         $this->move($id, 'down');
     }
 
     public function delete(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('hero-slides.view');
+        Gate::authorize('hero-slides.delete');
 
         HeroSlide::query()->findOrFail($id)->delete();
 
@@ -364,6 +379,8 @@ final class HeroSlideIndex extends Component
 
     public function render(): View
     {
+        Gate::authorize('hero-slides.view');
+
         return view(
             'livewire.admin.hero-slides.hero-slide-index',
             [
@@ -392,7 +409,8 @@ final class HeroSlideIndex extends Component
 
     private function move(int $id, string $direction): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('hero-slides.view');
+        Gate::authorize('hero-slides.update');
 
         $slides = HeroSlide::query()
             ->orderBy('sort_order')
@@ -439,11 +457,15 @@ final class HeroSlideIndex extends Component
 
     public function updatedNewImage(): void
     {
+        Gate::authorize('hero-slides.view');
+
         $this->resetValidation('newImage');
     }
 
     public function clearNewImage(): void
     {
+        Gate::authorize('hero-slides.view');
+
         $this->newImage = null;
         $this->resetValidation('newImage');
     }

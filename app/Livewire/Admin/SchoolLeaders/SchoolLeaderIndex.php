@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -22,6 +23,7 @@ final class SchoolLeaderIndex extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public string $imageMediaId = '';
@@ -50,7 +52,7 @@ final class SchoolLeaderIndex extends Component
 
     public function mount(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('school-leaders.view');
 
         $firstLeader = SchoolLeader::query()
             ->whereIn('role_key', SchoolLeader::allowedRoles())
@@ -65,7 +67,7 @@ final class SchoolLeaderIndex extends Component
 
     public function edit(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('school-leaders.view');
 
         $leader = SchoolLeader::query()->findOrFail($id);
 
@@ -96,7 +98,8 @@ final class SchoolLeaderIndex extends Component
 
     public function save(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('school-leaders.view');
+        Gate::authorize('school-leaders.update');
 
         if ($this->editingId === null) {
             throw ValidationException::withMessages([
@@ -167,6 +170,11 @@ final class SchoolLeaderIndex extends Component
             $leader = SchoolLeader::query()
                 ->findOrFail($this->editingId);
 
+            abort_unless(
+                in_array($leader->role_key, SchoolLeader::allowedRoles(), true),
+                404,
+            );
+
             $leader->fill([
                 'title_en' => $this->cleanRequired($this->titleEn),
                 'title_si' => $this->cleanNullable($this->titleSi),
@@ -200,11 +208,15 @@ final class SchoolLeaderIndex extends Component
 
     public function updatedNewImage(): void
     {
+        Gate::authorize('school-leaders.view');
+
         $this->resetValidation('newImage');
     }
 
     public function clearNewImage(): void
     {
+        Gate::authorize('school-leaders.view');
+
         $this->newImage = null;
 
         $this->resetValidation('newImage');
@@ -212,6 +224,8 @@ final class SchoolLeaderIndex extends Component
 
     public function render(): View
     {
+        Gate::authorize('school-leaders.view');
+
         return view(
             'livewire.admin.school-leaders.school-leader-index',
             [

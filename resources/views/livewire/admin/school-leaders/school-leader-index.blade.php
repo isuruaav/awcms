@@ -1,28 +1,29 @@
 <div class="space-y-6">
+    @php
+        $canCreate = false;
+        $canUpdate = \Illuminate\Support\Facades\Gate::allows('school-leaders.update');
+        $canManageForm = $canCreate || $canUpdate;
+        $canSave = $canUpdate && $editingId !== null;
+    @endphp
     <div>
         <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
             Site Management
         </p>
-
         <h1 class="mt-1 text-2xl font-black text-zinc-950">
             School Leadership
         </h1>
-
         <p class="mt-1 text-sm text-zinc-500">
             Manage the three fixed leadership cards shown on the homepage.
         </p>
     </div>
-
     @if (session('status'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
             {{ session('status') }}
         </div>
     @endif
-
     @if ($errors->any())
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             <p class="font-bold">Please correct the following errors:</p>
-
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 @foreach ($errors->all() as $error)
                     <li>{{ $error }}</li>
@@ -30,8 +31,10 @@
             </ul>
         </div>
     @endif
-
-    <div class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
+    <div @class([
+        'grid min-w-0 gap-6',
+        'xl:grid-cols-[minmax(0,1fr)_420px]' => $canManageForm,
+    ])>
         <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div
                 class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-6 py-4">
@@ -39,12 +42,10 @@
                     <h2 class="font-bold text-zinc-900">Fixed leadership cards</h2>
                     <p class="mt-1 text-xs text-zinc-500">These roles cannot be added or deleted.</p>
                 </div>
-
                 <span class="rounded-full bg-zinc-200 px-3 py-1 text-xs font-bold text-zinc-700">
                     {{ $schoolLeaders->count() }} roles
                 </span>
             </div>
-
             <div class="divide-y divide-zinc-200">
                 @forelse ($schoolLeaders as $leader)
                     <article wire:key="school-leader-{{ $leader->id }}" class="p-5 sm:p-6">
@@ -78,7 +79,6 @@
                                     </div>
                                 @endif
                             </div>
-
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-wrap gap-2">
                                     <span @class([
@@ -93,7 +93,6 @@
                                         Order {{ $leader->sort_order }}
                                     </span>
                                 </div>
-
                                 <h3 class="mt-3 text-base font-black text-zinc-950">
                                     {{ $leader->title_en }}
                                 </h3>
@@ -105,31 +104,32 @@
                                     <span class="text-zinc-300">/</span>
                                     {{ $leader->name_si ?: 'Sinhala name not added' }}
                                 </p>
-
-                                <button type="button" wire:click="edit({{ $leader->id }})"
-                                    class="mt-5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800">
-                                    Edit card
-                                </button>
+                                @can('school-leaders.update')
+                                    <button type="button" wire:click="edit({{ $leader->id }})"
+                                        class="mt-5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800">
+                                        Edit card
+                                    </button>
+                                @endcan
                             </div>
                         </div>
                     </article>
                 @empty
                     <div class="px-6 py-14 text-center">
                         <p class="font-bold text-zinc-700">The fixed leadership roles are not seeded yet.</p>
-                        <p class="mt-1 text-sm text-zinc-500">Run the database seeders to create the three roles.</p>
+                        <p class="mt-1 text-sm text-zinc-500">Ask a system administrator to initialise the fixed leadership roles.</p>
                     </div>
                 @endforelse
             </div>
         </section>
-
+        @if ($canManageForm)
         <aside>
+            @if ($canSave)
             <form wire:submit="save"
                 class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm xl:sticky xl:top-6">
                 <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
                     <h2 class="font-bold text-zinc-900">Edit leadership card</h2>
                     <p class="mt-1 text-xs text-zinc-500">The role itself is fixed. Update its content below.</p>
                 </div>
-
                 <div class="space-y-5 p-6">
                     @php($selectedLeader = $schoolLeaders->firstWhere('id', $editingId))
                     @if ($selectedLeader)
@@ -140,14 +140,13 @@
                                 {{ $selectedLeader->title_si }}</p>
                         </div>
                     @endif
-
                     <div>
                         <p class="text-sm font-black text-zinc-900">Profile image</p>
                         <p class="mt-1 text-xs text-zinc-500">Select a public Media Library image or upload a new one.
                         </p>
                     </div>
-
-                    <div class="rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
+                    @can('media.upload')
+<div class="rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
                         <label for="school-leader-image" class="block cursor-pointer text-center">
                             @if ($newImage instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile)
                                 <img src="{{ $newImage->temporaryUrl() }}" alt="New leadership image preview"
@@ -169,7 +168,6 @@
                             <input id="school-leader-image" wire:model="newImage" type="file"
                                 accept="image/jpeg,image/png,image/webp" class="sr-only">
                         </label>
-
                         @if ($newImage)
                             <button type="button" wire:click="clearNewImage"
                                 class="mt-3 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">
@@ -180,6 +178,7 @@
                             <p class="mt-2 text-xs font-semibold text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
+@endcan
 
                     <div>
                         <label for="school-leader-library-image"
@@ -196,7 +195,6 @@
                             <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
-
                     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
                         <div>
                             <label for="school-leader-name-en"
@@ -218,7 +216,6 @@
                             @enderror
                         </div>
                     </div>
-
                     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
                         <div>
                             <label for="school-leader-title-en"
@@ -240,7 +237,6 @@
                             @enderror
                         </div>
                     </div>
-
                     <div>
                         <label for="school-leader-order" class="mb-1 block text-xs font-bold text-zinc-700">Display
                             order</label>
@@ -251,7 +247,6 @@
                             <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
-
                     <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-4">
                         <input wire:model="isActive" type="checkbox"
                             class="size-4 rounded border-zinc-300 text-emerald-700">
@@ -260,7 +255,6 @@
                             <span class="block text-xs text-zinc-500">Show this leader on the public homepage.</span>
                         </span>
                     </label>
-
                     <button type="submit" wire:loading.attr="disabled" wire:target="save"
                         class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60">
                         <span wire:loading.remove wire:target="save">Save Changes</span>
@@ -268,6 +262,12 @@
                     </button>
                 </div>
             </form>
+            @else
+                <div class="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
+                    Select an existing record using its Edit button, or use New if you have permission to create records.
+                </div>
+            @endif
         </aside>
+        @endif
     </div>
 </div>

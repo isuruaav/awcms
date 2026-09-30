@@ -1,5 +1,4 @@
 <div class="space-y-6">
-
     {{-- =====================================================
          HEADER
     ====================================================== --}}
@@ -11,7 +10,6 @@
         >
             Administration
         </p>
-
         <h1
             class="mt-1
                    text-2xl font-black
@@ -19,7 +17,6 @@
         >
            Roles &amp; Permissions
         </h1>
-
         <p
             class="mt-1
                    max-w-3xl
@@ -30,8 +27,6 @@
             Super Administrator system role protected.
         </p>
     </div>
-
-
     {{-- =====================================================
          FLASH MESSAGE
     ====================================================== --}}
@@ -47,8 +42,6 @@
             {{ session('status') }}
         </div>
     @endif
-
-
     {{-- =====================================================
          ERRORS
     ====================================================== --}}
@@ -64,7 +57,6 @@
             <p class="font-bold">
                 The action could not be completed.
             </p>
-
             <ul
                 class="mt-2
                        list-disc
@@ -79,8 +71,6 @@
             </ul>
         </div>
     @endif
-
-
     {{-- =====================================================
          MAIN LAYOUT
     ====================================================== --}}
@@ -90,7 +80,6 @@
                gap-6
                lg:grid-cols-[280px_minmax(0,1fr)]"
     >
-
         {{-- =================================================
              LEFT SIDEBAR
         ================================================== --}}
@@ -98,7 +87,7 @@
             class="min-w-0
                    space-y-5"
         >
-
+            @if ($canManageRoles)
             {{-- CREATE ROLE --}}
             <section
                 class="rounded-2xl
@@ -113,7 +102,6 @@
                 >
                     Create Role
                 </h2>
-
                 <p
                     class="mt-1
                            text-xs leading-5
@@ -122,7 +110,6 @@
                     Create an additional CMS role and then
                     assign only the permissions it requires.
                 </p>
-
                 <div
                     class="mt-4
                            flex flex-col
@@ -152,7 +139,6 @@
                                focus:ring-2
                                focus:ring-emerald-100"
                     >
-
                     <button
                         type="button"
                         wire:click="createRole"
@@ -178,7 +164,6 @@
                         >
                             Add
                         </span>
-
                         <span
                             wire:loading
                             wire:target="createRole"
@@ -187,7 +172,6 @@
                         </span>
                     </button>
                 </div>
-
                 @error('newRoleName')
                     <p
                         class="mt-2
@@ -198,8 +182,11 @@
                     </p>
                 @enderror
             </section>
-
-
+            @else
+                <p class="rounded-xl border border-zinc-200 bg-white p-5 text-sm text-zinc-600">
+                    Read-only access. Only a Super Administrator can create roles or change permissions.
+                </p>
+            @endif
             {{-- ROLE LIST --}}
             <section
                 class="overflow-hidden
@@ -220,7 +207,6 @@
                     >
                         Roles
                     </h2>
-
                     <p
                         class="mt-1
                                text-xs
@@ -229,7 +215,6 @@
                         Select a role to review its permissions.
                     </p>
                 </div>
-
                 <div class="divide-y divide-zinc-100">
                     @forelse ($roles as $role)
                         <button
@@ -257,7 +242,6 @@
                             >
                                 {{ $role->name }}
                             </span>
-
                             <span
                                 class="shrink-0
                                        whitespace-nowrap
@@ -280,10 +264,7 @@
                     @endforelse
                 </div>
             </section>
-
         </aside>
-
-
         {{-- =================================================
              PERMISSIONS PANEL
         ================================================== --}}
@@ -295,7 +276,6 @@
                    bg-white
                    shadow-sm"
         >
-
             {{-- PANEL HEADER --}}
             <div
                 class="border-b
@@ -311,7 +291,6 @@
                 >
                     {{ $selectedRole?->name ?? 'Select a role' }}
                 </h2>
-
                 @if ($selectedRole)
                     @if ($selectedRole->name === 'Super Administrator')
                         <p
@@ -319,8 +298,8 @@
                                    text-xs leading-5
                                    text-amber-700"
                         >
-                            Protected system role. Its permissions
-                            are synchronised from the permission seeder.
+                            Protected system role. Full access is granted by the system authorization rule.
+                            Checked boxes show effective access to registered permissions.
                         </p>
                     @else
                         <p
@@ -328,7 +307,8 @@
                                    text-xs leading-5
                                    text-zinc-500"
                         >
-                            Select the capabilities available to this role.
+                            Select admin.access and the relevant module view permission before granting its actions.
+                            Changes to school profiles and active slides can affect the public site immediately.
                         </p>
                     @endif
                 @else
@@ -341,10 +321,7 @@
                     </p>
                 @endif
             </div>
-
-
             @if ($selectedRole)
-
                 {{-- PERMISSION GROUPS --}}
                 <div
                     class="grid
@@ -357,9 +334,8 @@
                            2xl:grid-cols-3"
                 >
                     @foreach ($groupedPermissions as $group => $permissions)
-
                         <article
-                            wire:key="permission-group-{{ \Illuminate\Support\Str::slug($group) }}"
+                            wire:key="permission-group-{{ $selectedRoleId }}-{{ \Illuminate\Support\Str::slug($group) }}"
                             class="min-w-0
                                    overflow-hidden
                                    rounded-xl
@@ -379,7 +355,6 @@
                                 >
                                     {{ $group }}
                                 </h3>
-
                                 <p
                                     class="mt-1
                                            text-xs
@@ -391,17 +366,14 @@
                                         : 'permissions' }}
                                 </p>
                             </div>
-
-
                             <div
                                 class="mt-3
                                        min-w-0
                                        space-y-1"
                             >
                                 @foreach ($permissions as $permission)
-
                                     <label
-                                        wire:key="permission-{{ $permission->id }}"
+                                        wire:key="permission-{{ $selectedRoleId }}-{{ $permission->id }}"
                                         class="flex
                                                min-w-0
                                                cursor-pointer
@@ -418,7 +390,7 @@
                                             type="checkbox"
                                             wire:model="selectedPermissions"
                                             value="{{ $permission->name }}"
-                                            @disabled($selectedRole->name === 'Super Administrator')
+                                            @disabled(! $canManageRoles || $selectedRole->name === 'Super Administrator')
                                             class="mt-0.5
                                                    h-4 w-4
                                                    shrink-0
@@ -429,7 +401,6 @@
                                                    disabled:cursor-not-allowed
                                                    disabled:opacity-60"
                                         >
-
                                         <span
                                             class="min-w-0
                                                    flex-1
@@ -440,17 +411,13 @@
                                             {{ $permission->name }}
                                         </span>
                                     </label>
-
                                 @endforeach
                             </div>
                         </article>
-
                     @endforeach
                 </div>
-
-
                 {{-- SAVE --}}
-                @if ($selectedRole->name !== 'Super Administrator')
+                @if ($canManageRoles && $selectedRole->name !== 'Super Administrator')
                     <div
                         class="flex
                                flex-col
@@ -468,9 +435,8 @@
                             class="text-xs leading-5
                                    text-zinc-500"
                         >
-                            Permission changes take effect after saving.
+                            Permission changes take effect after saving. An empty selection removes all role permissions.
                         </p>
-
                         <button
                             type="button"
                             wire:click="savePermissions"
@@ -495,7 +461,6 @@
                             >
                                 Save Permissions
                             </span>
-
                             <span
                                 wire:loading
                                 wire:target="savePermissions"
@@ -505,9 +470,7 @@
                         </button>
                     </div>
                 @endif
-
             @else
-
                 {{-- EMPTY STATE --}}
                 <div
                     class="px-6 py-16
@@ -519,7 +482,6 @@
                     >
                         No role selected
                     </p>
-
                     <p
                         class="mt-1
                                text-sm
@@ -529,10 +491,7 @@
                         review and manage its permissions.
                     </p>
                 </div>
-
             @endif
         </section>
-
     </div>
-
 </div>

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -22,6 +23,7 @@ final class PastChiefInstructorIndex extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public ?int $editingId = null;
 
     public string $imageMediaId = '';
@@ -46,19 +48,20 @@ final class PastChiefInstructorIndex extends Component
 
     public function mount(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-chief-instructors.view');
     }
 
     public function create(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-chief-instructors.view');
+        Gate::authorize('past-chief-instructors.create');
 
         $this->resetForm();
     }
 
     public function edit(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-chief-instructors.view');
 
         $instructor = PastChiefInstructor::query()
             ->findOrFail($id);
@@ -83,7 +86,12 @@ final class PastChiefInstructorIndex extends Component
 
     public function save(): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-chief-instructors.view');
+        Gate::authorize(
+            $this->editingId === null
+                ? 'past-chief-instructors.create'
+                : 'past-chief-instructors.update',
+        );
 
         $validated = $this->validate([
             'imageMediaId' => [
@@ -182,7 +190,8 @@ final class PastChiefInstructorIndex extends Component
 
     public function delete(int $id): void
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-chief-instructors.view');
+        Gate::authorize('past-chief-instructors.delete');
 
         $instructor = PastChiefInstructor::query()
             ->findOrFail($id);
@@ -215,11 +224,15 @@ final class PastChiefInstructorIndex extends Component
 
     public function updatedNewImage(): void
     {
+        Gate::authorize('past-chief-instructors.view');
+
         $this->resetValidation('newImage');
     }
 
     public function clearNewImage(): void
     {
+        Gate::authorize('past-chief-instructors.view');
+
         $this->newImage = null;
 
         $this->resetValidation('newImage');
@@ -227,7 +240,7 @@ final class PastChiefInstructorIndex extends Component
 
     public function render(): View
     {
-        Gate::authorize('settings.manage');
+        Gate::authorize('past-chief-instructors.view');
 
         return view(
             'livewire.admin.past-chief-instructors.past-chief-instructor-index',

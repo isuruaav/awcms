@@ -304,27 +304,9 @@ final class DocumentEdit extends Component
 
     public function archive(): void
     {
-        Gate::authorize(
-            'documents.archive',
-        );
-
-        $document =
-            app(
-                DocumentService::class,
-            )->archive(
-                document: $this->document(),
-
-                actor: $this->actor(),
-            );
-
-        $this->loadDocument(
-            $document,
-        );
-
-        session()->flash(
-            'status',
-            'Document archived successfully.',
-        );
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'workflow' => 'Archiving is no longer available.',
+        ]);
     }
 
     /*

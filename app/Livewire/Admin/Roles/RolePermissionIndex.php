@@ -6,8 +6,11 @@ use App\Models\User;
 use App\Services\AuditLogger;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -15,6 +18,7 @@ use Spatie\Permission\PermissionRegistrar;
 
 final class RolePermissionIndex extends Component
 {
+    #[Locked]
     public ?int $selectedRoleId = null;
 
     /** @var list<string> */
@@ -34,6 +38,7 @@ final class RolePermissionIndex extends Component
         $this->selectedRoleId = $role instanceof Role
             ? (int) $role->getKey()
             : null;
+
         $this->loadSelectedPermissions();
     }
 
@@ -46,112 +51,120 @@ final class RolePermissionIndex extends Component
             ->findOrFail($roleId);
 
         $this->selectedRoleId = $roleId;
+        $this->resetValidation();
         $this->loadSelectedPermissions();
     }
 
     public function createRole(): void
     {
-        Gate::authorize('roles.manage');
+        $actor = $this->authorizeRoleChanges();
+        $this->newRoleName = trim(strip_tags($this->newRoleName));
 
         $this->validate([
-            'newRoleName' => ['required', 'string', 'max:100'],
+            'newRoleName' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique(Role::class, 'name')->where('guard_name', 'web'),
+            ],
         ]);
 
-        $name = trim(
-            strip_tags($this->newRoleName),
-        );
-
-        if ($name === '') {
+        if (in_array(mb_strtolower($this->newRoleName), [
+            'super administrator',
+            'site administrator',
+        ], true)) {
             throw ValidationException::withMessages([
-                'newRoleName' => 'Role name is required.',
+                'newRoleName' => 'This name is reserved for a system administrator role.',
             ]);
         }
 
-        if (
-            Role::query()
-                ->where('name', $name)
-                ->where('guard_name', 'web')
-                ->exists()
-        ) {
-            throw ValidationException::withMessages([
-                'newRoleName' => 'That role already exists.',
+        $role = DB::transaction(function () use ($actor): Role {
+            $role = Role::query()->create([
+                'name' => $this->newRoleName,
+                'guard_name' => 'web',
             ]);
-        }
 
-        $role = Role::query()->create([
-            'name' => $name,
-            'guard_name' => 'web',
-        ]);
+            app(AuditLogger::class)->log(
+                event: 'roles.created',
+                description: 'A role was created.',
+                actor: $actor,
+                subject: $role,
+                newValues: ['name' => $role->name],
+            );
+
+            return $role;
+        });
 
         $this->selectedRoleId = (int) $role->getKey();
         $this->selectedPermissions = [];
         $this->newRoleName = '';
+        $this->resetValidation();
 
-        app(AuditLogger::class)->log(
-            event: 'roles.created',
-            description: 'A role was created.',
-            actor: $this->actor(),
-            subject: $role,
-            newValues: [
-                'name' => $name,
-            ],
-        );
-
-        session()->flash(
-            'status',
-            'Role created successfully.',
-        );
+        session()->flash('status', 'Role created successfully. Assign its permissions before assigning users.');
     }
 
     public function savePermissions(): void
     {
-        Gate::authorize('roles.manage');
-
+        $actor = $this->authorizeRoleChanges();
         $role = $this->selectedRole();
 
         if ($role->name === 'Super Administrator') {
             throw ValidationException::withMessages([
-                'role' => 'Super Administrator permissions are managed by the system seeder and cannot be reduced here.',
+                'role' => 'Super Administrator has full access through the system authorization rule and cannot be changed here.',
             ]);
         }
 
         $valid = $this->allPermissionNames();
-        $permissions = array_values(
-            array_intersect(
-                $valid,
-                $this->selectedPermissions,
-            ),
-        );
-        $old = $this->rolePermissionNames($role);
+        $this->validate([
+            'selectedPermissions' => ['present', 'array', 'max:'.count($valid)],
+            'selectedPermissions.*' => ['required', 'string', 'distinct', Rule::in($valid)],
+        ]);
 
-        $role->syncPermissions($permissions);
+        $permissions = $this->selectedPermissions;
+        sort($permissions);
+        $this->assertPermissionDependencies($permissions);
 
-        app(PermissionRegistrar::class)
-            ->forgetCachedPermissions();
+        $registrar = app(PermissionRegistrar::class);
 
-        app(AuditLogger::class)->log(
-            event: 'roles.permissions-updated',
-            description: 'Role permissions were updated.',
-            actor: $this->actor(),
-            subject: $role,
-            oldValues: [
-                'permissions' => $old,
-            ],
-            newValues: [
-                'permissions' => $permissions,
-            ],
-        );
+        try {
+            DB::transaction(function () use ($actor, $role, $permissions): void {
+                $lockedRole = Role::query()
+                    ->where('guard_name', 'web')
+                    ->whereKey($role->getKey())
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                // Re-check the protected name inside the transaction.
+                if ($lockedRole->name === 'Super Administrator') {
+                    throw ValidationException::withMessages([
+                        'role' => 'The Super Administrator role is protected.',
+                    ]);
+                }
+
+                $old = $this->rolePermissionNames($lockedRole);
+                $lockedRole->syncPermissions($permissions);
+
+                app(AuditLogger::class)->log(
+                    event: 'roles.permissions-updated',
+                    description: 'Role permissions were updated.',
+                    actor: $actor,
+                    subject: $lockedRole,
+                    oldValues: ['permissions' => $old],
+                    newValues: ['permissions' => $permissions],
+                );
+            });
+        } finally {
+            $registrar->forgetCachedPermissions();
+        }
 
         $this->loadSelectedPermissions();
-
-        session()->flash(
-            'status',
-            'Role permissions updated successfully.',
-        );
+        session()->flash('status', 'Role permissions updated successfully.');
     }
 
     public function render(): View
     {
+        Gate::authorize('roles.manage');
+
         $permissions = Permission::query()
             ->where('guard_name', 'web')
             ->orderBy('name')
@@ -159,35 +172,24 @@ final class RolePermissionIndex extends Component
 
         $grouped = $permissions->groupBy(
             static function (Permission $permission): string {
-                $parts = explode(
-                    '.',
-                    $permission->name,
-                    2,
-                );
+                $prefix = explode('.', $permission->name, 2)[0];
 
-                return ucfirst($parts[0]);
+                return ucwords(str_replace(['-', '_'], ' ', $prefix));
             },
         );
 
-        return view(
-            'livewire.admin.roles.role-permission-index',
-            [
-                'roles' => Role::query()
-                    ->where('guard_name', 'web')
-                    ->withCount('users')
-                    ->orderBy('name')
-                    ->get(),
-                'groupedPermissions' => $grouped,
-                'selectedRole' => $this->selectedRoleId !== null
-                    ? Role::query()->find($this->selectedRoleId)
-                    : null,
-            ],
-        )->layout(
-            'components.layouts.admin',
-            [
-                'title' => 'Roles & Permissions',
-            ],
-        );
+        return view('livewire.admin.roles.role-permission-index', [
+            'roles' => Role::query()
+                ->where('guard_name', 'web')
+                ->withCount('users')
+                ->orderBy('name')
+                ->get(),
+            'groupedPermissions' => $grouped,
+            'canManageRoles' => $this->actor()->hasRole('Super Administrator'),
+            'selectedRole' => $this->selectedRoleId === null
+                ? null
+                : $this->selectedRole(),
+        ])->layout('components.layouts.admin', ['title' => 'Roles & Permissions']);
     }
 
     private function loadSelectedPermissions(): void
@@ -198,11 +200,10 @@ final class RolePermissionIndex extends Component
             return;
         }
 
-        $role = Role::query()->find($this->selectedRoleId);
-
-        $this->selectedPermissions = $role instanceof Role
-            ? $this->rolePermissionNames($role)
-            : [];
+        $role = $this->selectedRole();
+        $this->selectedPermissions = $role->name === 'Super Administrator'
+            ? $this->allPermissionNames()
+            : $this->rolePermissionNames($role);
     }
 
     private function selectedRole(): Role
@@ -223,12 +224,7 @@ final class RolePermissionIndex extends Component
     {
         $names = [];
 
-        foreach (
-            Permission::query()
-                ->where('guard_name', 'web')
-                ->orderBy('name')
-                ->get(['name']) as $permission
-        ) {
+        foreach (Permission::query()->where('guard_name', 'web')->orderBy('name')->get(['name']) as $permission) {
             $names[] = $permission->name;
         }
 
@@ -249,15 +245,53 @@ final class RolePermissionIndex extends Component
         return $names;
     }
 
+    /** @param list<string> $permissions */
+    private function assertPermissionDependencies(array $permissions): void
+    {
+        if ($permissions !== [] && ! in_array('admin.access', $permissions, true)) {
+            throw ValidationException::withMessages([
+                'selectedPermissions' => 'Select admin.access to allow this role to enter the administration panel.',
+            ]);
+        }
+
+        $modules = [
+            'users', 'pages', 'news', 'galleries', 'documents', 'media',
+            'hero-slides', 'school-leaders', 'past-commandants', 'past-chief-instructors',
+        ];
+
+        foreach ($permissions as $permission) {
+            $module = explode('.', $permission, 2)[0];
+
+            if (
+                in_array($module, $modules, true)
+                && $permission !== $module.'.view'
+                && ! in_array($module.'.view', $permissions, true)
+            ) {
+                throw ValidationException::withMessages([
+                    'selectedPermissions' => 'Select '.$module.'.view before granting '.$permission.'.',
+                ]);
+            }
+        }
+    }
+
+    private function authorizeRoleChanges(): User
+    {
+        Gate::authorize('roles.manage');
+        $actor = $this->actor();
+
+        abort_unless(
+            $actor->hasRole('Super Administrator'),
+            403,
+            'Only a Super Administrator may create roles or change their permissions.',
+        );
+
+        return $actor;
+    }
+
     private function actor(): User
     {
         $user = Auth::user();
-
-        if (! $user instanceof User) {
-            throw ValidationException::withMessages([
-                'authorization' => 'An authenticated administrator is required.',
-            ]);
-        }
+        abort_unless($user instanceof User, 403);
 
         return $user;
     }

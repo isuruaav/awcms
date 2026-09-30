@@ -193,21 +193,6 @@ final class PageIndex extends Component
         );
     }
 
-    public function archivePage(int $pageId): void
-    {
-        $page = Page::query()->findOrFail($pageId);
-
-        app(PageWorkflowService::class)->archive(
-            $page,
-            $this->actor(),
-        );
-
-        session()->flash(
-            'status',
-            "{$page->title} was archived.",
-        );
-    }
-
     public function returnPageToDraft(int $pageId): void
     {
         $page = Page::query()->findOrFail($pageId);

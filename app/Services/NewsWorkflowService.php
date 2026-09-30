@@ -450,64 +450,9 @@ final class NewsWorkflowService
         News $news,
         User $actor,
     ): News {
-        Gate::forUser(
-            $actor,
-        )->authorize(
-            'news.archive',
-        );
-
-        return DB::transaction(
-            function () use (
-                $news,
-                $actor,
-            ): News {
-                $news =
-                    $this->lockedNews(
-                        $news,
-                    );
-
-                $status =
-                    $this->status(
-                        $news,
-                    );
-
-                if (
-                    $status !==
-                    NewsStatus::Published
-                ) {
-                    $this->invalidTransition(
-                        'Only Published news can be archived.',
-                    );
-                }
-
-                $news->forceFill([
-                    'status' => NewsStatus::Archived->value,
-
-                    'archived_at' => now(),
-
-                    'archived_by' => $actor->id,
-
-                    'updated_by' => $actor->id,
-                ])->save();
-
-                $this->audit(
-                    event: 'news.archived',
-
-                    description: 'A news article was archived.',
-
-                    actor: $actor,
-
-                    news: $news,
-
-                    oldStatus: $status,
-
-                    newStatus: NewsStatus::Archived,
-                );
-
-                return $news->refresh();
-            },
-            3,
-        );
+        throw ValidationException::withMessages([
+            'workflow' => 'Archiving is no longer available.',
+        ]);
     }
 
     private function lockedNews(
