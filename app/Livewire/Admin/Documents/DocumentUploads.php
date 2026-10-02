@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Admin\Documents;
 
+use App\Enums\DocumentStatus;
 use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
 use App\Models\Document;
@@ -34,6 +35,14 @@ final class DocumentUploads extends Component
 
     public string $search = '';
 
+    public string $statusFilter = 'all';
+
+    public int $perPage = 10;
+
+    public string $sortField = 'updated_at';
+
+    public string $sortDirection = 'desc';
+
     public mixed $englishFile = null;
 
     public mixed $sinhalaFile = null;
@@ -52,6 +61,76 @@ final class DocumentUploads extends Component
         $this->resetPage();
     }
 
+    public function updatedStatusFilter(): void
+    {
+        if (! in_array(
+            $this->statusFilter,
+            [
+                'all',
+                'published',
+                'not_public',
+            ],
+            true,
+        )) {
+            $this->statusFilter = 'all';
+        }
+
+        $this->resetPage();
+    }
+
+    public function updatedPerPage(): void
+    {
+        if (! in_array(
+            $this->perPage,
+            [
+                10,
+                25,
+                50,
+            ],
+            true,
+        )) {
+            $this->perPage = 10;
+        }
+
+        $this->resetPage();
+    }
+
+    public function sortBy(string $field): void
+    {
+        if (! in_array(
+            $field,
+            [
+                'title',
+                'status',
+                'updated_at',
+            ],
+            true,
+        )) {
+            return;
+        }
+
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc'
+                ? 'desc'
+                : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = $field === 'updated_at'
+                ? 'desc'
+                : 'asc';
+        }
+
+        $this->resetPage();
+    }
+
+    public function clearTableFilters(): void
+    {
+        $this->search = '';
+        $this->statusFilter = 'all';
+
+        $this->resetPage();
+    }
+
     public function create(): void
     {
         Gate::authorize('documents.create');
@@ -64,16 +143,22 @@ final class DocumentUploads extends Component
         Gate::authorize('documents.view');
         Gate::authorize('documents.update');
 
-        $document = Document::query()->whereKey($id)->firstOrFail();
+        $document = Document::query()
+            ->whereKey($id)
+            ->firstOrFail();
 
         $this->editingId = (int) $document->getKey();
         $this->title = $document->titleForLocale('en');
 
         $titleSi = $document->getAttribute('title_si');
-        $this->titleSi = is_string($titleSi) ? $titleSi : '';
+
+        $this->titleSi = is_string($titleSi)
+            ? $titleSi
+            : '';
 
         $this->englishFile = null;
         $this->sinhalaFile = null;
+
         $this->resetValidation();
     }
 
@@ -87,19 +172,29 @@ final class DocumentUploads extends Component
     public function save(): void
     {
         Gate::authorize('documents.view');
+
         Gate::authorize(
             $this->editingId === null
                 ? 'documents.create'
                 : 'documents.update',
         );
+
         Gate::authorize('documents.publish');
 
         $this->title = trim($this->title);
         $this->titleSi = trim($this->titleSi);
 
         $this->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'titleSi' => ['nullable', 'string', 'max:255'],
+            'title' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'titleSi' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
             'englishFile' => [
                 'nullable',
                 'file',
@@ -126,8 +221,17 @@ final class DocumentUploads extends Component
 
         $actor = $this->actor();
 
-        $english = $this->upload($this->englishFile, 'englishFile', $actor);
-        $sinhala = $this->upload($this->sinhalaFile, 'sinhalaFile', $actor);
+        $english = $this->upload(
+            $this->englishFile,
+            'englishFile',
+            $actor,
+        );
+
+        $sinhala = $this->upload(
+            $this->sinhalaFile,
+            'sinhalaFile',
+            $actor,
+        );
 
         app(DocumentUploadManager::class)->save(
             actor: $actor,
@@ -141,14 +245,20 @@ final class DocumentUploads extends Component
         $this->clearForm();
         $this->resetPage();
 
-        session()->flash('status', 'Document saved and published successfully.');
+        session()->flash(
+            'status',
+            'Document saved and published successfully.',
+        );
     }
 
     public function delete(int $id): void
     {
         Gate::authorize('documents.view');
 
-        app(DocumentUploadManager::class)->delete($id, $this->actor());
+        app(DocumentUploadManager::class)->delete(
+            $id,
+            $this->actor(),
+        );
 
         if ($this->editingId === $id) {
             $this->clearForm();
@@ -156,31 +266,110 @@ final class DocumentUploads extends Component
 
         $this->resetPage();
 
-        session()->flash('status', 'Document deleted successfully.');
+        session()->flash(
+            'status',
+            'Document deleted successfully.',
+        );
     }
 
     public function render(): View
     {
         Gate::authorize('documents.view');
 
-        $search = mb_substr(trim($this->search), 0, 255);
+        $search = mb_substr(
+            trim($this->search),
+            0,
+            255,
+        );
 
-        $documents = Document::query()
-            ->when($search !== '', function (Builder $query) use ($search): void {
-                $query->where(function (Builder $titles) use ($search): void {
-                    $titles->where('title', 'like', '%'.$search.'%')
-                        ->orWhere('title_si', 'like', '%'.$search.'%');
-                });
-            })
-            ->latest('updated_at')
-            ->orderByDesc('id')
-            ->paginate(12);
+        $query = Document::query()
+            ->when(
+                $search !== '',
+                function (Builder $query) use ($search): void {
+                    $query->where(
+                        function (Builder $titles) use ($search): void {
+                            $titles
+                                ->where(
+                                    'title',
+                                    'like',
+                                    '%'.$search.'%',
+                                )
+                                ->orWhere(
+                                    'title_si',
+                                    'like',
+                                    '%'.$search.'%',
+                                );
+                        },
+                    );
+                },
+            );
 
-        return view('livewire.admin.documents.document-uploads', [
-            'documents' => $documents,
-        ])->layout('components.layouts.admin', [
-            'title' => 'Document Uploads',
-        ]);
+        if ($this->statusFilter === 'published') {
+            $query->where(
+                'status',
+                DocumentStatus::Published->value,
+            );
+        } elseif ($this->statusFilter === 'not_public') {
+            $query->where(
+                'status',
+                '!=',
+                DocumentStatus::Published->value,
+            );
+        }
+
+        $sortDirection = $this->sortDirection === 'asc'
+            ? 'asc'
+            : 'desc';
+
+        match ($this->sortField) {
+            'title' => $query->orderBy(
+                'title',
+                $sortDirection,
+            ),
+            'status' => $query->orderBy(
+                'status',
+                $sortDirection,
+            ),
+            default => $query->orderBy(
+                'updated_at',
+                $sortDirection,
+            ),
+        };
+
+        if ($this->sortField !== 'updated_at') {
+            $query->orderByDesc('updated_at');
+        }
+
+        $query->orderByDesc('id');
+
+        if (! in_array(
+            $this->perPage,
+            [
+                10,
+                25,
+                50,
+            ],
+            true,
+        )) {
+            $this->perPage = 10;
+        }
+
+        /** @var view-string $viewName */
+        $viewName = 'livewire.admin.documents.document-uploads';
+
+        return view(
+            $viewName,
+            [
+                'documents' => $query->paginate(
+                    $this->perPage,
+                ),
+            ],
+        )->layout(
+            'components.layouts.admin',
+            [
+                'title' => 'Document Uploads',
+            ],
+        );
     }
 
     private function upload(
@@ -200,13 +389,16 @@ final class DocumentUploads extends Component
                 type: MediaType::Document,
                 visibility: MediaVisibility::Public,
                 actor: $actor,
-                title: $field === 'sinhalaFile' && $this->titleSi !== ''
-                    ? $this->titleSi
-                    : $this->title,
+                title: $field === 'sinhalaFile'
+                    && $this->titleSi !== ''
+                        ? $this->titleSi
+                        : $this->title,
             );
         } catch (ValidationException $exception) {
             throw ValidationException::withMessages([
-                $field => collect($exception->errors())
+                $field => collect(
+                    $exception->errors(),
+                )
                     ->flatten()
                     ->implode(' '),
             ]);
@@ -230,7 +422,10 @@ final class DocumentUploads extends Component
     {
         $actor = Auth::user();
 
-        abort_unless($actor instanceof User, 403);
+        abort_unless(
+            $actor instanceof User,
+            403,
+        );
 
         return $actor;
     }
