@@ -118,20 +118,6 @@
         </x-admin.nav-link>
     @endcan
 
-    {{-- Past Commandants --}}
-    @can('past-commandants.view')
-        <x-admin.nav-link :href="route('admin.past-commandants.index')" :active="request()->routeIs('admin.past-commandants.*')">
-            Past Commandants
-        </x-admin.nav-link>
-    @endcan
-
-    {{-- Past Chief Instructors --}}
-    @can('past-chief-instructors.view')
-        <x-admin.nav-link :href="route('admin.past-chief-instructors.index')" :active="request()->routeIs('admin.past-chief-instructors.*')">
-            Past Chief Instructors
-        </x-admin.nav-link>
-    @endcan
-
 
 
     {{-- Site Settings --}}

@@ -59,13 +59,13 @@
 }
 
 /* Sinhala */
-@font-face {
+/* @font-face {
     font-family: "AWCMS Noto Serif Sinhala";
     src: url("../fonts/NotoSerifSinhala-Regular.woff2") format("woff2");
     font-weight: 400;
     font-style: normal;
     font-display: swap;
-}
+} */
 
 
 /* Public website typography */
@@ -109,7 +109,7 @@ body :where(
 :root {
     --awcms-font-family:
         "AWCMS Exo 2",
-        "AWCMS Noto Serif Sinhala",
+        /* "AWCMS Noto Serif Sinhala", */
         sans-serif;
 }
 
@@ -166,7 +166,7 @@ button {
 }
 
 .container {
-  width: min(1240px, calc(100% - 32px));
+  width: min(1400px, calc(100% - 32px));
   margin: 0 auto;
 }
 
@@ -1704,7 +1704,7 @@ img.image-fallback {
 /* ---------- Leadership / Past Command ---------- */
 .leadership-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 22px;
 }
 
@@ -1783,6 +1783,38 @@ img.image-fallback {
   color: var(--blue-500);
   background: var(--blue-50);
   font-size: 58px;
+}
+
+
+.leader-rank {
+  margin-top: 10px;
+  color: var(--blue-700);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.leader-body h3 {
+  margin-top: 5px;
+  color: var(--text);
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.leader-period {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.leader-period i {
+  color: var(--green-600);
 }
 
 .leader-card .card-body,
@@ -5327,4 +5359,548 @@ img.image-fallback {
 .sos-history-page:lang(si) .sos-history-date {
     font-size: 16px;
     line-height: 1.6;
+}
+
+
+
+
+/* =========================================================
+   News Detail — Gallery Lightbox + Related News Carousel
+   ========================================================= */
+
+[x-cloak] {
+    display: none !important;
+}
+
+
+/* ---------------------------------------------------------
+   Event Photographs
+   --------------------------------------------------------- */
+
+.sos-article-photo-button {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+}
+
+.sos-article-photo-button img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform .35s ease;
+}
+
+.sos-article-photo:hover .sos-article-photo-button img {
+    transform: scale(1.05);
+}
+
+.sos-photo-zoom-icon {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(7, 19, 51, .78);
+    color: #ffffff;
+    font-size: 14px;
+    opacity: 0;
+    transform: translateY(5px);
+    transition:
+        opacity .25s ease,
+        transform .25s ease,
+        background .25s ease;
+}
+
+.sos-article-photo:hover .sos-photo-zoom-icon,
+.sos-article-photo-button:focus-visible .sos-photo-zoom-icon {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.sos-photo-zoom-icon:hover {
+    background: #007634;
+}
+
+
+/* ---------------------------------------------------------
+   Fullscreen Lightbox
+   --------------------------------------------------------- */
+
+.sos-lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 80px;
+    background: rgba(3, 8, 20, .94);
+    backdrop-filter: blur(7px);
+}
+
+.sos-lightbox-stage {
+    width: min(1180px, 100%);
+    max-height: calc(100vh - 100px);
+}
+
+.sos-lightbox-figure {
+    margin: 0;
+    text-align: center;
+}
+
+.sos-lightbox-figure img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: calc(100vh - 150px);
+    margin: 0 auto;
+    border-radius: 12px;
+    object-fit: contain;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .45);
+}
+
+.sos-lightbox-figure figcaption {
+    margin-top: 14px;
+    color: #e4eaf2;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.sos-lightbox-close,
+.sos-lightbox-arrow {
+    position: absolute;
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, .18);
+    background: rgba(255, 255, 255, .1);
+    color: #ffffff;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition:
+        background .2s ease,
+        transform .2s ease;
+}
+
+.sos-lightbox-close {
+    top: 20px;
+    right: 22px;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    font-size: 20px;
+}
+
+.sos-lightbox-close:hover {
+    background: #b42318;
+}
+
+.sos-lightbox-arrow {
+    top: 50%;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    font-size: 18px;
+    transform: translateY(-50%);
+}
+
+.sos-lightbox-arrow:hover {
+    background: #007634;
+}
+
+.sos-lightbox-prev {
+    left: 22px;
+}
+
+.sos-lightbox-next {
+    right: 22px;
+}
+
+.sos-lightbox-counter {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    padding: 7px 13px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .1);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    transform: translateX(-50%);
+    backdrop-filter: blur(8px);
+}
+
+
+/* ---------------------------------------------------------
+   Related News Carousel
+   --------------------------------------------------------- */
+
+.sos-related-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 26px;
+}
+
+.sos-related-heading h2 {
+    margin: 0;
+}
+
+.sos-related-eyebrow {
+    margin: 0 0 7px;
+    color: #007634;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+
+.sos-related-view-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #007634;
+    font-size: 14px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.sos-related-carousel {
+    position: relative;
+}
+
+.sos-related-carousel-track {
+    display: flex;
+    gap: 20px;
+    padding: 4px 2px 18px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    overscroll-behavior-inline: contain;
+}
+
+.sos-related-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.sos-related-slide {
+       flex: 0 0 calc((100% - 60px) / 4);
+    scroll-snap-align: start;
+}
+
+.sos-related-summary {
+    margin: 0 0 20px;
+    color: #526079;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.sos-related-read-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: auto;
+}
+
+.sos-related-arrow {
+    position: absolute;
+    top: 50%;
+    z-index: 5;
+    display: inline-flex;
+    width: 46px;
+    height: 46px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #d5dee8;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #071333;
+    box-shadow: 0 10px 28px rgba(7, 19, 51, .14);
+    cursor: pointer;
+    transform: translateY(-50%);
+    transition:
+        color .2s ease,
+        background .2s ease,
+        border-color .2s ease,
+        transform .2s ease;
+}
+
+.sos-related-arrow:hover {
+    border-color: #007634;
+    background: #007634;
+    color: #ffffff;
+}
+
+.sos-related-arrow-left {
+    left: -23px;
+}
+
+.sos-related-arrow-right {
+    right: -23px;
+}
+
+
+/* ---------------------------------------------------------
+   Responsive
+   --------------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .sos-related-slide {
+        flex-basis: calc((100% - 20px) / 2);
+    }
+
+    .sos-related-arrow-left {
+        left: 8px;
+    }
+
+    .sos-related-arrow-right {
+        right: 8px;
+    }
+}
+
+@media (max-width: 600px) {
+    .sos-related-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .sos-related-slide {
+        flex-basis: 100%;
+    }
+
+    .sos-related-arrow {
+        width: 42px;
+        height: 42px;
+    }
+
+    .sos-lightbox {
+        padding: 64px 14px;
+    }
+
+    .sos-lightbox-arrow {
+        top: auto;
+        bottom: 22px;
+        width: 44px;
+        height: 44px;
+        transform: none;
+    }
+
+    .sos-lightbox-prev {
+        left: 16px;
+    }
+
+    .sos-lightbox-next {
+        right: 16px;
+    }
+
+    .sos-lightbox-counter {
+        bottom: 30px;
+    }
+
+    .sos-lightbox-figure img {
+        max-height: calc(100vh - 180px);
+    }
+
+    .sos-photo-zoom-icon {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+
+.sos-lightbox[hidden] {
+    display: none !important;
+}
+
+.sos-article-photo-button {
+    cursor: zoom-in;
+}
+
+.sos-related-arrow {
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+
+
+/* =========================================================
+   All News — Horizontal List Layout
+   ========================================================= */
+
+.school-news-card-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.school-news-card {
+    display: flex;
+    flex-direction: row;
+    min-height: 240px;
+    overflow: hidden;
+    border: 1px solid #dfe6ef;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 10px 28px rgba(7, 19, 51, 0.07);
+    transition:
+        transform .25s ease,
+        border-color .25s ease,
+        box-shadow .25s ease;
+}
+
+.school-news-card:hover {
+    transform: translateY(-3px);
+    border-color: #b7cbdc;
+    box-shadow: 0 18px 40px rgba(7, 19, 51, 0.11);
+}
+
+.school-news-card-image {
+    flex: 0 0 34%;
+    width: 34%;
+    min-height: 240px;
+    aspect-ratio: auto;
+    overflow: hidden;
+    background: #e8edf4;
+}
+
+.school-news-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.school-news-card-placeholder {
+    min-height: 240px;
+}
+
+.school-news-card-content {
+    flex: 1;
+    padding: 28px 30px;
+}
+
+.school-news-card h2 {
+    margin-top: 14px;
+    font-size: 26px;
+    line-height: 1.3;
+}
+
+.school-news-card h2 a {
+    -webkit-line-clamp: 2;
+}
+
+.school-news-card-content > p {
+    margin: 14px 0 22px;
+    font-size: 16px;
+    line-height: 1.75;
+    -webkit-line-clamp: 3;
+}
+
+.school-news-card-footer {
+    margin-top: auto;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+    .school-news-card {
+        min-height: 210px;
+    }
+
+    .school-news-card-image {
+        flex-basis: 38%;
+        width: 38%;
+        min-height: 210px;
+    }
+
+    .school-news-card-content {
+        padding: 22px 24px;
+    }
+
+    .school-news-card h2 {
+        font-size: 22px;
+    }
+}
+
+/* Mobile */
+@media (max-width: 640px) {
+    .school-news-card {
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .school-news-card-image {
+        width: 100%;
+        min-height: 0;
+        aspect-ratio: 16 / 10;
+    }
+
+    .school-news-card-content {
+        padding: 20px;
+    }
+
+    .school-news-card h2 {
+        font-size: 20px;
+    }
+}
+
+
+/* =========================================================
+   School Leadership - 4 Present Leaders
+   ========================================================= */
+
+.leadership-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.leader-card {
+    overflow: hidden;
+    min-width: 0;
+}
+
+.leader-card img {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    background: var(--blue-50);
+}
+
+.leader-placeholder {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    display: grid;
+    place-items: center;
+    color: var(--blue-500);
+    background: var(--blue-50);
+    font-size: 58px;
+}
+
+@media (max-width: 1100px) {
+    .leadership-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .leadership-grid {
+        grid-template-columns: 1fr;
+    }
 }

@@ -24,24 +24,24 @@
 }
 
 /* Sinhala */
-@font-face {
+/* @font-face {
     font-family: "AWCMS Noto Serif Sinhala";
     src: url("../fonts/NotoSerifSinhala-Regular.woff2") format("woff2");
     font-weight: 400;
     font-style: normal;
     font-display: swap;
-}
+} */
 
 :root {
     --awcms-font-family:
         "AWCMS Exo 2",
-        "AWCMS Noto Serif Sinhala",
+        /* "AWCMS Noto Serif Sinhala", */
         sans-serif;
 }
 @theme {
     --font-sans:
         "AWCMS Exo 2",
-        "AWCMS Noto Serif Sinhala",
+        /* "AWCMS Noto Serif Sinhala", */
         sans-serif,
         "Apple Color Emoji",
         "Segoe UI Emoji",

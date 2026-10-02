@@ -1,6 +1,10 @@
 import './page-content-editor.js';
 import Trix from 'trix';
 
+import Sortable from 'sortablejs';
+
+window.Sortable = Sortable;
+
 /*
  * AWCMS Rich Text Editor
  *

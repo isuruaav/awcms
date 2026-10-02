@@ -1,66 +1,87 @@
 <div class="space-y-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <!-- Header Section -->
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-zinc-950">News</h1>
-            <p class="mt-1 text-sm text-zinc-600">
-                Manage manual English, Sinhala and Tamil news articles.
+            <h1 class="text-2xl font-bold tracking-tight text-zinc-900">News Articles</h1>
+            <p class="mt-1 text-sm text-zinc-500">
+                Manage manual English, Sinhala, and Tamil news articles effortlessly.
             </p>
         </div>
 
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap items-center gap-2.5">
             @if ($canManageCategories)
                 <a href="{{ route('admin.news.categories.index') }}" wire:navigate
-                    class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
+                    class="inline-flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 shadow-sm transition-all hover:border-zinc-300 hover:bg-zinc-50">
+                    <svg class="h-4 w-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
                     Categories
                 </a>
             @endif
 
             @can('news.create')
                 <a href="{{ route('admin.news.create') }}" wire:navigate
-                    class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800">
+                    class="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-emerald-600/20 transition-all hover:bg-emerald-700 active:scale-[0.98]">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+                    </svg>
                     Create News
                 </a>
             @endcan
         </div>
     </div>
 
+    <!-- Alert Notifications -->
     @if (session('status'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">
-            {{ session('status') }}
+        <div class="flex items-center gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/80 px-4 py-3.5 text-sm font-medium text-emerald-900 shadow-sm">
+            <svg class="h-5 w-5 shrink-0 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ session('status') }}</span>
         </div>
     @endif
 
     @error('workflow')
-        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-            {{ $message }}
+        <div class="flex items-center gap-3 rounded-xl border border-red-200/80 bg-red-50/80 px-4 py-3.5 text-sm font-medium text-red-900 shadow-sm">
+            <svg class="h-5 w-5 shrink-0 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{{ $message }}</span>
         </div>
     @enderror
 
-    <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <div class="grid gap-4 lg:grid-cols-2 2xl:grid-cols-6">
-            <div class="lg:col-span-2 2xl:col-span-2">
-                <label for="news-search" class="mb-2 block text-sm font-medium text-zinc-700">Search news</label>
-                <input id="news-search" type="search" wire:model.live.debounce.300ms="search"
-                    placeholder="Search title, slug or summary..."
-                    class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm outline-none placeholder:text-zinc-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10">
+    <!-- Filters Section -->
+    <section class="rounded-2xl border border-zinc-200/80 bg-white p-5 shadow-sm">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
+            <div class="sm:col-span-2 lg:col-span-2">
+                <label for="news-search" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Search</label>
+                <div class="relative">
+                    <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                        <svg class="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input id="news-search" type="search" wire:model.live.debounce.300ms="search"
+                        placeholder="Search title, slug or summary..."
+                        class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 pl-10 pr-4 py-2 text-sm text-zinc-800 outline-none transition-all placeholder:text-zinc-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10">
+                </div>
             </div>
 
             <div>
-                <label for="news-locale" class="mb-2 block text-sm font-medium text-zinc-700">Language</label>
+                <label for="news-locale" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Language</label>
                 <select id="news-locale" wire:model.live="locale"
-                    class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm">
+                    class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 py-2 text-sm text-zinc-800 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10">
                     <option value="all">All languages</option>
                     @foreach ($locales as $localeOption)
-                        <option value="{{ $localeOption->value }}">{{ $localeOption->label() }} —
-                            {{ $localeOption->nativeLabel() }}</option>
+                        <option value="{{ $localeOption->value }}">{{ $localeOption->label() }} — {{ $localeOption->nativeLabel() }}</option>
                     @endforeach
                 </select>
             </div>
 
             <div>
-                <label for="news-category" class="mb-2 block text-sm font-medium text-zinc-700">Category</label>
+                <label for="news-category" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Category</label>
                 <select id="news-category" wire:model.live="category"
-                    class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm">
+                    class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 py-2 text-sm text-zinc-800 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10">
                     <option value="all">All categories</option>
                     @foreach ($categories as $categoryOption)
                         <option value="{{ $categoryOption->id }}">{{ $categoryOption->name }}</option>
@@ -69,9 +90,9 @@
             </div>
 
             <div>
-                <label for="news-status" class="mb-2 block text-sm font-medium text-zinc-700">Status</label>
+                <label for="news-status" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Status</label>
                 <select id="news-status" wire:model.live="status"
-                    class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm">
+                    class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 py-2 text-sm text-zinc-800 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10">
                     <option value="all">All statuses</option>
                     @foreach ($statuses as $statusOption)
                         <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
@@ -80,24 +101,28 @@
             </div>
 
             <div>
-                <label for="news-records" class="mb-2 block text-sm font-medium text-zinc-700">Records</label>
+                <label for="news-records" class="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-zinc-500">Records</label>
                 <select id="news-records" wire:model.live="recordState"
-                    class="w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm">
+                    class="w-full rounded-xl border border-zinc-200 bg-zinc-50/50 px-3.5 py-2 text-sm text-zinc-800 outline-none transition-all focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-500/10">
                     <option value="active">Active</option>
                     <option value="trashed">Trash</option>
                 </select>
             </div>
         </div>
 
-        <div
-            class="mt-4 flex flex-col gap-3 border-t border-zinc-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mt-4 flex items-center justify-between border-t border-zinc-100 pt-3.5">
             <button type="button" wire:click="resetFilters"
-                class="w-fit text-sm font-semibold text-emerald-700 hover:text-emerald-800">Reset filters</button>
+                class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:text-emerald-800 transition-colors">
+                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Reset filters
+            </button>
 
             <div class="flex items-center gap-2">
-                <label for="news-per-page" class="text-sm text-zinc-500">Rows</label>
+                <label for="news-per-page" class="text-xs font-medium text-zinc-500">Rows per page</label>
                 <select id="news-per-page" wire:model.live="perPage"
-                    class="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm">
+                    class="rounded-lg border border-zinc-200 bg-zinc-50/50 px-2.5 py-1 text-xs text-zinc-700 outline-none focus:border-emerald-500 focus:bg-white">
                     <option value="10">10</option>
                     <option value="15">15</option>
                     <option value="25">25</option>
@@ -107,57 +132,57 @@
         </div>
     </section>
 
-    <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-        <div class="space-y-3 p-4 2xl:hidden">
+    <!-- Table & Cards Section -->
+    <section class="overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-sm">
+        
+        <!-- Mobile & Tablet Card Layout (< xl screen) -->
+        <div class="divide-y divide-zinc-100 xl:hidden">
             @forelse ($news as $article)
                 @php
                     $statusClasses = match ($article->status) {
-                        \App\Enums\NewsStatus::Draft => 'bg-zinc-100 text-zinc-700',
-                        \App\Enums\NewsStatus::Submitted => 'bg-blue-50 text-blue-700',
-                        \App\Enums\NewsStatus::ChangesRequested => 'bg-red-50 text-red-700',
-                        \App\Enums\NewsStatus::Approved => 'bg-violet-50 text-violet-700',
-                        \App\Enums\NewsStatus::Published => 'bg-emerald-50 text-emerald-700',
-                        \App\Enums\NewsStatus::Archived => 'bg-amber-50 text-amber-700',
+                        \App\Enums\NewsStatus::Draft => 'bg-zinc-100 text-zinc-700 ring-zinc-200',
+                        \App\Enums\NewsStatus::Submitted => 'bg-blue-50 text-blue-700 ring-blue-200',
+                        \App\Enums\NewsStatus::ChangesRequested => 'bg-red-50 text-red-700 ring-red-200',
+                        \App\Enums\NewsStatus::Approved => 'bg-violet-50 text-violet-700 ring-violet-200',
+                        \App\Enums\NewsStatus::Published => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+                        \App\Enums\NewsStatus::Archived => 'bg-amber-50 text-amber-700 ring-amber-200',
                     };
                 @endphp
 
-                <article wire:key="mobile-news-{{ $article->id }}"
-                    class="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+                <article wire:key="mobile-news-{{ $article->id }}" class="p-4 sm:p-5 transition-colors hover:bg-zinc-50/50">
                     <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
+                        <div class="min-w-0 flex-1">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="text-sm font-bold text-zinc-900">{{ $article->title }}</h2>
+                                <h2 class="text-sm font-semibold text-zinc-900 leading-snug">{{ $article->title }}</h2>
                                 @if ($article->is_featured)
-                                    <span
-                                        class="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase text-amber-700">Featured</span>
+                                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200/60 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                                        ★ Featured
+                                    </span>
                                 @endif
                             </div>
-                            <p class="mt-1 truncate text-xs text-zinc-500">
-                                /{{ $article->locale->value }}/news/{{ $article->slug }}</p>
+                            <p class="mt-1 truncate text-xs text-zinc-400 font-mono">/{{ $article->locale->value }}/news/{{ $article->slug }}</p>
                         </div>
-                        <span
-                            class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold {{ $statusClasses }}">{{ $article->status->label() }}</span>
+                        <span class="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ring-1 ring-inset {{ $statusClasses }}">
+                            {{ $article->status->label() }}
+                        </span>
                     </div>
 
-                    <div class="mt-4 grid grid-cols-2 gap-3 border-y border-zinc-100 py-3 text-xs">
+                    <div class="mt-3.5 grid grid-cols-2 gap-3 border-y border-zinc-100 py-3 text-xs">
                         <div>
-                            <p class="text-zinc-400">Language</p>
-                            <p class="mt-1 font-semibold text-zinc-700">{{ $article->locale->nativeLabel() }}</p>
+                            <span class="text-zinc-400 block text-[10px] uppercase font-semibold">Language</span>
+                            <span class="mt-0.5 font-medium text-zinc-700 block">{{ $article->locale->nativeLabel() }}</span>
                         </div>
                         <div>
-                            <p class="text-zinc-400">Category</p>
-                            <p class="mt-1 truncate font-semibold text-zinc-700">
-                                {{ $article->category?->name ?? 'Uncategorised' }}</p>
+                            <span class="text-zinc-400 block text-[10px] uppercase font-semibold">Category</span>
+                            <span class="mt-0.5 font-medium text-zinc-700 block truncate">{{ $article->category?->name ?? 'Uncategorised' }}</span>
                         </div>
                         <div>
-                            <p class="text-zinc-400">Author</p>
-                            <p class="mt-1 truncate font-semibold text-zinc-700">
-                                {{ $article->creator?->name ?? 'Unknown' }}</p>
+                            <span class="text-zinc-400 block text-[10px] uppercase font-semibold">Author</span>
+                            <span class="mt-0.5 font-medium text-zinc-700 block truncate">{{ $article->creator?->name ?? 'Unknown' }}</span>
                         </div>
                         <div>
-                            <p class="text-zinc-400">Updated</p>
-                            <p class="mt-1 font-semibold text-zinc-700">{{ $article->updated_at?->format('Y-m-d') }}
-                            </p>
+                            <span class="text-zinc-400 block text-[10px] uppercase font-semibold">Updated</span>
+                            <span class="mt-0.5 font-medium text-zinc-700 block">{{ $article->updated_at?->format('Y-m-d H:i') }}</span>
                         </div>
                     </div>
 
@@ -166,156 +191,157 @@
                             @can('news.delete')
                                 <button type="button" wire:click="restoreArticle({{ $article->id }})"
                                     wire:confirm="Restore this news article from Trash?"
-                                    class="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white">Restore</button>
+                                    class="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700">Restore</button>
                             @endcan
                         @else
                             @can('news.view')
-                                <a href="{{ route('admin.news.preview', $article) }}" target="_blank"
-                                    rel="noopener noreferrer"
-                                    class="inline-flex flex-1 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">Preview</a>
+                                <a href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
+                                    class="inline-flex flex-1 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50">Preview</a>
                             @endcan
                             @if ($article->status === \App\Enums\NewsStatus::Published)
                                 @can('news.publish')
                                     <button type="button" wire:click="unpublishArticle({{ $article->id }})"
                                         wire:confirm="Unpublish this news article and return it to Draft?"
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Unpublish</button>
+                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100">Unpublish</button>
                                 @endcan
                             @else
                                 @can('news.publish')
                                     <button type="button" wire:click="publishArticle({{ $article->id }})"
                                         wire:confirm="Publish this news article?"
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white">Publish</button>
+                                        class="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700">Publish</button>
                                 @endcan
                             @endif
                             @if ($article->status === \App\Enums\NewsStatus::Draft)
                                 @can('news.update')
                                     <a href="{{ route('admin.news.edit', $article) }}" wire:navigate
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700">Edit</a>
+                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50">Edit</a>
                                 @endcan
                                 @can('news.delete')
                                     <button type="button" wire:click="deleteArticle({{ $article->id }})"
                                         wire:confirm="Move this draft news article to Trash?"
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">Delete</button>
+                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100">Delete</button>
                                 @endcan
                             @endif
                         @endif
                     </div>
                 </article>
             @empty
-                <div class="px-5 py-14 text-center">
-                    <p class="font-semibold text-zinc-700">No news articles found</p>
-                    <p class="mt-1 text-sm text-zinc-500">Create an article or change the current filters.</p>
+                <div class="px-5 py-16 text-center">
+                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+                        <svg class="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                        </svg>
+                    </div>
+                    <p class="mt-3 font-semibold text-zinc-800">No news articles found</p>
+                    <p class="mt-1 text-sm text-zinc-500">Try adjusting your filters or create a new article.</p>
                 </div>
             @endforelse
         </div>
 
-        <div class="hidden overflow-x-auto 2xl:block">
-            <table class="min-w-280 divide-y divide-zinc-200">
-                <thead class="bg-zinc-50">
-                    <tr>
-                        <th class="px-5 py-3 text-left">
-                            <button type="button" wire:click="sort('title')"
-                                class="text-xs font-semibold uppercase tracking-wide text-zinc-600 hover:text-zinc-900">
+        <!-- Desktop Table Layout (>= xl screen) -->
+        <div class="hidden overflow-x-auto xl:block">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="border-b border-zinc-200/80 bg-zinc-50/70 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                        <th class="py-3.5 pl-6 pr-4">
+                            <button type="button" wire:click="sort('title')" class="inline-flex items-center gap-1 hover:text-zinc-900 transition-colors">
                                 Article
                                 @if ($sortField === 'title')
-                                    {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    <span class="text-emerald-600">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
-                        <th class="px-5 py-3 text-left">
-                            <button type="button" wire:click="sort('locale')"
-                                class="text-xs font-semibold uppercase tracking-wide text-zinc-600 hover:text-zinc-900">
+                        <th class="px-4 py-3.5">
+                            <button type="button" wire:click="sort('locale')" class="inline-flex items-center gap-1 hover:text-zinc-900 transition-colors">
                                 Language
                                 @if ($sortField === 'locale')
-                                    {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    <span class="text-emerald-600">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                            Category</th>
-                        <th class="px-5 py-3 text-left">
-                            <button type="button" wire:click="sort('status')"
-                                class="text-xs font-semibold uppercase tracking-wide text-zinc-600 hover:text-zinc-900">
+                        <th class="px-4 py-3.5">Category</th>
+                        <th class="px-4 py-3.5">
+                            <button type="button" wire:click="sort('status')" class="inline-flex items-center gap-1 hover:text-zinc-900 transition-colors">
                                 Status
                                 @if ($sortField === 'status')
-                                    {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    <span class="text-emerald-600">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                            Author</th>
-                        <th class="px-5 py-3 text-left">
-                            <button type="button" wire:click="sort('updated_at')"
-                                class="text-xs font-semibold uppercase tracking-wide text-zinc-600 hover:text-zinc-900">
+                        <th class="px-4 py-3.5">Author</th>
+                        <th class="px-4 py-3.5">
+                            <button type="button" wire:click="sort('updated_at')" class="inline-flex items-center gap-1 hover:text-zinc-900 transition-colors">
                                 Updated
                                 @if ($sortField === 'updated_at')
-                                    {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    <span class="text-emerald-600">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
-                        <th class="px-5 py-3 text-left">
-                            <button type="button" wire:click="sort('published_at')"
-                                class="text-xs font-semibold uppercase tracking-wide text-zinc-600 hover:text-zinc-900">
+                        <th class="px-4 py-3.5">
+                            <button type="button" wire:click="sort('published_at')" class="inline-flex items-center gap-1 hover:text-zinc-900 transition-colors">
                                 Published
                                 @if ($sortField === 'published_at')
-                                    {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                    <span class="text-emerald-600">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
                                 @endif
                             </button>
                         </th>
-                        <th class="px-5 py-3 text-right text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                            Actions</th>
+                        <th class="py-3.5 pl-4 pr-6 text-right">Actions</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-zinc-100">
+                <tbody class="divide-y divide-zinc-100 text-sm">
                     @forelse ($news as $article)
                         @php
                             $statusClasses = match ($article->status) {
-                                \App\Enums\NewsStatus::Draft => 'bg-zinc-100 text-zinc-700',
-                                \App\Enums\NewsStatus::Submitted => 'bg-blue-50 text-blue-700',
-                                \App\Enums\NewsStatus::ChangesRequested => 'bg-red-50 text-red-700',
-                                \App\Enums\NewsStatus::Approved => 'bg-violet-50 text-violet-700',
-                                \App\Enums\NewsStatus::Published => 'bg-emerald-50 text-emerald-700',
-                                \App\Enums\NewsStatus::Archived => 'bg-amber-50 text-amber-700',
+                                \App\Enums\NewsStatus::Draft => 'bg-zinc-100 text-zinc-700 ring-zinc-200',
+                                \App\Enums\NewsStatus::Submitted => 'bg-blue-50 text-blue-700 ring-blue-200',
+                                \App\Enums\NewsStatus::ChangesRequested => 'bg-red-50 text-red-700 ring-red-200',
+                                \App\Enums\NewsStatus::Approved => 'bg-violet-50 text-violet-700 ring-violet-200',
+                                \App\Enums\NewsStatus::Published => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+                                \App\Enums\NewsStatus::Archived => 'bg-amber-50 text-amber-700 ring-amber-200',
                             };
                         @endphp
 
-                        <tr wire:key="news-{{ $article->id }}" class="hover:bg-zinc-50/70">
-                            <td class="px-5 py-4">
-                                <div class="max-w-lg">
+                        <tr wire:key="news-{{ $article->id }}" class="group transition-colors hover:bg-zinc-50/70">
+                            <!-- Article Title & Summary -->
+                            <td class="py-4 pl-6 pr-4 align-top">
+                                <div class="max-w-md">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <p class="font-semibold text-zinc-900">{{ $article->title }}</p>
-                                        @if ($article->is_featured)
-                                            <span
-                                                class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-amber-700">Featured</span>
-                                        @endif
+                                        <a href="{{ route('admin.news.preview', $article) }}" target="_blank" class="font-medium text-zinc-900 transition-colors hover:text-emerald-700 leading-snug">
+                                            {{ $article->title }}
+                                        </a>
+                                        {{-- @if ($article->is_featured)
+                                            <span class="inline-flex items-center rounded-full bg-amber-50 border border-amber-200/60 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                                Featured
+                                            </span>
+                                        @endif --}}
                                     </div>
+{{-- 
+                                    <p class="mt-1 text-xs text-zinc-400 font-mono">/{{ $article->locale->value }}/news/{{ $article->slug }}</p> --}}
 
-                                    <p class="mt-1 text-xs text-zinc-500">
-                                        /{{ $article->locale->value }}/news/{{ $article->slug }}</p>
-
-                                    <div class="mt-2 flex flex-wrap gap-1.5">
+                                    <!-- Translation Indicators -->
+                                    <div class="mt-2.5 flex flex-wrap gap-1.5">
                                         @foreach ($locales as $localeOption)
                                             @php
                                                 $translation = $article->translationVersions->first(
-                                                    fn(\App\Models\News $version): bool => $version->locale ===
-                                                        $localeOption,
+                                                    fn(\App\Models\News $version): bool => $version->locale === $localeOption,
                                                 );
                                             @endphp
 
                                             @if ($translation instanceof \App\Models\News)
                                                 <span @class([
-                                                    'rounded-full px-2 py-0.5 text-[11px] font-bold',
-                                                    'bg-emerald-100 text-emerald-800' => $localeOption === $article->locale,
-                                                    'bg-zinc-100 text-zinc-600' => $localeOption !== $article->locale,
+                                                    'inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider',
+                                                    'bg-emerald-100/80 text-emerald-800 border border-emerald-200/50' => $localeOption === $article->locale,
+                                                    'bg-zinc-100 text-zinc-600 border border-zinc-200/50' => $localeOption !== $article->locale,
                                                 ])>
-                                                    {{ strtoupper($localeOption->value) }} ✓
+                                                    {{ strtoupper($localeOption->value) }}
+                                                    <svg class="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                                                 </span>
                                             @elseif ($recordState !== 'trashed')
                                                 @can('news.create')
                                                     <a href="{{ route('admin.news.translations.create', ['newsId' => $article->id, 'locale' => $localeOption->value]) }}"
                                                         wire:navigate
-                                                        class="rounded-full border border-dashed border-zinc-300 px-2 py-0.5 text-[11px] font-bold text-zinc-500 hover:border-emerald-300 hover:text-emerald-700">
+                                                        class="inline-flex items-center gap-0.5 rounded-md border border-dashed border-zinc-300 bg-white px-1.5 py-0.5 text-[10px] font-bold text-zinc-400 transition-all hover:border-emerald-500 hover:text-emerald-700 hover:bg-emerald-50/30">
                                                         + {{ strtoupper($localeOption->value) }}
                                                     </a>
                                                 @endcan
@@ -323,73 +349,83 @@
                                         @endforeach
                                     </div>
 
-                                    @if ($article->summary)
-                                        <p class="mt-2 max-w-md text-sm text-zinc-600">
-                                            {{ \Illuminate\Support\Str::limit($article->summary, 100) }}</p>
-                                    @endif
+                                    {{-- @if ($article->summary)
+                                        <p class="mt-2 text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                                            {{ \Illuminate\Support\Str::limit($article->summary, 110) }}
+                                        </p>
+                                    @endif --}}
                                 </div>
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4">
-                                <span
-                                    class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">{{ $article->locale->nativeLabel() }}</span>
-                                <p class="mt-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-                                    {{ $article->locale->value }}</p>
+                            <!-- Language -->
+                            <td class="whitespace-nowrap px-4 py-4 align-top">
+                                <span class="inline-flex rounded-full bg-blue-50/80 border border-blue-200/50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                                    {{ $article->locale->nativeLabel() }}
+                                </span>
+                                {{-- <p class="mt-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400 font-mono">
+                                    {{ $article->locale->value }}
+                                </p> --}}
                             </td>
 
-                            <td class="px-5 py-4">
+                            <!-- Category -->
+                            <td class="whitespace-nowrap px-4 py-4 align-top">
                                 @if ($article->category)
-                                    <span
-                                        class="inline-flex rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-700">{{ $article->category->name }}</span>
+                                    <span class="inline-flex rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-medium text-zinc-700">
+                                        {{ $article->category->name }}
+                                    </span>
                                 @else
-                                    <span class="text-sm text-zinc-400">Uncategorised</span>
+                                    <span class="text-xs text-zinc-400 italic">Uncategorised</span>
                                 @endif
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4">
-                                <span
-                                    class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold {{ $statusClasses }}">{{ $article->status->label() }}</span>
+                            <!-- Status -->
+                            <td class="whitespace-nowrap px-4 py-4 align-top">
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset {{ $statusClasses }}">
+                                    {{ $article->status->label() }}
+                                </span>
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4">
-                                <p class="text-sm font-medium text-zinc-800">
-                                    {{ $article->creator?->name ?? 'Unknown' }}</p>
+                            <!-- Author -->
+                            <td class="whitespace-nowrap px-4 py-4 align-top">
+                                <p class="font-medium text-zinc-800">{{ $article->creator?->name ?? 'Unknown' }}</p>
                                 @if ($article->updater && !$article->updater->is($article->creator))
-                                    <p class="mt-1 text-xs text-zinc-500">Edited by {{ $article->updater->name }}</p>
+                                    <p class="mt-0.5 text-[11px] text-zinc-400">Ed. {{ $article->updater->name }}</p>
                                 @endif
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4">
-                                <p class="text-sm text-zinc-700">{{ $article->updated_at?->format('Y-m-d') }}</p>
-                                <p class="text-xs text-zinc-500">{{ $article->updated_at?->format('H:i') }}</p>
+                            <!-- Updated Date -->
+                            <td class="whitespace-nowrap px-4 py-4 align-top">
+                                <p class="font-mono text-xs text-zinc-700">{{ $article->updated_at?->format('Y-m-d') }}</p>
+                                <p class="font-mono text-[11px] text-zinc-400">{{ $article->updated_at?->format('H:i') }}</p>
                             </td>
 
-                            <td class="whitespace-nowrap px-5 py-4">
+                            <!-- Published Date -->
+                            <td class="whitespace-nowrap px-4 py-4 align-top">
                                 @if ($article->published_at)
-                                    <p class="text-sm text-zinc-700">{{ $article->published_at->format('Y-m-d') }}</p>
-                                    <p class="text-xs text-zinc-500">{{ $article->published_at->format('H:i') }}</p>
+                                    <p class="font-mono text-xs text-zinc-700">{{ $article->published_at->format('Y-m-d') }}</p>
+                                    <p class="font-mono text-[11px] text-zinc-400">{{ $article->published_at->format('H:i') }}</p>
                                 @else
-                                    <span class="text-sm text-zinc-400">Not published</span>
+                                    <span class="text-xs text-zinc-400 italic">Not published</span>
                                 @endif
                             </td>
 
-                            <td class="px-5 py-4">
-                                <div class="flex min-w-48 flex-wrap justify-end gap-2">
+                            <!-- Actions -->
+                            <td class="whitespace-nowrap py-4 pl-4 pr-6 text-right align-top">
+                                <div class="flex items-center justify-end gap-1.5">
                                     @if ($recordState === 'trashed')
                                         @can('news.delete')
                                             <button type="button" wire:click="restoreArticle({{ $article->id }})"
                                                 wire:confirm="Restore this news article from Trash?"
                                                 wire:loading.attr="disabled"
                                                 wire:target="restoreArticle({{ $article->id }})"
-                                                class="inline-flex rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">
+                                                class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-all">
                                                 Restore
                                             </button>
                                         @endcan
                                     @else
                                         @can('news.view')
-                                            <a href="{{ route('admin.news.preview', $article) }}" target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700 hover:bg-blue-100">
+                                            <a href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
+                                                class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-900">
                                                 Preview
                                             </a>
                                         @endcan
@@ -400,16 +436,17 @@
                                                     wire:confirm="Unpublish this news article and return it to Draft?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="unpublishArticle({{ $article->id }})"
-                                                    class="inline-flex rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100 disabled:opacity-60">
+                                                    class="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-800 transition-all hover:bg-amber-100 disabled:opacity-50">
                                                     Unpublish
                                                 </button>
                                             @endcan
                                         @else
                                             @can('news.publish')
                                                 <button type="button" wire:click="publishArticle({{ $article->id }})"
-                                                    wire:confirm="Publish this news article?" wire:loading.attr="disabled"
+                                                    wire:confirm="Publish this news article?"
+                                                    wire:loading.attr="disabled"
                                                     wire:target="publishArticle({{ $article->id }})"
-                                                    class="inline-flex rounded-lg bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800 disabled:opacity-60">
+                                                    class="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50">
                                                     Publish
                                                 </button>
                                             @endcan
@@ -418,7 +455,7 @@
                                         @if ($article->status === \App\Enums\NewsStatus::Draft)
                                             @can('news.update')
                                                 <a href="{{ route('admin.news.edit', $article) }}" wire:navigate
-                                                    class="inline-flex rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100">
+                                                    class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50">
                                                     Edit
                                                 </a>
                                             @endcan
@@ -428,7 +465,7 @@
                                                     wire:confirm="Move this draft news article to Trash?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="deleteArticle({{ $article->id }})"
-                                                    class="inline-flex rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60">
+                                                    class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-100 disabled:opacity-50">
                                                     Delete
                                                 </button>
                                             @endcan
@@ -439,10 +476,14 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-5 py-14 text-center">
-                                <p class="font-semibold text-zinc-700">No news articles found</p>
-                                <p class="mt-1 text-sm text-zinc-500">Create an article or change the current filters.
-                                </p>
+                            <td colspan="8" class="px-5 py-16 text-center">
+                                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-zinc-100">
+                                    <svg class="h-6 w-6 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                                    </svg>
+                                </div>
+                                <p class="mt-3 font-semibold text-zinc-800">No news articles found</p>
+                                <p class="mt-1 text-sm text-zinc-500">Try adjusting your search or filters.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -450,8 +491,11 @@
             </table>
         </div>
 
+        <!-- Pagination Bar -->
         @if ($news->hasPages())
-            <div class="border-t border-zinc-200 px-5 py-4">{{ $news->links() }}</div>
+            <div class="border-t border-zinc-200/80 bg-zinc-50/50 px-5 py-3.5">
+                {{ $news->links() }}
+            </div>
         @endif
     </section>
 </div>

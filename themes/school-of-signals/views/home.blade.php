@@ -1,12 +1,10 @@
 @extends('theme-school-of-signals::layout')
 
-@section('title', app()->getLocale() === 'si'
-    ? ($settings?->localized('site_name') ?: config('app.name'))
-    : ($settings?->default_seo_title ?: $settings?->localized('site_name') ?: config('app.name')))
-@section('meta_description', app()->getLocale() === 'si'
-    ? ($settings?->localized('site_tagline') ?: __('theme-school-of-signals::home.meta_description'))
-    : ($settings?->default_seo_description ?: $settings?->localized('site_tagline') ?:
-    __('theme-school-of-signals::home.meta_description')))
+@section('title', app()->getLocale() === 'si' ? ($settings?->localized('site_name') ?: config('app.name')) :
+    ($settings?->default_seo_title ?: $settings?->localized('site_name') ?: config('app.name')))
+@section('meta_description', app()->getLocale() === 'si' ? ($settings?->localized('site_tagline') ?:
+    __('theme-school-of-signals::home.meta_description')) : ($settings?->default_seo_description ?:
+    $settings?->localized('site_tagline') ?: __('theme-school-of-signals::home.meta_description')))
 
     @php
         $mediaUrls = app(\App\Services\MediaUrlService::class);
@@ -258,41 +256,95 @@
         </div>
     </section>
 
-    @if ($schoolLeaders->isNotEmpty())
-        <section class="section section-soft" id="leadership">
-            <div class="container">
-                <div class="section-head reveal">
-                    <div>
-                        <p class="kicker">{{ __('theme-school-of-signals::home.leadership.kicker') }}</p>
-                        <h2 class="title-lg">{{ __('theme-school-of-signals::home.leadership.title') }}</h2>
-                    </div>
-                </div>
+    <?php if ($schoolLeaders->isNotEmpty()): ?>
 
-                <div class="leadership-grid">
-                    @foreach ($schoolLeaders as $leader)
-                        @php($leaderImage = $leader->image ? $mediaUrls->mediumOrOriginal($leader->image) : null)
-                        <article class="card leader-card reveal">
-                            @if ($leaderImage)
-                                <img src="{{ $leaderImage }}"
-                                    alt="{{ $leader->nameForLocale($homeLocale) ?: $leader->titleForLocale($homeLocale) }}"
-                                    loading="lazy">
-                            @else
-                                <div class="leader-placeholder" aria-hidden="true">
-                                    <i class="fa-solid fa-user-tie"></i>
-                                </div>
-                            @endif
-                            <div class="leader-body">
-                                <p class="role">{{ $leader->titleForLocale($homeLocale) }}</p>
-                                @if ($leader->nameForLocale($homeLocale) !== '')
-                                    <h3>{{ $leader->nameForLocale($homeLocale) }}</h3>
-                                @endif
-                            </div>
-                        </article>
-                    @endforeach
+    <section class="section section-soft" id="leadership">
+        <div class="container">
+            <div class="section-head reveal">
+                <div>
+                    <p class="kicker">
+                        {{ __('theme-school-of-signals::home.leadership.kicker') }}
+                    </p>
+
+                    <h2 class="title-lg">
+                        {{ __('theme-school-of-signals::home.leadership.title') }}
+                    </h2>
                 </div>
             </div>
-        </section>
-    @endif
+
+            <div class="leadership-grid">
+
+                <?php foreach ($schoolLeaders as $leader): ?>
+
+                <?php
+                $leaderImage = $leader->image ? $mediaUrls->mediumOrOriginal($leader->image) : null;
+                
+                $leaderName = $leader->nameForLocale($homeLocale);
+                $leaderRank = $leader->rankLabelForLocale($homeLocale);
+                ?>
+
+                <article class="card leader-card reveal">
+
+                    <?php if ($leaderImage): ?>
+
+                    <img src="{{ $leaderImage }}"
+                        alt="{{ $leaderName !== '' ? $leaderName : $leader->titleForLocale($homeLocale) }}"
+                        loading="lazy">
+
+                    <?php else: ?>
+
+                    <div class="leader-placeholder" aria-hidden="true">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+
+                    <?php endif; ?>
+
+                    <div class="leader-body">
+
+                        <p class="role">
+                          {{ $leader->appointmentLabelForLocale($homeLocale) }}
+                        </p>
+
+                        <?php if ($leaderRank !== ''): ?>
+
+                        <p class="leader-rank">
+                            {{ $leaderRank }}
+                        </p>
+
+                        <?php endif; ?>
+
+                        <?php if ($leaderName !== ''): ?>
+
+                        <h3>
+                            {{ $leaderName }}
+                        </h3>
+
+                        <?php endif; ?>
+
+                        <?php if ($leader->start_date): ?>
+
+                        <p class="leader-period">
+                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
+
+                            <span>
+                                {{ $leader->start_date->format('d M Y') }}
+                                &ndash;
+                                Up to Date
+                            </span>
+                        </p>
+
+                        <?php endif; ?>
+
+                    </div>
+                </article>
+
+                <?php endforeach; ?>
+
+            </div>
+        </div>
+    </section>
+
+    <?php endif; ?>
 
     {{-- <section class="section" id="media">
         <div class="container">

@@ -68,17 +68,24 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+
     <title>@yield('title', $publicSiteName)</title>
+
     <meta name="description" content="@yield('meta_description', $publicDescription)">
+
     @hasSection('canonical')
         <link rel="canonical" href="@yield('canonical')">
     @endif
+
     @yield('meta')
-    @if ($faviconUrl)
-        <link rel="icon" href="{{ $faviconUrl }}">
-    @endif
+
+    {{-- Favicon --}}
+    <link rel="icon" type="image/png" href="{{ asset('logo.png') }}">
+
     <link rel="stylesheet" href="{{ $themeAssetBase }}/fonts/fontawesome-7/css/all.min.css">
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
     <link rel="stylesheet" href="{{ $themeAssetBase }}/css/theme.css">
     <link rel="stylesheet" href="{{ $themeAssetBase }}/css/navbar.css">
 

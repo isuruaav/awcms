@@ -40,56 +40,159 @@ final class PublicHomeController
                 ->get()
             : collect();
 
+        /*
+         |--------------------------------------------------------------------------
+         | School Leadership
+         |--------------------------------------------------------------------------
+         |
+         | Homepage rules:
+         |
+         | 1. Leader must belong to a dynamic appointment position.
+         | 2. Leader must be the present holder (end_date = NULL).
+         | 3. Leader record must be active.
+         | 4. Appointment type must be active.
+         | 5. Appointment type must have "Show on homepage" enabled.
+         | 6. Appointment position sort_order controls homepage order.
+         |
+         */
+        $schoolLeaders = Schema::hasTable('school_leaders')
+            && Schema::hasTable('school_leadership_positions')
+                ? SchoolLeader::query()
+                    ->join(
+                        'school_leadership_positions as positions',
+                        'positions.id',
+                        '=',
+                        'school_leaders.position_id',
+                    )
+                    ->whereNotNull(
+                        'school_leaders.position_id',
+                    )
+                    ->whereNull(
+                        'school_leaders.end_date',
+                    )
+                    ->where(
+                        'school_leaders.is_active',
+                        true,
+                    )
+                    ->where(
+                        'positions.is_active',
+                        true,
+                    )
+                    ->where(
+                        'positions.show_on_home',
+                        true,
+                    )
+                    ->with([
+                        'position',
+                        'image.variants',
+                    ])
+                    ->select(
+                        'school_leaders.*',
+                    )
+                    ->orderBy(
+                        'positions.sort_order',
+                    )
+                    ->orderBy(
+                        'school_leaders.id',
+                    )
+                    ->get()
+                : collect();
+
         $data = [
             'settings' => $settings,
+
             'slides' => $slides,
-            'schoolLeaders' => Schema::hasTable('school_leaders')
-                ? SchoolLeader::query()
-                    ->active()
-                    ->whereIn('role_key', SchoolLeader::allowedRoles())
-                    ->with('image.variants')
-                    ->get()
-                : collect(),
+
+            'schoolLeaders' => $schoolLeaders,
+
+            /*
+             |--------------------------------------------------------------------------
+             | Latest News
+             |--------------------------------------------------------------------------
+             */
             'latestNews' => News::query()
                 ->published()
-                ->where('locale', $locale)
+                ->where(
+                    'locale',
+                    $locale,
+                )
                 ->with([
                     'category',
                     'featuredImage.variants',
                 ])
-                ->latest('published_at')
+                ->latest(
+                    'published_at',
+                )
                 ->limit(4)
                 ->get(),
+
+            /*
+             |--------------------------------------------------------------------------
+             | Latest Galleries
+             |--------------------------------------------------------------------------
+             */
             'latestGalleries' => Gallery::query()
                 ->published()
-                ->with(['coverMedia.variants'])
-                ->latest('published_at')
+                ->with([
+                    'coverMedia.variants',
+                ])
+                ->latest(
+                    'published_at',
+                )
                 ->limit(3)
                 ->get(),
+
+            /*
+             |--------------------------------------------------------------------------
+             | Latest Documents
+             |--------------------------------------------------------------------------
+             */
             'latestDocuments' => Document::query()
                 ->published()
-                ->latest('published_at')
+                ->latest(
+                    'published_at',
+                )
                 ->limit(5)
                 ->get(),
+
             'languageVersions' => $this->languageVersions(),
         ];
 
         $themeHomePath = $this->themeHomePath();
 
-        return $themeHomePath === null
-            ? view('public.home', $data)
-            : ViewFacade::file($themeHomePath, $data);
+        if ($themeHomePath === null) {
+            return view(
+                'public.home',
+                $data,
+            );
+        }
+
+        return ViewFacade::file(
+            $themeHomePath,
+            $data,
+        );
     }
 
-    private function requestLocale(Request $request): string
-    {
-        $routeLocale = $request->route('locale');
-        $locale = is_string($routeLocale) && trim($routeLocale) !== ''
-            ? strtolower(trim($routeLocale))
-            : 'en';
+    private function requestLocale(
+        Request $request,
+    ): string {
+        $routeLocale = $request->route(
+            'locale',
+        );
+
+        $locale = is_string($routeLocale)
+            && trim($routeLocale) !== ''
+                ? strtolower(
+                    trim($routeLocale),
+                )
+                : 'en';
 
         abort_unless(
-            in_array($locale, $this->supportedLocales(), true),
+            in_array(
+                $locale,
+                $this->supportedLocales(),
+                true,
+            ),
             404,
         );
 
@@ -97,19 +200,31 @@ final class PublicHomeController
     }
 
     /**
-     * @return list<array{code: string, available: true, url: string}>
+     * @return list<array{
+     *     code: string,
+     *     available: true,
+     *     url: string
+     * }>
      */
     private function languageVersions(): array
     {
         $versions = [];
 
-        foreach ($this->supportedLocales() as $locale) {
+        foreach (
+            $this->supportedLocales() as $locale
+        ) {
             $versions[] = [
                 'code' => $locale,
                 'available' => true,
+
                 'url' => $locale === 'en'
                     ? route('home')
-                    : route('home.localized', ['locale' => $locale]),
+                    : route(
+                        'home.localized',
+                        [
+                            'locale' => $locale,
+                        ],
+                    ),
             ];
         }
 
@@ -121,19 +236,40 @@ final class PublicHomeController
      */
     private function supportedLocales(): array
     {
-        $activeTheme = config('awcms.active_theme');
+        $activeTheme = config(
+            'awcms.active_theme',
+        );
 
-        if (! is_string($activeTheme) || trim($activeTheme) === '') {
-            return ['en', 'si', 'ta'];
+        if (
+            ! is_string($activeTheme)
+            || trim($activeTheme) === ''
+        ) {
+            return [
+                'en',
+                'si',
+                'ta',
+            ];
         }
 
+        $activeTheme = trim(
+            $activeTheme,
+        );
+
         $configuredLocales = config(
-            'awcms.theme_locales.'.trim($activeTheme),
-            ['en', 'si', 'ta'],
+            'awcms.theme_locales.'.$activeTheme,
+            [
+                'en',
+                'si',
+                'ta',
+            ],
         );
 
         if (! is_array($configuredLocales)) {
-            return ['en', 'si', 'ta'];
+            return [
+                'en',
+                'si',
+                'ta',
+            ];
         }
 
         $supportedLocales = [];
@@ -141,8 +277,20 @@ final class PublicHomeController
         foreach ($configuredLocales as $locale) {
             if (
                 is_string($locale)
-                && in_array($locale, ['en', 'si', 'ta'], true)
-                && ! in_array($locale, $supportedLocales, true)
+                && in_array(
+                    $locale,
+                    [
+                        'en',
+                        'si',
+                        'ta',
+                    ],
+                    true,
+                )
+                && ! in_array(
+                    $locale,
+                    $supportedLocales,
+                    true,
+                )
             ) {
                 $supportedLocales[] = $locale;
             }
@@ -150,25 +298,40 @@ final class PublicHomeController
 
         return $supportedLocales !== []
             ? $supportedLocales
-            : ['en'];
+            : [
+                'en',
+            ];
     }
 
     private function themeHomePath(): ?string
     {
-        $activeTheme = config('awcms.active_theme');
+        $activeTheme = config(
+            'awcms.active_theme',
+        );
 
-        if (! is_string($activeTheme) || trim($activeTheme) === '') {
+        if (
+            ! is_string($activeTheme)
+            || trim($activeTheme) === ''
+        ) {
             return null;
         }
 
-        $activeTheme = trim($activeTheme);
-        $viewsPath = $this->themeManager->viewsPath($activeTheme);
+        $activeTheme = trim(
+            $activeTheme,
+        );
+
+        $viewsPath = $this->themeManager
+            ->viewsPath(
+                $activeTheme,
+            );
 
         if ($viewsPath === null) {
             return null;
         }
 
-        $homePath = $viewsPath.DIRECTORY_SEPARATOR.'home.blade.php';
+        $homePath = $viewsPath
+            .DIRECTORY_SEPARATOR
+            .'home.blade.php';
 
         return is_file($homePath)
             ? $homePath

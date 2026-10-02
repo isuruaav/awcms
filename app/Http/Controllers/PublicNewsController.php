@@ -86,7 +86,7 @@ final class PublicNewsController extends Controller
                 ),
             )
             ->orderByDesc('published_at')
-            ->limit(3)
+            ->limit(12)
             ->get();
 
         $translationGroup = $news->getAttribute('translation_group');

@@ -1,273 +1,1168 @@
 <div class="space-y-6">
+
     @php
-        $canCreate = false;
-        $canUpdate = \Illuminate\Support\Facades\Gate::allows('school-leaders.update');
-        $canManageForm = $canCreate || $canUpdate;
-        $canSave = $canUpdate && $editingId !== null;
+
+        $canUpdate = \Illuminate\Support\Facades\Gate::allows(
+
+            'school-leaders.update'
+
+        );
+
+        $selectedAppointment = $positions->firstWhere(
+
+            'key',
+
+            $roleKey
+
+        );
+
     @endphp
-    <div>
-        <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
-            Site Management
-        </p>
-        <h1 class="mt-1 text-2xl font-black text-zinc-950">
-            School Leadership
-        </h1>
-        <p class="mt-1 text-sm text-zinc-500">
-            Manage the three fixed leadership cards shown on the homepage.
-        </p>
+
+    <div class="flex flex-wrap items-start justify-between gap-4">
+
+        <div>
+
+            <p class="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
+
+                Site Management
+
+            </p>
+
+            <h1 class="mt-1 text-2xl font-black text-zinc-950">
+
+                School Leadership
+
+            </h1>
+
+            <p class="mt-1 max-w-3xl text-sm text-zinc-500">
+
+                Manage present and past leadership appointments from one place.
+
+                Appointment types are managed separately and can be expanded at any time.
+
+            </p>
+
+        </div>
+
+        @if ($canUpdate)
+
+            <div class="flex flex-wrap gap-2">
+
+                <a
+
+                    href="{{ route('admin.school-leadership-positions.index') }}"
+
+                    class="rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50"
+
+                >
+
+                    Manage Appointment Types
+
+                </a>
+
+                <button
+
+                    type="button"
+
+                    wire:click="startCreate"
+
+                    class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800"
+
+                >
+
+                    + New Appointment
+
+                </button>
+
+            </div>
+
+        @endif
+
     </div>
+
     @if (session('status'))
+
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+
             {{ session('status') }}
+
         </div>
+
     @endif
+
     @if ($errors->any())
+
         <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            <p class="font-bold">Please correct the following errors:</p>
+
+            <p class="font-bold">
+
+                Please correct the following errors:
+
+            </p>
+
             <ul class="mt-2 list-disc space-y-1 pl-5">
+
                 @foreach ($errors->all() as $error)
+
                     <li>{{ $error }}</li>
+
                 @endforeach
+
             </ul>
+
         </div>
+
     @endif
+
     <div @class([
+
         'grid min-w-0 gap-6',
-        'xl:grid-cols-[minmax(0,1fr)_420px]' => $canManageForm,
+
+        'xl:grid-cols-[minmax(0,1fr)\_430px]' => $canUpdate,
+
     ])>
-        <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-            <div
-                class="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-6 py-4">
-                <div>
-                    <h2 class="font-bold text-zinc-900">Fixed leadership cards</h2>
-                    <p class="mt-1 text-xs text-zinc-500">These roles cannot be added or deleted.</p>
-                </div>
-                <span class="rounded-full bg-zinc-200 px-3 py-1 text-xs font-bold text-zinc-700">
-                    {{ $schoolLeaders->count() }} roles
-                </span>
-            </div>
-            <div class="divide-y divide-zinc-200">
-                @forelse ($schoolLeaders as $leader)
-                    <article wire:key="school-leader-{{ $leader->id }}" class="p-5 sm:p-6">
-                        <div class="flex flex-col gap-5 sm:flex-row">
-                            <div
-                                class="flex h-28 w-full shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 sm:w-44">
-                                @if ($leader->image)
-                                    <div class="px-4 text-center">
-                                        <span
-                                            class="mx-auto flex size-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-                                            <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                                stroke-width="1.8" aria-hidden="true">
-                                                <rect x="3" y="4" width="18" height="16" rx="2" />
-                                                <circle cx="8.5" cy="9" r="1.5" />
-                                                <path d="m4 17 5-5 4 4 2-2 5 5" />
-                                            </svg>
-                                        </span>
-                                        <p class="mt-2 line-clamp-2 text-xs font-semibold text-zinc-600">
-                                            {{ $leader->image->title ?: $leader->image->original_name }}
-                                        </p>
-                                    </div>
-                                @else
-                                    <div class="text-center text-zinc-400">
-                                        <svg class="mx-auto size-7" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="1.8" aria-hidden="true">
-                                            <path
-                                                d="m3 3 18 18M10.5 6H19a2 2 0 0 1 2 2v9.5M6 6H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13" />
-                                            <path d="m3 17 4-4 3 3 1.5-1.5" />
-                                        </svg>
-                                        <p class="mt-1 text-xs font-semibold">No image</p>
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap gap-2">
-                                    <span @class([
-                                        'rounded-full px-2.5 py-1 text-[11px] font-bold',
-                                        'bg-emerald-100 text-emerald-800' => $leader->is_active,
-                                        'bg-zinc-200 text-zinc-600' => !$leader->is_active,
-                                    ])>
-                                        {{ $leader->is_active ? 'Active' : 'Inactive' }}
-                                    </span>
-                                    <span
-                                        class="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700">
-                                        Order {{ $leader->sort_order }}
-                                    </span>
-                                </div>
-                                <h3 class="mt-3 text-base font-black text-zinc-950">
-                                    {{ $leader->title_en }}
-                                </h3>
-                                <p class="mt-1 text-sm font-semibold text-zinc-600" lang="si">
-                                    {{ $leader->title_si ?: 'Sinhala title not added' }}
-                                </p>
-                                <p class="mt-2 text-sm text-zinc-500">
-                                    {{ $leader->name_en ?: 'English name not added' }}
-                                    <span class="text-zinc-300">/</span>
-                                    {{ $leader->name_si ?: 'Sinhala name not added' }}
-                                </p>
-                                @can('school-leaders.update')
-                                    <button type="button" wire:click="edit({{ $leader->id }})"
-                                        class="mt-5 rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800">
-                                        Edit card
-                                    </button>
-                                @endcan
-                            </div>
-                        </div>
-                    </article>
-                @empty
-                    <div class="px-6 py-14 text-center">
-                        <p class="font-bold text-zinc-700">The fixed leadership roles are not seeded yet.</p>
-                        <p class="mt-1 text-sm text-zinc-500">Ask a system administrator to initialise the fixed leadership roles.</p>
-                    </div>
-                @endforelse
-            </div>
-        </section>
-        @if ($canManageForm)
-        <aside>
-            @if ($canSave)
-            <form wire:submit="save"
-                class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm xl:sticky xl:top-6">
-                <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
-                    <h2 class="font-bold text-zinc-900">Edit leadership card</h2>
-                    <p class="mt-1 text-xs text-zinc-500">The role itself is fixed. Update its content below.</p>
-                </div>
-                <div class="space-y-5 p-6">
-                    @php($selectedLeader = $schoolLeaders->firstWhere('id', $editingId))
-                    @if ($selectedLeader)
-                        <div class="rounded-xl border border-blue-200 bg-blue-50/60 p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-blue-700">Fixed role</p>
-                            <p class="mt-1 font-black text-blue-950">{{ $selectedLeader->title_en }}</p>
-                            <p class="mt-1 text-sm font-semibold text-blue-800" lang="si">
-                                {{ $selectedLeader->title_si }}</p>
-                        </div>
-                    @endif
+
+        <section class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+            <div class="border-b border-zinc-200 bg-zinc-50 px-5 py-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                        <p class="text-sm font-black text-zinc-900">Profile image</p>
-                        <p class="mt-1 text-xs text-zinc-500">Select a public Media Library image or upload a new one.
+                        <h2 class="font-bold text-zinc-900">
+                            Leadership appointment history
+                        </h2>
+
+                        <p class="mt-1 text-xs text-zinc-500">
+                            Search, filter and manage present and past leadership records.
                         </p>
                     </div>
-                    @can('media.upload')
-<div class="rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
-                        <label for="school-leader-image" class="block cursor-pointer text-center">
-                            @if ($newImage instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile)
-                                <img src="{{ $newImage->temporaryUrl() }}" alt="New leadership image preview"
-                                    class="mx-auto h-44 w-full rounded-lg object-cover">
-                                <span class="mt-3 block text-sm font-bold text-emerald-800">Change selected image</span>
-                            @else
-                                <span
-                                    class="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
-                                    <svg class="size-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="1.8" aria-hidden="true">
-                                        <path d="M12 16V4" />
-                                        <path d="m7 9 5-5 5 5" />
-                                        <path d="M5 20h14a2 2 0 0 0 2-2v-3M3 15v3a2 2 0 0 0 2 2" />
-                                    </svg>
-                                </span>
-                                <span class="mt-3 block text-sm font-black text-zinc-900">Upload New Image</span>
-                                <span class="mt-1 block text-xs text-zinc-500">JPG, PNG or WebP — maximum 20 MB</span>
-                            @endif
-                            <input id="school-leader-image" wire:model="newImage" type="file"
-                                accept="image/jpeg,image/png,image/webp" class="sr-only">
-                        </label>
-                        @if ($newImage)
-                            <button type="button" wire:click="clearNewImage"
-                                class="mt-3 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50">
-                                Remove New Image
-                            </button>
-                        @endif
-                        @error('newImage')
-                            <p class="mt-2 text-xs font-semibold text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-@endcan
 
-                    <div>
-                        <label for="school-leader-library-image"
-                            class="mb-1.5 block text-sm font-bold text-zinc-800">Media Library Image</label>
-                        <select id="school-leader-library-image" wire:model="imageMediaId" @disabled($newImage)
-                            class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400">
-                            <option value="">No existing image selected</option>
-                            @foreach ($mediaAssets as $asset)
-                                <option value="{{ $asset->id }}">#{{ $asset->id }} —
-                                    {{ $asset->title ?: $asset->original_name }}</option>
-                            @endforeach
-                        </select>
-                        @error('imageMediaId')
-                            <p class="mt-1 text-xs font-semibold text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                        <div>
-                            <label for="school-leader-name-en"
-                                class="mb-1 block text-xs font-bold text-zinc-700">English name</label>
-                            <input id="school-leader-name-en" wire:model="nameEn" type="text" maxlength="180"
-                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm">
-                            @error('nameEn')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div>
-                            <label for="school-leader-name-si"
-                                class="mb-1 block text-xs font-bold text-zinc-700">සිංහල නම</label>
-                            <input id="school-leader-name-si" wire:model="nameSi" type="text" maxlength="220"
-                                lang="si"
-                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm">
-                            @error('nameSi')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-                        <div>
-                            <label for="school-leader-title-en"
-                                class="mb-1 block text-xs font-bold text-zinc-700">English position</label>
-                            <input id="school-leader-title-en" wire:model="titleEn" type="text" maxlength="120"
-                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm">
-                            @error('titleEn')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div>
-                            <label for="school-leader-title-si"
-                                class="mb-1 block text-xs font-bold text-zinc-700">සිංහල තනතුර</label>
-                            <input id="school-leader-title-si" wire:model="titleSi" type="text" maxlength="160"
-                                lang="si"
-                                class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm">
-                            @error('titleSi')
-                                <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                    </div>
-                    <div>
-                        <label for="school-leader-order" class="mb-1 block text-xs font-bold text-zinc-700">Display
-                            order</label>
-                        <input id="school-leader-order" wire:model="sortOrder" type="number" min="1"
-                            max="255"
-                            class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm">
-                        @error('sortOrder')
-                            <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-zinc-200 p-4">
-                        <input wire:model="isActive" type="checkbox"
-                            class="size-4 rounded border-zinc-300 text-emerald-700">
-                        <span>
-                            <span class="block text-sm font-bold text-zinc-900">Active card</span>
-                            <span class="block text-xs text-zinc-500">Show this leader on the public homepage.</span>
+                    <div class="flex items-center gap-2">
+                        <span
+                            wire:loading
+                            wire:target="search,statusFilter,positionFilter,perPage"
+                            class="text-xs font-semibold text-emerald-700"
+                        >
+                            Updating...
                         </span>
-                    </label>
-                    <button type="submit" wire:loading.attr="disabled" wire:target="save"
-                        class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60">
-                        <span wire:loading.remove wire:target="save">Save Changes</span>
-                        <span wire:loading wire:target="save">Saving...</span>
+
+                        <span class="rounded-full bg-zinc-200 px-3 py-1 text-xs font-bold text-zinc-700">
+                            {{ $schoolLeaders->total() }}
+                            {{ $schoolLeaders->total() === 1 ? 'record' : 'records' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-b border-zinc-200 p-4">
+                <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-[minmax(220px,1fr)_190px_150px_110px_auto]">
+                    <div class="relative">
+                        <span
+                            class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-400"
+                            aria-hidden="true"
+                        >
+                            <svg
+                                class="size-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                            >
+                                <circle cx="11" cy="11" r="7" />
+                                <path d="m20 20-3.5-3.5" />
+                            </svg>
+                        </span>
+
+                        <input
+                            wire:model.live.debounce.300ms="search"
+                            type="search"
+                            placeholder="Search appointment, rank or name..."
+                            class="w-full rounded-xl border border-zinc-300 bg-white py-2.5 pl-9 pr-3 text-sm text-zinc-800 placeholder:text-zinc-400"
+                        >
+                    </div>
+
+                    <select
+                        wire:model.live="positionFilter"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800"
+                    >
+                        <option value="all">
+                            All appointments
+                        </option>
+
+                        @foreach ($positions as $position)
+                            <option value="{{ $position->id }}">
+                                {{ $position->name_en }}
+                            </option>
+                        @endforeach
+                    </select>
+
+                    <select
+                        wire:model.live="statusFilter"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800"
+                    >
+                        <option value="all">All status</option>
+                        <option value="present">Present</option>
+                        <option value="past">Past</option>
+                    </select>
+
+                    <select
+                        wire:model.live="perPage"
+                        class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800"
+                        aria-label="Rows per page"
+                    >
+                        <option value="10">10 rows</option>
+                        <option value="25">25 rows</option>
+                        <option value="50">50 rows</option>
+                    </select>
+
+                    <button
+                        type="button"
+                        wire:click="resetTableFilters"
+                        class="rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm font-bold text-zinc-700 hover:bg-zinc-50"
+                    >
+                        Reset
                     </button>
                 </div>
-            </form>
-            @else
-                <div class="rounded-2xl border border-zinc-200 bg-white p-6 text-sm text-zinc-600">
-                    Select an existing record using its Edit button, or use New if you have permission to create records.
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-zinc-200 text-left">
+                    <thead class="bg-zinc-50">
+                        <tr>
+                            <th class="px-4 py-3 text-xs font-black uppercase tracking-wide text-zinc-600">
+                                <button
+                                    type="button"
+                                    wire:click="sortBy('appointment')"
+                                    class="inline-flex items-center gap-1.5 hover:text-zinc-950"
+                                >
+                                    Appointment
+
+                                    @if ($sortField === 'appointment')
+                                        <span aria-hidden="true">
+                                            {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                        </span>
+                                    @endif
+                                </button>
+                            </th>
+
+                            <th class="px-4 py-3 text-xs font-black uppercase tracking-wide text-zinc-600">
+                                <button
+                                    type="button"
+                                    wire:click="sortBy('name')"
+                                    class="inline-flex items-center gap-1.5 hover:text-zinc-950"
+                                >
+                                    Officer / Rank
+
+                                    @if ($sortField === 'name')
+                                        <span aria-hidden="true">
+                                            {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                        </span>
+                                    @endif
+                                </button>
+                            </th>
+
+                            <th class="px-4 py-3 text-xs font-black uppercase tracking-wide text-zinc-600">
+                                <button
+                                    type="button"
+                                    wire:click="sortBy('period')"
+                                    class="inline-flex items-center gap-1.5 hover:text-zinc-950"
+                                >
+                                    Period
+
+                                    @if ($sortField === 'period')
+                                        <span aria-hidden="true">
+                                            {{ $sortDirection === 'asc' ? '↑' : '↓' }}
+                                        </span>
+                                    @endif
+                                </button>
+                            </th>
+
+                            <th class="px-4 py-3 text-xs font-black uppercase tracking-wide text-zinc-600">
+                                Status
+                            </th>
+
+                            <th class="px-4 py-3 text-xs font-black uppercase tracking-wide text-zinc-600">
+                                Homepage
+                            </th>
+
+                            @if ($canUpdate)
+                                <th class="px-4 py-3 text-right text-xs font-black uppercase tracking-wide text-zinc-600">
+                                    Action
+                                </th>
+                            @endif
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-zinc-100 bg-white">
+                        @forelse ($schoolLeaders as $leader)
+                            <tr
+                                wire:key="school-leader-row-{{ $leader->id }}"
+                                @class([
+                                    'transition hover:bg-zinc-50',
+                                    'bg-blue-50/50' => $editingId === $leader->id,
+                                ])
+                            >
+                                <td class="min-w-52 px-4 py-4 align-top">
+                                    <p class="font-black text-zinc-950">
+                                        {{ $leader->position?->name_en ?? $leader->title_en }}
+                                    </p>
+
+                                    @if ($leader->position?->name_si)
+                                        <p class="mt-1 text-xs text-zinc-500" lang="si">
+                                            {{ $leader->position->name_si }}
+                                        </p>
+                                    @endif
+
+                                    @if (! $leader->position?->is_active)
+                                        <span class="mt-2 inline-flex rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-black uppercase text-zinc-600">
+                                            Inactive type
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="min-w-64 px-4 py-4 align-top">
+                                    <div class="flex items-start gap-3">
+                                        <span
+                                            class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"
+                                            aria-hidden="true"
+                                        >
+                                            <svg
+                                                class="size-4"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="1.8"
+                                            >
+                                                <path d="M12 3 4 7v5c0 5 3.4 8.7 8 9 4.6-.3 8-4 8-9V7l-8-4Z" />
+                                                <path d="M9 12h6M12 9v6" />
+                                            </svg>
+                                        </span>
+
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-black text-blue-700">
+                                                {{ $leader->rankLabel() ?: 'Rank not added' }}
+                                            </p>
+
+                                            <p class="mt-1 font-bold text-zinc-900">
+                                                {{ $leader->name_en ?: 'English name not added' }}
+                                            </p>
+
+                                            @if ($leader->name_si)
+                                                <p class="mt-0.5 text-xs text-zinc-500" lang="si">
+                                                    {{ $leader->name_si }}
+                                                </p>
+                                            @endif
+
+                                            @if ($leader->image)
+                                                <p class="mt-1 truncate text-[10px] font-semibold text-zinc-400">
+                                                    Image: {{ $leader->image->title ?: $leader->image->original_name }}
+                                                </p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="whitespace-nowrap px-4 py-4 align-top text-xs font-semibold text-zinc-600">
+                                    <div>
+                                        {{ $leader->start_date?->format('d M Y') ?? 'Not added' }}
+                                    </div>
+
+                                    <div class="my-1 text-zinc-300">
+                                        ↓
+                                    </div>
+
+                                    @if ($leader->end_date)
+                                        <div>
+                                            {{ $leader->end_date->format('d M Y') }}
+                                        </div>
+                                    @else
+                                        <div class="font-black text-emerald-700">
+                                            Up to Date
+                                        </div>
+                                    @endif
+                                </td>
+
+                                <td class="px-4 py-4 align-top">
+                                    @if ($leader->isCurrentAppointment())
+                                        <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-800">
+                                            Present
+                                        </span>
+                                    @else
+                                        <span class="inline-flex rounded-full bg-zinc-200 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-zinc-700">
+                                            Past
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-4 py-4 align-top">
+                                    @if ($leader->position?->show_on_home)
+                                        <span class="inline-flex rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-700">
+                                            Enabled
+                                        </span>
+                                    @else
+                                        <span class="text-sm font-bold text-zinc-300">
+                                            —
+                                        </span>
+                                    @endif
+                                </td>
+
+                                @if ($canUpdate)
+                                    <td class="px-4 py-4 text-right align-top">
+                                        <button
+                                            type="button"
+                                            wire:click="edit({{ $leader->id }})"
+                                            class="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800"
+                                        >
+                                            Edit
+                                        </button>
+                                    </td>
+                                @endif
+                            </tr>
+                        @empty
+                            <tr>
+                                <td
+                                    colspan="{{ $canUpdate ? 6 : 5 }}"
+                                    class="px-6 py-14 text-center"
+                                >
+                                    <span class="mx-auto flex size-12 items-center justify-center rounded-full bg-zinc-100 text-zinc-400">
+                                        <svg
+                                            class="size-6"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            stroke-width="1.8"
+                                            aria-hidden="true"
+                                        >
+                                            <circle cx="11" cy="11" r="7" />
+                                            <path d="m20 20-3.5-3.5" />
+                                        </svg>
+                                    </span>
+
+                                    <p class="mt-3 font-bold text-zinc-700">
+                                        No leadership records found.
+                                    </p>
+
+                                    <p class="mt-1 text-sm text-zinc-500">
+                                        Change the search or filters, or create a new appointment.
+                                    </p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-t border-zinc-200 bg-zinc-50 px-4 py-4">
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <p class="text-xs font-semibold text-zinc-500">
+                        Showing
+                        <span class="font-black text-zinc-700">
+                            {{ $schoolLeaders->firstItem() ?? 0 }}
+                        </span>
+                        to
+                        <span class="font-black text-zinc-700">
+                            {{ $schoolLeaders->lastItem() ?? 0 }}
+                        </span>
+                        of
+                        <span class="font-black text-zinc-700">
+                            {{ $schoolLeaders->total() }}
+                        </span>
+                        records
+                    </p>
+
+                    <div>
+                        {{ $schoolLeaders->onEachSide(1)->links() }}
+                    </div>
                 </div>
-            @endif
-        </aside>
+            </div>
+        </section>
+
+        @if ($canUpdate)
+
+            <aside>
+
+                <form
+
+                    wire:submit="save"
+
+                    class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm xl:sticky xl:top-6"
+
+                >
+
+                    <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
+
+                        <h2 class="font-bold text-zinc-900">
+
+                            {{ $editingId === null
+
+                                ? 'New leadership appointment'
+
+                                : 'Edit leadership appointment' }}
+
+                        </h2>
+
+                        <p class="mt-1 text-xs text-zinc-500">
+
+                            Select the appointment type first. The rank list will automatically match its rank group.
+
+                        </p>
+
+                    </div>
+
+                    <div class="space-y-5 p-6">
+
+                        <div>
+
+                            <label
+
+                                for="school-leader-role"
+
+                                class="mb-1.5 block text-sm font-bold text-zinc-800"
+
+                            >
+
+                                Appointment
+
+                                <span class="text-red-600">*</span>
+
+                            </label>
+
+                            <select
+
+                                id="school-leader-role"
+
+                                wire:model.live="roleKey"
+
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800"
+
+                            >
+
+                                <option value="">
+
+                                    Select appointment
+
+                                </option>
+
+                                @foreach ($appointmentOptions as $appointment)
+
+                                    <option value="{{ $appointment->key }}">
+
+                                        {{ $appointment->name_en }}
+
+                                        —
+
+                                        {{ $appointment->name_si }}
+
+                                        @if (! $appointment->is_active)
+
+                                            (Inactive)
+
+                                        @endif
+
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+
+                            @error('roleKey')
+
+                                <p class="mt-1 text-xs font-semibold text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+
+                            @enderror
+
+                        </div>
+
+                        <div>
+
+                            <label
+
+                                for="school-leader-rank"
+
+                                class="mb-1.5 block text-sm font-bold text-zinc-800"
+
+                            >
+
+                                Rank
+
+                                <span class="text-red-600">*</span>
+
+                            </label>
+
+                            <select
+
+                                id="school-leader-rank"
+
+                                wire:model="rank"
+
+                                @disabled($selectedAppointment === null)
+
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100"
+
+                            >
+
+                                <option value="">
+
+                                    {{ $selectedAppointment === null
+
+                                        ? 'Select appointment first'
+
+                                        : 'Select rank' }}
+
+                                </option>
+
+                                @if ($selectedAppointment?->requiresCommissionedRank())
+
+                                    <optgroup label="Commissioned Officers">
+
+                                        @foreach ($rankOptions as $rankOption)
+
+                                            @if ($rankOption->isCommissioned())
+
+                                                <option value="{{ $rankOption->value }}">
+
+                                                    {{ method_exists($rankOption, 'adminLabel')
+
+                                                        ? $rankOption->adminLabel()
+
+                                                        : $rankOption->label() }}
+
+                                                </option>
+
+                                            @endif
+
+                                        @endforeach
+
+                                    </optgroup>
+
+                                @elseif ($selectedAppointment !== null)
+
+                                    <optgroup label="Other Ranks">
+
+                                        @foreach ($rankOptions as $rankOption)
+
+                                            @if (! $rankOption->isCommissioned())
+
+                                                <option value="{{ $rankOption->value }}">
+
+                                                    {{ method_exists($rankOption, 'adminLabel')
+
+                                                        ? $rankOption->adminLabel()
+
+                                                        : $rankOption->label() }}
+
+                                                </option>
+
+                                            @endif
+
+                                        @endforeach
+
+                                    </optgroup>
+
+                                @endif
+
+                            </select>
+
+                            @error('rank')
+
+                                <p class="mt-1 text-xs font-semibold text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+
+                            @enderror
+
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+
+                            <div>
+
+                                <label
+
+                                    for="school-leader-name-en"
+
+                                    class="mb-1 block text-xs font-bold text-zinc-700"
+
+                                >
+
+                                    English name
+
+                                    <span class="text-red-600">*</span>
+
+                                </label>
+
+                                <input
+
+                                    id="school-leader-name-en"
+
+                                    wire:model="nameEn"
+
+                                    type="text"
+
+                                    maxlength="180"
+
+                                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+
+                                >
+
+                                @error('nameEn')
+
+                                    <p class="mt-1 text-xs text-red-600">
+
+                                        {{ $message }}
+
+                                    </p>
+
+                                @enderror
+
+                            </div>
+
+                            <div>
+
+                                <label
+
+                                    for="school-leader-name-si"
+
+                                    class="mb-1 block text-xs font-bold text-zinc-700"
+
+                                >
+
+                                    සිංහල නම
+
+                                    <span class="text-red-600">*</span>
+
+                                </label>
+
+                                <input
+
+                                    id="school-leader-name-si"
+
+                                    wire:model="nameSi"
+
+                                    type="text"
+
+                                    maxlength="220"
+
+                                    lang="si"
+
+                                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+
+                                >
+
+                                @error('nameSi')
+
+                                    <p class="mt-1 text-xs text-red-600">
+
+                                        {{ $message }}
+
+                                    </p>
+
+                                @enderror
+
+                            </div>
+
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+
+                            <div>
+
+                                <label
+
+                                    for="school-leader-start-date"
+
+                                    class="mb-1 block text-xs font-bold text-zinc-700"
+
+                                >
+
+                                    Start date
+
+                                    <span class="text-red-600">*</span>
+
+                                </label>
+
+                                <input
+
+                                    id="school-leader-start-date"
+
+                                    wire:model="startDate"
+
+                                    type="date"
+
+                                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm"
+
+                                >
+
+                                @error('startDate')
+
+                                    <p class="mt-1 text-xs text-red-600">
+
+                                        {{ $message }}
+
+                                    </p>
+
+                                @enderror
+
+                            </div>
+
+                            <div>
+
+                                <label
+
+                                    for="school-leader-end-date"
+
+                                    class="mb-1 block text-xs font-bold text-zinc-700"
+
+                                >
+
+                                    End date
+
+                                    @if (! $isCurrent)
+
+                                        <span class="text-red-600">*</span>
+
+                                    @endif
+
+                                </label>
+
+                                <input
+
+                                    id="school-leader-end-date"
+
+                                    wire:model="endDate"
+
+                                    type="date"
+
+                                    @disabled($isCurrent)
+
+                                    class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+
+                                >
+
+                                @if ($isCurrent)
+
+                                    <p class="mt-1 text-[11px] font-semibold text-emerald-700">
+
+                                        Present appointment — displayed as Up to Date.
+
+                                    </p>
+
+                                @else
+
+                                    <p class="mt-1 text-[11px] text-zinc-500">
+
+                                        Required for a past appointment.
+
+                                    </p>
+
+                                @endif
+
+                                @error('endDate')
+
+                                    <p class="mt-1 text-xs text-red-600">
+
+                                        {{ $message }}
+
+                                    </p>
+
+                                @enderror
+
+                            </div>
+
+                        </div>
+
+                        <label
+
+                            class="flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 p-4"
+
+                        >
+
+                            <input
+
+                                wire:model.live="isCurrent"
+
+                                type="checkbox"
+
+                                class="mt-0.5 size-4 rounded border-zinc-300 text-emerald-700"
+
+                            >
+
+                            <span>
+
+                                <span class="block text-sm font-black text-zinc-900">
+
+                                    Present appointment
+
+                                </span>
+
+                                <span class="mt-1 block text-xs leading-5 text-zinc-500">
+
+                                    Enable this only for the current holder.
+
+                                    Only one present holder is allowed for each appointment type.
+
+                                    Homepage display is controlled by the Appointment Type setting.
+
+                                </span>
+
+                            </span>
+
+                        </label>
+
+                        @error('isCurrent')
+
+                            <p class="text-xs font-semibold text-red-600">
+
+                                {{ $message }}
+
+                            </p>
+
+                        @enderror
+
+                        <div>
+
+                            <p class="text-sm font-black text-zinc-900">
+
+                                Profile image
+
+                            </p>
+
+                            <p class="mt-1 text-xs text-zinc-500">
+
+                                Select a public Media Library image or upload a new one.
+
+                            </p>
+
+                        </div>
+
+                        @can('media.upload')
+
+                            <div class="rounded-xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
+
+                                <label
+
+                                    for="school-leader-image"
+
+                                    class="block cursor-pointer text-center"
+
+                                >
+
+                                    @if ($newImage instanceof \Livewire\Features\SupportFileUploads\TemporaryUploadedFile)
+
+                                        <img
+
+                                            src="{{ $newImage->temporaryUrl() }}"
+
+                                            alt="New leadership image preview"
+
+                                            class="mx-auto h-44 w-full rounded-lg object-cover"
+
+                                        >
+
+                                        <span class="mt-3 block text-sm font-bold text-emerald-800">
+
+                                            Change selected image
+
+                                        </span>
+
+                                    @else
+
+                                        <span
+
+                                            class="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-700"
+
+                                        >
+
+                                            <svg
+
+                                                class="size-6"
+
+                                                viewBox="0 0 24 24"
+
+                                                fill="none"
+
+                                                stroke="currentColor"
+
+                                                stroke-width="1.8"
+
+                                                aria-hidden="true"
+
+                                            >
+
+                                                <path d="M12 16V4" />
+
+                                                <path d="m7 9 5-5 5 5" />
+
+                                                <path d="M5 20h14a2 2 0 0 0 2-2v-3M3 15v3a2 2 0 0 0 2 2" />
+
+                                            </svg>
+
+                                        </span>
+
+                                        <span class="mt-3 block text-sm font-black text-zinc-900">
+
+                                            Upload New Image
+
+                                        </span>
+
+                                        <span class="mt-1 block text-xs text-zinc-500">
+
+                                            JPG, PNG or WebP — maximum 20 MB
+
+                                        </span>
+
+                                    @endif
+
+                                    <input
+
+                                        id="school-leader-image"
+
+                                        wire:model="newImage"
+
+                                        type="file"
+
+                                        accept="image/jpeg,image/png,image/webp"
+
+                                        class="sr-only"
+
+                                    >
+
+                                </label>
+
+                                @if ($newImage)
+
+                                    <button
+
+                                        type="button"
+
+                                        wire:click="clearNewImage"
+
+                                        class="mt-3 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
+
+                                    >
+
+                                        Remove New Image
+
+                                    </button>
+
+                                @endif
+
+                                @error('newImage')
+
+                                    <p class="mt-2 text-xs font-semibold text-red-600">
+
+                                        {{ $message }}
+
+                                    </p>
+
+                                @enderror
+
+                            </div>
+
+                        @endcan
+
+                        <div>
+
+                            <label
+
+                                for="school-leader-library-image"
+
+                                class="mb-1.5 block text-sm font-bold text-zinc-800"
+
+                            >
+
+                                Media Library Image
+
+                            </label>
+
+                            <select
+
+                                id="school-leader-library-image"
+
+                                wire:model="imageMediaId"
+
+                                @disabled($newImage)
+
+                                class="w-full rounded-xl border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-100 disabled:text-zinc-400"
+
+                            >
+
+                                <option value="">
+
+                                    No existing image selected
+
+                                </option>
+
+                                @foreach ($mediaAssets as $asset)
+
+                                    <option value="{{ $asset->id }}">
+
+                                        #{{ $asset->id }}
+
+                                        —
+
+                                        {{ $asset->title ?: $asset->original_name }}
+
+                                    </option>
+
+                                @endforeach
+
+                            </select>
+
+                            @error('imageMediaId')
+
+                                <p class="mt-1 text-xs font-semibold text-red-600">
+
+                                    {{ $message }}
+
+                                </p>
+
+                            @enderror
+
+                        </div>
+
+                        <button
+
+                            type="submit"
+
+                            wire:loading.attr="disabled"
+
+                            wire:target="save"
+
+                            class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
+
+                        >
+
+                            <span wire:loading.remove wire:target="save">
+
+                                {{ $editingId === null
+
+                                    ? 'Create Appointment'
+
+                                    : 'Save Changes' }}
+
+                            </span>
+
+                            <span wire:loading wire:target="save">
+
+                                Saving...
+
+                            </span>
+
+                        </button>
+
+                    </div>
+
+                </form>
+
+            </aside>
+
         @endif
+
     </div>
+
 </div>

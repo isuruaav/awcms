@@ -14,8 +14,6 @@ use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicRedirectController;
 use App\Livewire\Admin\Documents\DocumentUploads;
 use App\Livewire\Admin\HeroSlides\HeroSlideIndex;
-use App\Livewire\Admin\PastChiefInstructors\PastChiefInstructorIndex;
-use App\Livewire\Admin\PastCommandants\PastCommandantIndex;
 use App\Livewire\Admin\SchoolLeaders\SchoolLeaderIndex;
 use Illuminate\Support\Facades\Route;
 
@@ -805,25 +803,18 @@ Route::middleware([
             */
 
             Route::get(
-                '/past-commandants',
-                PastCommandantIndex::class,
-            )
-                ->middleware('can:past-commandants.view')
-                ->name('past-commandants.index');
-
-            Route::get(
-                '/past-chief-instructors',
-                PastChiefInstructorIndex::class,
-            )
-                ->middleware('can:past-chief-instructors.view')
-                ->name('past-chief-instructors.index');
-
-            Route::get(
                 '/school-leaders',
                 SchoolLeaderIndex::class,
             )
                 ->middleware('can:school-leaders.view')
                 ->name('school-leaders.index');
+
+            Route::livewire(
+                '/school-leadership-positions',
+                'admin.school-leaders.school-leadership-position-index',
+            )
+                ->middleware('can:school-leaders.view')
+                ->name('school-leadership-positions.index');
 
             /*
             |--------------------------------------------------------------------------
