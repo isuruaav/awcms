@@ -57,8 +57,10 @@
                             <p class="truncate text-xs text-zinc-600">{{ $image->getClientOriginalName() }}</p>
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-xs font-semibold text-emerald-700">{{ $index === 0 ? 'Cover' : 'Photo '.($index + 1) }}</span>
-                                <button type="button" wire:click="removeImage({{ $index }})" wire:loading.attr="disabled"
-                                    class="text-xs font-semibold text-red-600" aria-label="Remove photograph {{ $index + 1 }}">Remove</button>
+                                <x-admin.icon-action label="Remove" icon="trash" tone="danger"
+                                    type="button" wire:click="removeImage({{ $index }})" wire:loading.attr="disabled"
+                                    aria-label="Remove photograph {{ $index + 1 }}"
+                                />
                             </div>
                         </div>
                     </div>

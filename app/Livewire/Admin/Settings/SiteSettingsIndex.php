@@ -251,6 +251,7 @@ final class SiteSettingsIndex extends Component
                     ->orderBy('sort_order')
                     ->orderBy('id')
                     ->get(),
+                'socialPlatforms' => array_keys(SocialLink::PLATFORM_ICONS),
             ],
         )->layout(
             'components.layouts.admin',

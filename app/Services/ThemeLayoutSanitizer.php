@@ -70,11 +70,42 @@ final class ThemeLayoutSanitizer
             ]);
         }
 
+        // HTML closes a style element even when the closing tag is in a CSS comment.
+        if (preg_match('/<\/?style\b/i', $css) === 1) {
+            throw ValidationException::withMessages([
+                'layout_css' => 'Enter CSS only, without <style> tags.',
+            ]);
+        }
+
         $inspectionCss = preg_replace(
             '/\/\*.*?\*\//s',
             '',
             $css,
         );
+
+        if (is_string($inspectionCss)) {
+            // Inspect decoded tokens while retaining icon and selector escapes in the saved source.
+            $inspectionCss = preg_replace('/\\\\(?:\r\n|[\n\r\f])/', '', $inspectionCss);
+        }
+
+        if (is_string($inspectionCss)) {
+            $inspectionCss = preg_replace_callback(
+                '/\\\\(?:([0-9a-f]{1,6})(?:\r\n|[ \t\r\n\f])?|([^\r\n\f]))/iu',
+                static function (array $matches): string {
+                    if ($matches[1] === '') {
+                        return $matches[2];
+                    }
+
+                    $codePoint = (int) hexdec($matches[1]);
+
+                    return $codePoint === 0 || $codePoint > 0x10FFFF
+                        || ($codePoint >= 0xD800 && $codePoint <= 0xDFFF)
+                            ? "\u{FFFD}"
+                            : mb_chr($codePoint, 'UTF-8');
+                },
+                $inspectionCss,
+            );
+        }
 
         if (! is_string($inspectionCss)) {
             throw ValidationException::withMessages([
@@ -86,9 +117,8 @@ final class ThemeLayoutSanitizer
             '/<\/?style\b/i',
             '/@(?:import|charset|namespace|font-face)\b/i',
             '/\b(?:url|image-set|cross-fade|expression)\s*\(/i',
-            '/\b(?:behavior|-moz-binding)\s*:/i',
+            '/(?<![\w-])(?:behavior|-moz-binding)\s*:/i',
             '/(?:javascript|data|vbscript)\s*:/i',
-            '/\\\\/',
         ];
 
         foreach ($forbiddenPatterns as $pattern) {

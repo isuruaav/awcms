@@ -719,19 +719,9 @@
 
                                     {{-- PUBLIC VIEW --}}
                                     @if ($isPubliclyAvailable && is_string($publicUrl))
-                                        <a href="{{ $publicUrl }}" target="_blank" rel="noopener noreferrer"
-                                            class="rounded-lg
-                                                   border
-                                                   border-emerald-200
-                                                   bg-emerald-50
-                                                   px-3 py-2
-                                                   text-xs
-                                                   font-bold
-                                                   text-emerald-700
-                                                   transition
-                                                   hover:bg-emerald-100">
-                                            View
-                                        </a>
+                                        <x-admin.icon-action label="View" icon="eye" tone="info"
+                                            href="{{ $publicUrl }}" target="_blank" rel="noopener noreferrer"
+                                        />
 
 
                                         {{-- COPY STABLE PUBLIC LINK --}}
@@ -754,70 +744,37 @@
                                                 }
                                             }
                                         }">
-                                            <button type="button" x-on:click="copyLink"
-                                                class="rounded-lg
-                                                       border
-                                                       border-sky-200
-                                                       bg-sky-50
-                                                       px-3 py-2
-                                                       text-xs
-                                                       font-bold
-                                                       text-sky-700
-                                                       transition
-                                                       hover:bg-sky-100">
-                                                <span x-show="!copied">
-                                                    Copy Link
-                                                </span>
-
-                                                <span x-show="copied" x-cloak>
-                                                    Copied
-                                                </span>
-                                            </button>
+                                            <x-admin.icon-action label="Copy Link" icon="clipboard-document" tone="info"
+                                                type="button" x-on:click="copyLink"
+                                                x-bind:aria-label="copied ? 'Copied' : 'Copy Link'"
+                                            >
+                                                <flux:icon.clipboard-document class="size-4" x-show="!copied" />
+                                                <flux:icon.check class="size-4" x-show="copied" x-cloak />
+                                                <span class="sr-only" x-show="copied" x-cloak role="status">Copied</span>
+                                            </x-admin.icon-action>
                                         </div>
                                     @endif
 
 
                                     {{-- EDIT --}}
                                     @can('documents.update')
-                                        <a href="{{ route('admin.documents.edit', [
-                                            'document' => $document->id,
-                                        ]) }}"
-                                            wire:navigate
-                                            class="rounded-lg
-                                                   border
-                                                   border-zinc-300
-                                                   bg-white
-                                                   px-3 py-2
-                                                   text-xs
-                                                   font-bold
-                                                   text-zinc-700
-                                                   transition
-                                                   hover:bg-zinc-50">
-                                            Edit
-                                        </a>
+                                        <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
+                                            href="{{ route('admin.documents.edit', [
+                                                'document' => $document->id,
+                                            ]) }}"
+                                                wire:navigate
+                                        />
                                     @endcan
 
 
                                     {{-- DELETE --}}
                                     @can('documents.delete')
                                         @if ($status !== \App\Enums\DocumentStatus::Published)
-                                            <button type="button" wire:click="delete({{ $document->id }})"
+                                            <x-admin.icon-action label="Delete" icon="trash" tone="danger"
+                                                type="button" wire:click="delete({{ $document->id }})"
                                                 wire:confirm="Delete this document? The document record will be moved to the deleted state."
                                                 wire:loading.attr="disabled" wire:target="delete({{ $document->id }})"
-                                                class="rounded-lg
-                                                       border
-                                                       border-red-200
-                                                       bg-red-50
-                                                       px-3 py-2
-                                                       text-xs
-                                                       font-bold
-                                                       text-red-700
-                                                       transition
-                                                       hover:bg-red-100
-                                                       disabled:cursor-not-allowed
-                                                       disabled:opacity-50">
-                                                Delete
-                                            </button>
+                                            />
                                         @endif
                                     @endcan
 

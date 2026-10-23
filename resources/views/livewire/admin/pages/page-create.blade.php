@@ -19,7 +19,7 @@
         </a>
     </div>
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" wire:confirm="Create this page as a draft?" class="space-y-6">
         <section class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
             <div class="space-y-5">
                 <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-4">
@@ -224,6 +224,8 @@
                 />
             </div>
         </section>
+
+        <x-forms.page-custom-css />
 
         <section class="rounded-2xl border border-blue-200 bg-blue-50 p-5">
             <h2 class="text-sm font-semibold text-blue-950">

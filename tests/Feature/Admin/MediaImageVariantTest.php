@@ -10,7 +10,6 @@ use App\Services\MediaUploadService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 beforeEach(function (): void {
     $this->seed(

@@ -32,6 +32,8 @@ final class SchoolLeaderIndex extends Component
     #[Locked]
     public ?int $editingId = null;
 
+    public bool $showEditor = false;
+
     public string $roleKey = '';
 
     public string $rank = '';
@@ -87,12 +89,16 @@ final class SchoolLeaderIndex extends Component
 
         $this->resetForm();
 
+        $this->showEditor = true;
+
     }
 
     public function edit(int $id): void
     {
 
         Gate::authorize('school-leaders.view');
+
+        Gate::authorize('school-leaders.update');
 
         $leader = SchoolLeader::query()
 
@@ -152,6 +158,17 @@ final class SchoolLeaderIndex extends Component
 
         $this->resetValidation();
 
+        $this->showEditor = true;
+
+    }
+
+    public function closeEditor(): void
+    {
+        Gate::authorize('school-leaders.view');
+        Gate::authorize('school-leaders.update');
+
+        $this->showEditor = false;
+        $this->resetForm();
     }
 
     public function updatedSearch(): void
@@ -597,8 +614,42 @@ final class SchoolLeaderIndex extends Component
 
         );
 
-        $this->edit($leader->id);
+        $this->closeEditor();
 
+    }
+
+    public function delete(int $id): void
+    {
+        Gate::authorize('school-leaders.view');
+        Gate::authorize('school-leaders.update');
+
+        $actor = $this->actor();
+
+        DB::transaction(function () use ($id, $actor): void {
+            $leader = SchoolLeader::query()->findOrFail($id);
+            $oldValues = $leader->getAttributes();
+
+            $leader->delete();
+
+            app(AuditLogger::class)->log(
+                event: 'settings.school-leader-deleted',
+                description: 'A School of Signals leadership appointment was deleted.',
+                actor: $actor,
+                subject: $leader,
+                oldValues: $oldValues,
+            );
+        });
+
+        if ($this->editingId === $id) {
+            $this->closeEditor();
+        }
+
+        $this->resetPage();
+
+        session()->flash(
+            'status',
+            'Leadership appointment deleted successfully.',
+        );
     }
 
     public function updatedNewImage(): void

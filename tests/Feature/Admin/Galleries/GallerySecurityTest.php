@@ -68,23 +68,23 @@ beforeEach(function (): void {
     $this->seed(RolesAndPermissionsSeeder::class);
 });
 
-it('has the correct gallery permission matrix', function (): void {
+it('has the correct active gallery permission matrix', function (): void {
+    // The archive workflow is retired; don't test the removed permission.
     $permissions = [
         'galleries.view',
         'galleries.create',
         'galleries.update',
         'galleries.delete',
         'galleries.publish',
-        'galleries.archive',
     ];
 
     $expected = [
-        'Super Administrator' => [true, true, true, true, true, true],
-        'Site Administrator' => [true, true, true, true, true, true],
-        'Publisher' => [true, true, true, false, true, true],
-        'Content Editor' => [true, true, true, false, false, false],
-        'Media Operator' => [true, true, true, false, false, false],
-        'Auditor' => [true, false, false, false, false, false],
+        'Super Administrator' => [true, true, true, true, true],
+        'Site Administrator' => [true, true, true, true, true],
+        'Publisher' => [true, true, true, false, true],
+        'Content Editor' => [true, true, true, false, false],
+        'Media Operator' => [true, true, true, false, false],
+        'Auditor' => [true, false, false, false, false],
     ];
 
     foreach ($expected as $role => $expectedResults) {
@@ -244,7 +244,7 @@ it('does not publish a gallery after attached media becomes restricted', functio
     expect($gallery->refresh()->status)->toBe(GalleryStatus::Draft);
 });
 
-it('cannot archive a draft gallery', function (): void {
+it('cannot archive a draft gallery when the archive workflow is disabled', function (): void {
     $publisher = galleryInvariantUser('Publisher');
     $gallery = Gallery::factory()->create();
 
@@ -256,7 +256,7 @@ it('cannot archive a draft gallery', function (): void {
     expect($gallery->refresh()->status)->toBe(GalleryStatus::Draft);
 });
 
-it('cannot publish an archived gallery again', function (): void {
+it('cannot publish a legacy archived gallery again', function (): void {
     $publisher = galleryInvariantUser('Publisher');
     $service = app(GalleryService::class);
     $gallery = Gallery::factory()->create();
@@ -268,9 +268,15 @@ it('cannot publish an archived gallery again', function (): void {
     );
 
     $gallery = $service->publish(gallery: $gallery, actor: $publisher);
-    $gallery = $service->archive(gallery: $gallery, actor: $publisher);
 
-    expect(fn () => $service->publish(gallery: $gallery, actor: $publisher))
+    // Historic archived data may exist even though the action has been removed.
+    $gallery->forceFill([
+        'status' => GalleryStatus::Archived->value,
+        'archived_at' => now(),
+        'archived_by' => $publisher->id,
+    ])->save();
+
+    expect(fn () => $service->publish(gallery: $gallery->refresh(), actor: $publisher))
         ->toThrow(ValidationException::class);
 
     expect($gallery->refresh()->status)->toBe(GalleryStatus::Archived);

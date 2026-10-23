@@ -90,7 +90,7 @@ test(
                 $publisher->can(
                     'news.archive',
                 ),
-            )->toBeTrue();
+            )->toBeFalse();
     },
 );
 
@@ -507,7 +507,7 @@ test(
 */
 
 test(
-    'a publisher can archive a published article',
+    'a publisher cannot archive a published article because archive actions are retired',
     function (): void {
         $publisher =
             User::factory()->create();
@@ -528,27 +528,18 @@ test(
                 'archived_by' => null,
             ]);
 
-        $updated =
-            app(
+        expect(
+            fn () => app(
                 NewsWorkflowService::class,
             )->archive(
                 news: $news,
                 actor: $publisher,
-            );
+            ),
+        )->toThrow(ValidationException::class);
 
-        expect(
-            $updated->status,
-        )->toBe(
-            NewsStatus::Archived,
-        )
-            ->and(
-                $updated->archived_at,
-            )->not->toBeNull()
-            ->and(
-                $updated->archived_by,
-            )->toBe(
-                $publisher->id,
-            );
+        expect($news->fresh()?->status)->toBe(NewsStatus::Published)
+            ->and($news->fresh()?->archived_at)->toBeNull()
+            ->and($news->fresh()?->archived_by)->toBeNull();
     },
 );
 
@@ -663,20 +654,14 @@ test(
             NewsStatus::Published,
         );
 
-        /*
-         * Published -> Archived
-         */
-        $news =
-            $service->archive(
+        expect(
+            fn () => $service->archive(
                 news: $news,
                 actor: $publisher,
-            );
+            ),
+        )->toThrow(ValidationException::class);
 
-        expect(
-            $news->status,
-        )->toBe(
-            NewsStatus::Archived,
-        );
+        expect($news->fresh()?->status)->toBe(NewsStatus::Published);
     },
 );
 

@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Livewire\Admin\Users;
+
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\UserManagementRules;
@@ -15,17 +17,26 @@ use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
+
 final class UserEdit extends Component
 {
     #[Locked]
     public int $userId;
+
     public string $name = '';
+
     public string $email = '';
+
     public string $role = '';
+
     public bool $isActive = true;
+
     public string $administrator_password = '';
+
     public string $new_password = '';
+
     public string $new_password_confirmation = '';
+
     public function mount(User $user): void
     {
         Gate::authorize('users.update');
@@ -44,6 +55,7 @@ final class UserEdit extends Component
             : '';
         $this->isActive = (bool) $user->is_active;
     }
+
     public function save(): void
     {
         Gate::authorize('users.update');
@@ -258,6 +270,7 @@ final class UserEdit extends Component
             "{$target->name}'s password was reset and active sessions were terminated.",
         );
     }
+
     /**
      * @return array<string, list<mixed>>
      */
@@ -293,6 +306,7 @@ final class UserEdit extends Component
             ],
         ];
     }
+
     public function render(): View
     {
         Gate::authorize('users.update');
@@ -319,6 +333,7 @@ final class UserEdit extends Component
             ],
         );
     }
+
     private function actor(): User
     {
         $actor = Auth::user();
@@ -326,14 +341,17 @@ final class UserEdit extends Component
             $actor instanceof User,
             403,
         );
+
         return $actor;
     }
+
     private function target(): User
     {
         return User::query()
             ->with('roles')
             ->findOrFail($this->userId);
     }
+
     private function normaliseInput(): void
     {
         $this->name = trim($this->name);

@@ -162,13 +162,10 @@
                             </td>
 
                             <td class="px-5 py-4 text-right">
-                                <button
+                                <x-admin.icon-action label="Details" icon="information-circle" tone="neutral"
                                     type="button"
                                     wire:click="viewLog({{ $log->id }})"
-                                    class="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100"
-                                >
-                                    Details
-                                </button>
+                                />
                             </td>
                         </tr>
                     @empty

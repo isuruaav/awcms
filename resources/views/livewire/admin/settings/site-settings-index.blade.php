@@ -175,13 +175,32 @@
     <section class="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
         <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
             <h2 class="font-bold text-zinc-900">Social Links</h2>
+            <p class="mt-1 text-sm text-zinc-500">Choose or enter a platform. Its icon is added automatically on the website.</p>
         </div>
-        <div class="grid gap-3 p-6 sm:grid-cols-3"><input wire:model="socialPlatform" type="text"
-                placeholder="Facebook" class="rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"><input
-                wire:model="socialLabel" type="text" placeholder="Label (optional)"
-                class="rounded-xl border border-zinc-300 px-3 py-2.5 text-sm"><input wire:model="socialUrl"
-                type="url" placeholder="https://..."
-                class="rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+        <div class="grid gap-3 p-6 sm:grid-cols-3">
+            <div>
+                <label for="social-platform" class="mb-1.5 block text-sm font-semibold">Platform</label>
+                <input id="social-platform" wire:model="socialPlatform" type="text" list="social-platforms"
+                    maxlength="80" placeholder="Facebook" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                <datalist id="social-platforms">
+                    @foreach ($socialPlatforms as $platform)
+                        <option value="{{ $platform }}"></option>
+                    @endforeach
+                </datalist>
+                @error('socialPlatform')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="social-label" class="mb-1.5 block text-sm font-semibold">Label (optional)</label>
+                <input id="social-label" wire:model="socialLabel" type="text" maxlength="120"
+                    placeholder="Official Facebook" class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                @error('socialLabel')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+            </div>
+            <div>
+                <label for="social-url" class="mb-1.5 block text-sm font-semibold">URL</label>
+                <input id="social-url" wire:model="socialUrl" type="url" maxlength="2048" placeholder="https://..."
+                    class="w-full rounded-xl border border-zinc-300 px-3 py-2.5 text-sm">
+                @error('socialUrl')<p class="mt-1 text-sm text-red-700">{{ $message }}</p>@enderror
+            </div>
             <div class="sm:col-span-3"><button type="button" wire:click="addSocialLink"
                     class="rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white">Add Social Link</button>
             </div>
@@ -192,9 +211,14 @@
                     <div>
                         <p class="text-sm font-bold text-zinc-900">{{ $link->platform }}</p>
                         <p class="max-w-sm truncate text-xs text-zinc-500">{{ $link->url }}</p>
-                    </div><button type="button" wire:click="deleteSocialLink({{ $link->id }})"
-                        wire:confirm="Delete this social link?" class="text-xs font-bold text-red-600">Delete</button>
-            </div>@empty<p class="px-6 py-8 text-sm text-zinc-500">No social links.</p>
+                    </div>
+                    <x-admin.icon-action label="Delete" icon="trash" tone="danger"
+                        type="button" wire:click="deleteSocialLink({{ $link->id }})"
+                        wire:confirm="Delete this social link?"
+                    />
+                </div>
+            @empty
+                <p class="px-6 py-8 text-sm text-zinc-500">No social links.</p>
             @endforelse
         </div>
     </section>

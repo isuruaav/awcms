@@ -289,6 +289,8 @@ final class MediaEdit extends Component
 
                 'publicUrl' => $publicUrl,
 
+                'originalUrl' => app(MediaUrlService::class)->namedOriginal($media),
+
                 'fileSize' => $this->fileSize(
                     $media,
                 ),

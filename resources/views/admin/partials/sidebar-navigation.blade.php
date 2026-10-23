@@ -89,12 +89,6 @@
     @endcan
 
 
-    {{-- Menus --}}
-    @can('menus.manage')
-        <x-admin.nav-link :href="route('admin.menus.index')" :active="request()->routeIs('admin.menus.*')">
-            Menus
-        </x-admin.nav-link>
-    @endcan
 
 
     {{-- Header & Footer --}}
@@ -116,6 +110,9 @@
         <x-admin.nav-link :href="route('admin.school-leaders.index')" :active="request()->routeIs('admin.school-leaders.*')">
             School Leadership
         </x-admin.nav-link>
+        <x-admin.nav-link :href="route('admin.school-leadership-profiles.index')" :active="request()->routeIs('admin.school-leadership-profiles.*')">
+            Leadership Profiles
+        </x-admin.nav-link>
     @endcan
 
 
@@ -130,9 +127,7 @@
 
     {{-- Contact Messages --}}
     @can('contacts.manage')
-        <x-admin.nav-link :href="route('admin.contact-messages.index')" :active="request()->routeIs('admin.contact-messages.*')">
-            Contact Messages
-        </x-admin.nav-link>
+        <livewire:admin.contact-messages.contact-message-nav-link />
     @endcan
 
 

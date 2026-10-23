@@ -728,6 +728,14 @@
                     @endif
                 </div>
             </section>
+            @if ($originalUrl)
+                <section class="space-y-3 rounded-xl border border-zinc-200 bg-white p-5">
+                    <x-admin.copy-path :path="$originalUrl"
+                        :label="$mediaAsset->isImage() ? 'Public image path' : 'Public document path'" />
+                    <a href="{{ $originalUrl }}" target="_blank" rel="noopener noreferrer"
+                        class="inline-block text-sm font-semibold text-blue-700 hover:underline">Open original file</a>
+                </section>
+            @endif
         </aside>
     </div>
 </div>

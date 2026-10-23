@@ -31,7 +31,7 @@
         </div>
     @endif
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" wire:confirm="Save changes to this page?" class="space-y-6">
         <section class="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -40,7 +40,7 @@
                     </h2>
 
                     <p class="mt-1 text-sm text-zinc-600">
-                        Each language has its own manually entered title, content, editor mode and publishing status. No automatic translation is used.
+                        Each language has its own manually entered title, content, custom CSS, editor mode and publishing status. No automatic translation is used.
                     </p>
                 </div>
 
@@ -101,22 +101,16 @@
                             <div class="mt-3">
                                 @if ($version instanceof \App\Models\Page && ! $version->trashed())
                                     @if ($version->status === \App\Enums\PageStatus::Draft)
-                                        <a
+                                        <x-admin.icon-action label="Edit {{ $localeOption->nativeLabel() }} version" icon="pencil-square" tone="info"
                                             href="{{ route('admin.pages.edit', $version) }}"
                                             wire:navigate
-                                            class="text-xs font-semibold text-emerald-700 hover:text-emerald-800"
-                                        >
-                                            Edit {{ $localeOption->nativeLabel() }} version
-                                        </a>
+                                        />
                                     @else
-                                        <a
+                                        <x-admin.icon-action label="Preview {{ $localeOption->nativeLabel() }} version" icon="eye" tone="info"
                                             href="{{ route('admin.pages.preview', $version) }}"
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            class="text-xs font-semibold text-blue-700 hover:text-blue-800"
-                                        >
-                                            Preview {{ $localeOption->nativeLabel() }} version
-                                        </a>
+                                        />
                                     @endif
                                 @elseif (! ($version instanceof \App\Models\Page))
                                     @can('pages.create')
@@ -280,6 +274,8 @@
                 />
             </div>
         </section>
+
+        <x-forms.page-custom-css />
 
         <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5">
             <h2 class="text-sm font-semibold text-amber-950">

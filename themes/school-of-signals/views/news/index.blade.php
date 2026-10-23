@@ -18,9 +18,9 @@
     };
 @endphp
 
-@section('title', 'News | ' . config('app.name'))
-@section('description', 'Latest published news and official updates.')
-@section('meta_description', 'Latest published news and official updates.')
+@section('title', __('public.news') . ' | ' . config('app.name'))
+@section('description', __('public.news_page.description'))
+@section('meta_description', __('public.news_page.description'))
 @section('canonical', $publicNewsIndexUrl)
 
 @section('content')
@@ -28,9 +28,9 @@
         <header class="school-news-index-header">
             <div class="school-news-container school-news-index-header-inner">
                 <div>
-                    <span class="school-news-section-kicker">Latest Updates</span>
-                    <h1>News</h1>
-                    <p>Latest published news, announcements and official updates.</p>
+                    <span class="school-news-section-kicker">{{ __('theme-school-of-signals::home.news.kicker') }}</span>
+                    <h1>{{ __('public.news') }}</h1>
+                    <p>{{ __('public.news_page.intro') }}</p>
                 </div>
             </div>
         </header>
@@ -40,8 +40,8 @@
                 @if ($news->isEmpty())
                     <div class="school-news-empty">
                         <i class="fa-regular fa-newspaper" aria-hidden="true"></i>
-                        <h2>No News Available</h2>
-                        <p>No published news is available in {{ $locale->nativeLabel() }}.</p>
+                        <h2>{{ __('public.news_page.empty_title') }}</h2>
+                        <p>{{ __('public.news_page.empty', ['language' => $locale->nativeLabel()]) }}</p>
                     </div>
                 @else
                     <div class="school-news-card-grid">
@@ -55,7 +55,7 @@
                             <article class="school-news-card">
                                 @if (is_string($imageUrl) && $imageUrl !== '')
                                     <a href="{{ $publicNewsUrl($article) }}" class="school-news-card-image"
-                                        aria-label="Read {{ $article->title }}">
+                                        aria-label="{{ __('public.news_page.read', ['title' => $article->title]) }}">
                                         <img src="{{ $imageUrl }}"
                                             alt="{{ $article->featuredImage?->alt_text ?: $article->title }}"
                                             loading="lazy">
@@ -63,7 +63,7 @@
                                 @else
                                     <a href="{{ $publicNewsUrl($article) }}"
                                         class="school-news-card-image school-news-card-placeholder"
-                                        aria-label="Read {{ $article->title }}">
+                                        aria-label="{{ __('public.news_page.read', ['title' => $article->title]) }}">
                                         <i class="fa-regular fa-image" aria-hidden="true"></i>
                                     </a>
                                 @endif
@@ -79,7 +79,7 @@
                                         @if ($article->is_featured)
                                             <span class="school-news-featured">
                                                 <i class="fa-solid fa-star" aria-hidden="true"></i>
-                                                Featured
+                                                {{ __('public.news_page.featured') }}
                                             </span>
                                         @endif
                                     </div>
@@ -103,7 +103,7 @@
                                         @endif
 
                                         <a href="{{ $publicNewsUrl($article) }}">
-                                            Read More
+                                            {{ __('theme-school-of-signals::home.news.read_more') }}
                                             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                                         </a>
                                     </div>
@@ -113,7 +113,7 @@
                     </div>
 
                     @if ($news->hasPages())
-                        <nav class="school-news-pagination" aria-label="News pagination">
+                        <nav class="school-news-pagination" aria-label="{{ __('public.news_page.pagination') }}">
                             {{ $news->links() }}
                         </nav>
                     @endif

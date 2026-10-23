@@ -80,7 +80,7 @@
 
 
 
-    <form wire:submit="save" class="space-y-6">
+    <form wire:submit="save" wire:confirm="Save this news article as a draft?" class="space-y-6">
 
         @if ($translationSourceNewsId === null)
 
@@ -1598,7 +1598,7 @@
 
             @if ($translationSourceNewsId === null && auth()->user()?->can('news.publish'))
 
-                <button type="button" wire:click="saveAndPublish" wire:loading.attr="disabled"
+                <button type="button" wire:click="saveAndPublish" wire:confirm="Save and publish this news article now?" wire:loading.attr="disabled"
 
                     class="inline-flex items-center justify-center rounded-xl bg-emerald-700 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60">
 

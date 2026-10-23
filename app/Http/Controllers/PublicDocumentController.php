@@ -1,5 +1,7 @@
 <?php
+
 namespace App\Http\Controllers;
+
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\MediaAsset;

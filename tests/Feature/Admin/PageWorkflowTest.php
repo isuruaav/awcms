@@ -114,7 +114,7 @@ test('submitted page cannot be published directly', function (): void {
         ->toBe(PageStatus::Submitted->value);
 });
 
-test('published page can be archived', function (): void {
+test('published page cannot be archived because archive actions are retired', function (): void {
     $publisher = User::factory()->create();
     $publisher->assignRole('Publisher');
 
@@ -122,17 +122,14 @@ test('published page can be archived', function (): void {
         ->published()
         ->create();
 
-    Livewire::actingAs($publisher)
-        ->test(PageIndex::class)
-        ->call('archivePage', $page->id)
-        ->assertHasNoErrors();
-
-    $page->refresh();
+    expect(
+        fn () => app(PageWorkflowService::class)->archive($page, $publisher),
+    )->toThrow(ValidationException::class);
 
     expect($page->getRawOriginal('status'))
-        ->toBe(PageStatus::Archived->value)
-        ->and($page->archived_at)
-        ->not->toBeNull();
+        ->toBe(PageStatus::Published->value)
+        ->and($page->fresh()?->archived_at)
+        ->toBeNull();
 });
 
 test('workflow transitions create audit records', function (): void {

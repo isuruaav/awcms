@@ -798,57 +798,19 @@
                                             @if (!$isCurrent && $canRestoreVersion && $media)
                                                 @can('documents.update')
                                                     @if ($status === \App\Enums\DocumentStatus::Published)
-                                                        <button type="button"
+                                                        <x-admin.icon-action label="Restore v{{ $version->version }}" icon="arrow-uturn-left" tone="info"
+                                                            type="button"
                                                             wire:click="restoreVersion({{ $version->id }})"
                                                             wire:confirm="Restore PDF version {{ $version->version }}? This will immediately replace the current live PDF while keeping all versions in history."
                                                             wire:loading.attr="disabled" wire:target="restoreVersion"
-                                                            class="inline-flex
-                           items-center
-                           justify-center
-                           rounded-xl
-                           border border-amber-300
-                           bg-amber-50
-                           px-3 py-2
-                           text-xs font-bold
-                           text-amber-800
-                           transition
-                           hover:bg-amber-100
-                           disabled:cursor-not-allowed
-                           disabled:opacity-60">
-                                                            <span wire:loading.remove wire:target="restoreVersion">
-                                                                Restore v{{ $version->version }}
-                                                            </span>
-
-                                                            <span wire:loading wire:target="restoreVersion">
-                                                                Restoring...
-                                                            </span>
-                                                        </button>
+                                                        />
                                                     @elseif ($status === \App\Enums\DocumentStatus::Draft)
-                                                        <button type="button"
+                                                        <x-admin.icon-action label="Restore v{{ $version->version }}" icon="arrow-uturn-left" tone="info"
+                                                            type="button"
                                                             wire:click="restoreVersion({{ $version->id }})"
                                                             wire:confirm="Restore PDF version {{ $version->version }} as the current version?"
                                                             wire:loading.attr="disabled" wire:target="restoreVersion"
-                                                            class="inline-flex
-                           items-center
-                           justify-center
-                           rounded-xl
-                           border border-blue-300
-                           bg-blue-50
-                           px-3 py-2
-                           text-xs font-bold
-                           text-blue-700
-                           transition
-                           hover:bg-blue-100
-                           disabled:cursor-not-allowed
-                           disabled:opacity-60">
-                                                            <span wire:loading.remove wire:target="restoreVersion">
-                                                                Restore v{{ $version->version }}
-                                                            </span>
-
-                                                            <span wire:loading wire:target="restoreVersion">
-                                                                Restoring...
-                                                            </span>
-                                                        </button>
+                                                        />
                                                     @endif
                                                 @endcan
                                             @endif
@@ -1112,44 +1074,19 @@
                     }
                 }" class="mt-4
                            grid gap-2">
-                    <button type="button" x-on:click="copyLink"
-                        class="inline-flex
-                               w-full
-                               items-center
-                               justify-center
-                               rounded-xl
-                               border border-sky-200
-                               bg-sky-50
-                               px-4 py-2.5
-                               text-sm font-bold
-                               text-sky-700
-                               transition
-                               hover:bg-sky-100">
-                        <span x-show="!copied">
-                            Copy Public Link
-                        </span>
-
-                        <span x-show="copied" x-cloak>
-                            Copied
-                        </span>
-                    </button>
+                    <x-admin.icon-action label="Copy Public Link" icon="clipboard-document" tone="info"
+                        type="button" x-on:click="copyLink"
+                        x-bind:aria-label="copied ? 'Copied' : 'Copy Public Link'"
+                    >
+                        <flux:icon.clipboard-document class="size-4" x-show="!copied" />
+                        <flux:icon.check class="size-4" x-show="copied" x-cloak />
+                        <span class="sr-only" x-show="copied" x-cloak role="status">Copied</span>
+                    </x-admin.icon-action>
 
                     @if ($isPubliclyAvailable)
-                        <a href="{{ $stablePublicUrl }}" target="_blank" rel="noopener noreferrer"
-                            class="inline-flex
-                                   w-full
-                                   items-center
-                                   justify-center
-                                   rounded-xl
-                                   border border-emerald-200
-                                   bg-emerald-50
-                                   px-4 py-2.5
-                                   text-sm font-bold
-                                   text-emerald-700
-                                   transition
-                                   hover:bg-emerald-100">
-                            View Public Page
-                        </a>
+                        <x-admin.icon-action label="View Public Page" icon="arrow-top-right-on-square" tone="info"
+                            href="{{ $stablePublicUrl }}" target="_blank" rel="noopener noreferrer"
+                        />
                     @else
                         <div
                             class="rounded-xl
@@ -1343,21 +1280,10 @@
                     @can('documents.publish')
                         @if ($status === \App\Enums\DocumentStatus::Draft)
                             @if ($document->current_version > 0)
-                                <button type="button" wire:click="publish" wire:confirm="Publish this document?"
+                                <x-admin.icon-action label="Publish Document" icon="arrow-up-tray" tone="success"
+                                    type="button" wire:click="publish" wire:confirm="Publish this document?"
                                     wire:loading.attr="disabled" wire:target="publish"
-                                    class="inline-flex
-                                           w-full
-                                           items-center
-                                           justify-center
-                                           rounded-xl
-                                           bg-emerald-700
-                                           px-5 py-3
-                                           text-sm font-bold
-                                           text-white
-                                           hover:bg-emerald-800
-                                           disabled:opacity-60">
-                                    Publish Document
-                                </button>
+                                />
                             @else
                                 <div
                                     class="rounded-xl

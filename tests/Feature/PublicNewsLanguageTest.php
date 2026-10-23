@@ -1,9 +1,10 @@
+
 <?php
 
 use App\Enums\NewsLocale;
 use App\Models\News;
 
-test('english sinhala and tamil news are rendered from manually entered versions', function (): void {
+test('english and sinhala news are rendered with only supported public language links', function (): void {
     $english = News::factory()
         ->published()
         ->create([
@@ -27,6 +28,8 @@ test('english sinhala and tamil news are rendered from manually entered versions
             'content' => '<p>අනුමත සිංහල පුවත් අන්තර්ගතය.</p>',
         ]);
 
+    // Tamil is created only to verify it is not
+    // offered as a public language option.
     $tamil = News::factory()
         ->published()
         ->create([
@@ -37,6 +40,23 @@ test('english sinhala and tamil news are rendered from manually entered versions
             'content' => '<p>அங்கீகரிக்கப்பட்ட தமிழ் செய்தி உள்ளடக்கம்.</p>',
         ]);
 
+    $englishUrl = route(
+        'news.show.localized',
+        [
+            'locale' => NewsLocale::English->value,
+            'slug' => $english->slug,
+        ],
+    );
+
+    $tamilUrl = route(
+        'news.show.localized',
+        [
+            'locale' => NewsLocale::Tamil->value,
+            'slug' => $tamil->slug,
+        ],
+    );
+
+    // Verify English content and public language options.
     $this->get(
         route(
             'news.show',
@@ -47,8 +67,15 @@ test('english sinhala and tamil news are rendered from manually entered versions
     )
         ->assertOk()
         ->assertSee('Approved English news content.')
-        ->assertDontSee('අනුමත සිංහල පුවත් අන්තර්ගතය.');
+        ->assertDontSee('අනුමත සිංහල පුවත් අන්තර්ගතය.')
+        ->assertDontSee(
+            'href="'.$tamilUrl.'"',
+            false,
+        )
+        ->assertDontSee('hreflang="ta"', false)
+        ->assertDontSee('data-lang="ta"', false);
 
+    // Verify Sinhala content and public language options.
     $this->get(
         route(
             'news.show.localized',
@@ -62,26 +89,13 @@ test('english sinhala and tamil news are rendered from manually entered versions
         ->assertSee('lang="si"', false)
         ->assertSee('අනුමත සිංහල පුවත් අන්තර්ගතය.')
         ->assertDontSee('Approved English news content.')
-        ->assertSee(
-            route(
-                'news.show.localized',
-                [
-                    'locale' => NewsLocale::English->value,
-                    'slug' => $english->slug,
-                ],
-            ),
+        ->assertSee($englishUrl, false)
+        ->assertDontSee(
+            'href="'.$tamilUrl.'"',
             false,
         )
-        ->assertSee(
-            route(
-                'news.show.localized',
-                [
-                    'locale' => NewsLocale::Tamil->value,
-                    'slug' => $tamil->slug,
-                ],
-            ),
-            false,
-        );
+        ->assertDontSee('hreflang="ta"', false)
+        ->assertDontSee('data-lang="ta"', false);
 });
 
 test('an unpublished news translation is not offered as an active language link', function (): void {

@@ -11,15 +11,25 @@ use Illuminate\Http\Request;
 
 final class PublicContactController
 {
-    public function create(): View
+    public function create(Request $request): View
     {
+        $locale = $this->setLocale($request);
+
         return view('public.contact.index', [
             'settings' => SiteSetting::current(),
+            'languageVersions' => array_map(static fn (string $code): array => [
+                'code' => $code,
+                'available' => true,
+                'active' => $code === $locale,
+                'url' => $code === 'en' ? route('contact.create') : route('contact.create.localized', ['locale' => $code]),
+            ], ['en', 'si']),
         ]);
     }
 
     public function store(Request $request, ContentSanitizer $sanitizer): RedirectResponse
     {
+        $this->setLocale($request);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email:rfc', 'max:255'],
@@ -40,5 +50,14 @@ final class PublicContactController
         ]);
 
         return back()->with('status', 'Your message has been received.');
+    }
+
+    private function setLocale(Request $request): string
+    {
+        $locale = $request->route('locale', 'en');
+        $locale = is_string($locale) && in_array($locale, ['en', 'si'], true) ? $locale : 'en';
+        app()->setLocale($locale);
+
+        return $locale;
     }
 }

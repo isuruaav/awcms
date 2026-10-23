@@ -188,38 +188,67 @@
 
                     <div class="flex flex-wrap gap-2 pt-3">
                         @if ($recordState === 'trashed')
+                            @can('news.view')
+                                <x-admin.icon-action label="Preview" icon="eye" tone="neutral"
+                                    href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
+                                />
+                            @endcan
                             @can('news.delete')
-                                <button type="button" wire:click="restoreArticle({{ $article->id }})"
+                                <x-admin.icon-action label="Restore" icon="arrow-uturn-left" tone="success"
+                                    type="button" wire:click="restoreArticle({{ $article->id }})"
                                     wire:confirm="Restore this news article from Trash?"
-                                    class="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700">Restore</button>
+                                    wire:loading.attr="disabled"
+                                    wire:target="restoreArticle({{ $article->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="restoreArticle({{ $article->id }})"
+                                />
+                                <x-admin.icon-action label="Delete Permanently" icon="trash" tone="danger"
+                                    type="button" wire:click="forceDeleteArticle({{ $article->id }})"
+                                    wire:confirm="Permanently delete this news article and its revision history? This action cannot be undone."
+                                    wire:loading.attr="disabled"
+                                    wire:target="forceDeleteArticle({{ $article->id }})"
+                                    wire:loading.attr="disabled"
+                                    wire:target="forceDeleteArticle({{ $article->id }})"
+                                />
                             @endcan
                         @else
                             @can('news.view')
-                                <a href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
-                                    class="inline-flex flex-1 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50">Preview</a>
+                                <x-admin.icon-action label="Preview" icon="eye" tone="neutral"
+                                    href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
+                                />
                             @endcan
                             @if ($article->status === \App\Enums\NewsStatus::Published)
                                 @can('news.publish')
-                                    <button type="button" wire:click="unpublishArticle({{ $article->id }})"
+                                    <x-admin.icon-action label="Unpublish" icon="eye-slash" tone="warning"
+                                        type="button" wire:click="unpublishArticle({{ $article->id }})"
                                         wire:confirm="Unpublish this news article and return it to Draft?"
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100">Unpublish</button>
+                                        wire:loading.attr="disabled"
+                                        wire:target="unpublishArticle({{ $article->id }})"
+                                    />
                                 @endcan
                             @else
                                 @can('news.publish')
-                                    <button type="button" wire:click="publishArticle({{ $article->id }})"
+                                    <x-admin.icon-action label="Publish" icon="arrow-up-tray" tone="success"
+                                        type="button" wire:click="publishArticle({{ $article->id }})"
                                         wire:confirm="Publish this news article?"
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700">Publish</button>
+                                        wire:loading.attr="disabled"
+                                        wire:target="publishArticle({{ $article->id }})"
+                                    />
                                 @endcan
                             @endif
                             @if ($article->status === \App\Enums\NewsStatus::Draft)
                                 @can('news.update')
-                                    <a href="{{ route('admin.news.edit', $article) }}" wire:navigate
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-zinc-200 bg-white px-3 py-2 text-xs font-semibold text-zinc-700 shadow-sm hover:bg-zinc-50">Edit</a>
+                                    <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
+                                        href="{{ route('admin.news.edit', $article) }}" wire:navigate
+                                    />
                                 @endcan
                                 @can('news.delete')
-                                    <button type="button" wire:click="deleteArticle({{ $article->id }})"
+                                    <x-admin.icon-action label="Delete" icon="trash" tone="danger"
+                                        type="button" wire:click="deleteArticle({{ $article->id }})"
                                         wire:confirm="Move this draft news article to Trash?"
-                                        class="inline-flex flex-1 items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-100">Delete</button>
+                                        wire:loading.attr="disabled"
+                                        wire:target="deleteArticle({{ $article->id }})"
+                                    />
                                 @endcan
                             @endif
                         @endif
@@ -413,61 +442,66 @@
                             <td class="whitespace-nowrap py-4 pl-4 pr-6 text-right align-top">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if ($recordState === 'trashed')
+                                        @can('news.view')
+                                            <x-admin.icon-action label="Preview" icon="eye" tone="neutral"
+                                                href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
+                                            />
+                                        @endcan
                                         @can('news.delete')
-                                            <button type="button" wire:click="restoreArticle({{ $article->id }})"
+                                            <x-admin.icon-action label="Restore" icon="arrow-uturn-left" tone="success"
+                                                type="button" wire:click="restoreArticle({{ $article->id }})"
                                                 wire:confirm="Restore this news article from Trash?"
                                                 wire:loading.attr="disabled"
                                                 wire:target="restoreArticle({{ $article->id }})"
-                                                class="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50 transition-all">
-                                                Restore
-                                            </button>
+                                            />
+                                            <x-admin.icon-action label="Delete Permanently" icon="trash" tone="danger"
+                                                type="button" wire:click="forceDeleteArticle({{ $article->id }})"
+                                                wire:confirm="Permanently delete this news article and its revision history? This action cannot be undone."
+                                                wire:loading.attr="disabled"
+                                                wire:target="forceDeleteArticle({{ $article->id }})"
+                                            />
                                         @endcan
                                     @else
                                         @can('news.view')
-                                            <a href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
-                                                class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50 hover:text-zinc-900">
-                                                Preview
-                                            </a>
+                                            <x-admin.icon-action label="Preview" icon="eye" tone="neutral"
+                                                href="{{ route('admin.news.preview', $article) }}" target="_blank" rel="noopener noreferrer"
+                                            />
                                         @endcan
 
                                         @if ($article->status === \App\Enums\NewsStatus::Published)
                                             @can('news.publish')
-                                                <button type="button" wire:click="unpublishArticle({{ $article->id }})"
+                                                <x-admin.icon-action label="Unpublish" icon="eye-slash" tone="warning"
+                                                    type="button" wire:click="unpublishArticle({{ $article->id }})"
                                                     wire:confirm="Unpublish this news article and return it to Draft?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="unpublishArticle({{ $article->id }})"
-                                                    class="rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-800 transition-all hover:bg-amber-100 disabled:opacity-50">
-                                                    Unpublish
-                                                </button>
+                                                />
                                             @endcan
                                         @else
                                             @can('news.publish')
-                                                <button type="button" wire:click="publishArticle({{ $article->id }})"
+                                                <x-admin.icon-action label="Publish" icon="arrow-up-tray" tone="success"
+                                                    type="button" wire:click="publishArticle({{ $article->id }})"
                                                     wire:confirm="Publish this news article?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="publishArticle({{ $article->id }})"
-                                                    class="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-emerald-700 disabled:opacity-50">
-                                                    Publish
-                                                </button>
+                                                />
                                             @endcan
                                         @endif
 
                                         @if ($article->status === \App\Enums\NewsStatus::Draft)
                                             @can('news.update')
-                                                <a href="{{ route('admin.news.edit', $article) }}" wire:navigate
-                                                    class="rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-zinc-700 shadow-sm transition-all hover:bg-zinc-50">
-                                                    Edit
-                                                </a>
+                                                <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
+                                                    href="{{ route('admin.news.edit', $article) }}" wire:navigate
+                                                />
                                             @endcan
 
                                             @can('news.delete')
-                                                <button type="button" wire:click="deleteArticle({{ $article->id }})"
+                                                <x-admin.icon-action label="Delete" icon="trash" tone="danger"
+                                                    type="button" wire:click="deleteArticle({{ $article->id }})"
                                                     wire:confirm="Move this draft news article to Trash?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="deleteArticle({{ $article->id }})"
-                                                    class="rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-semibold text-red-700 transition-all hover:bg-red-100 disabled:opacity-50">
-                                                    Delete
-                                                </button>
+                                                />
                                             @endcan
                                         @endif
                                     @endif

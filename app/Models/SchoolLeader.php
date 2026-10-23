@@ -22,6 +22,11 @@ use Illuminate\Support\Carbon;
  * @property string|null $name_si
  * @property int|null $image_media_id
  * @property bool $is_active
+ * @property bool $profile_enabled
+ * @property string|null $profile_html_en
+ * @property string|null $profile_html_si
+ * @property string|null $profile_css
+ * @property string|null $profile_compiled_css
  * @property int $sort_order
  * @property int|null $created_by
  * @property int|null $updated_by
@@ -53,6 +58,11 @@ final class SchoolLeader extends Model
         'name_si',
         'image_media_id',
         'is_active',
+        'profile_enabled',
+        'profile_html_en',
+        'profile_html_si',
+        'profile_css',
+        'profile_compiled_css',
         'sort_order',
         'created_by',
         'updated_by',
@@ -69,6 +79,7 @@ final class SchoolLeader extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'is_active' => 'boolean',
+            'profile_enabled' => 'boolean',
             'sort_order' => 'integer',
             'created_by' => 'integer',
             'updated_by' => 'integer',
@@ -260,5 +271,27 @@ final class SchoolLeader extends Model
             ): string => $appointment->value,
             SchoolLeadershipAppointment::cases(),
         );
+    }
+
+    public function supportsProfile(): bool
+    {
+        return $this->is_active
+            && $this->position?->is_active;
+    }
+
+    public function hasPublicProfile(): bool
+    {
+        return $this->profile_enabled && $this->supportsProfile();
+    }
+
+    public function profileUrlForLocale(string $locale): ?string
+    {
+        if (! $this->hasPublicProfile() || ! in_array($locale, ['en', 'si'], true)) {
+            return null;
+        }
+
+        return $locale === 'en'
+            ? route('school-leadership.show', ['leader' => $this->id])
+            : route('school-leadership.show.localized', ['locale' => $locale, 'leader' => $this->id]);
     }
 }

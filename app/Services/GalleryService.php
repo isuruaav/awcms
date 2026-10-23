@@ -1556,6 +1556,7 @@ final class GalleryService
             )
             : null;
     }
+
     private function normaliseSinhalaTitle(string $title): ?string
     {
         $title = trim($title);
@@ -1565,5 +1566,4 @@ final class GalleryService
 
         return $title === '' ? null : $title;
     }
-
 }

@@ -30,7 +30,7 @@
         </div>
     @endif
 
-    @if (! $themeAvailable)
+    @if (!$themeAvailable)
         <section class="rounded-2xl border border-amber-200 bg-amber-50 p-6">
             <h2 class="font-bold text-amber-950">
                 No valid active theme is configured
@@ -46,7 +46,8 @@
         </section>
     @else
         <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-            <div class="flex flex-col gap-4 border-b border-zinc-200 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div
+                class="flex flex-col gap-4 border-b border-zinc-200 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wider text-zinc-500">
                         Active theme
@@ -68,22 +69,15 @@
                         </span>
 
                         @if (
-                            $layout->status->value === 'published'
-                            && (
-                                $layout->draft_html !== $layout->published_html
-                                || $layout->draft_css !== $layout->published_css
-                            )
-                        )
+                            $layout->status->value === 'published' &&
+                                ($layout->draft_html !== $layout->published_html || $layout->draft_css !== $layout->published_css))
                             <span class="rounded-full bg-amber-100 px-3 py-1 font-bold text-amber-800">
                                 Unpublished draft changes
                             </span>
                         @else
                             <span
                                 class="rounded-full px-3 py-1 font-bold
-                                    {{ $layout->status->value === 'published'
-                                        ? 'bg-emerald-100 text-emerald-800'
-                                        : 'bg-amber-100 text-amber-800' }}"
-                            >
+                                    {{ $layout->status->value === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
                                 {{ $layout->status->label() }}
                             </span>
                         @endif
@@ -111,24 +105,16 @@
                     Layout language
                 </p>
 
-                <div
-                    class="flex flex-wrap gap-2"
-                    role="tablist"
-                    aria-label="Theme layout language"
-                >
+                <div class="flex flex-wrap gap-2" role="tablist" aria-label="Theme layout language">
                     @foreach ($locales as $localeOption)
-                        <button
-                            type="button"
-                            wire:key="theme-layout-locale-{{ $localeOption->value }}"
+                        <button type="button" wire:key="theme-layout-locale-{{ $localeOption->value }}"
                             wire:click="selectLocale('{{ $localeOption->value }}')"
                             wire:confirm="Switch to {{ $localeOption->label() }}? Any unsaved editor changes will be discarded."
                             class="rounded-t-xl border border-b-0 px-5 py-3 text-sm font-bold
                                 {{ $locale === $localeOption->value
                                     ? 'border-zinc-300 bg-zinc-50 text-emerald-700'
                                     : 'border-transparent bg-white text-zinc-600 hover:bg-zinc-50 hover:text-zinc-950' }}"
-                            role="tab"
-                            aria-selected="{{ $locale === $localeOption->value ? 'true' : 'false' }}"
-                        >
+                            role="tab" aria-selected="{{ $locale === $localeOption->value ? 'true' : 'false' }}">
                             <span>{{ $localeOption->nativeLabel() }}</span>
 
                             <span class="ml-1 text-xs font-semibold opacity-60">
@@ -145,36 +131,24 @@
                     Layout region
                 </p>
 
-                <div
-                    class="flex flex-wrap gap-2"
-                    role="tablist"
-                    aria-label="Theme layout region"
-                >
-                    <button
-                        type="button"
-                        wire:click="selectRegion('header')"
+                <div class="flex flex-wrap gap-2" role="tablist" aria-label="Theme layout region">
+                    <button type="button" wire:click="selectRegion('header')"
                         wire:confirm="Switch to Header? Any unsaved editor changes will be discarded."
                         class="rounded-t-xl border border-b-0 px-5 py-3 text-sm font-bold
                             {{ $region === 'header'
                                 ? 'border-zinc-300 bg-white text-emerald-700'
                                 : 'border-transparent bg-zinc-100 text-zinc-600 hover:text-zinc-950' }}"
-                        role="tab"
-                        aria-selected="{{ $region === 'header' ? 'true' : 'false' }}"
-                    >
+                        role="tab" aria-selected="{{ $region === 'header' ? 'true' : 'false' }}">
                         Header / Top Bar / Navigation
                     </button>
 
-                    <button
-                        type="button"
-                        wire:click="selectRegion('footer')"
+                    <button type="button" wire:click="selectRegion('footer')"
                         wire:confirm="Switch to Footer? Any unsaved editor changes will be discarded."
                         class="rounded-t-xl border border-b-0 px-5 py-3 text-sm font-bold
                             {{ $region === 'footer'
                                 ? 'border-zinc-300 bg-white text-emerald-700'
                                 : 'border-transparent bg-zinc-100 text-zinc-600 hover:text-zinc-950' }}"
-                        role="tab"
-                        aria-selected="{{ $region === 'footer' ? 'true' : 'false' }}"
-                    >
+                        role="tab" aria-selected="{{ $region === 'footer' ? 'true' : 'false' }}">
                         Footer
                     </button>
                 </div>
@@ -193,7 +167,7 @@
                     </p>
 
                     <p class="mt-2 leading-6">
-                        Menu Builder remains the place to manage navigation items.
+                        Navigation items are managed by the configured site theme and existing menu data.
                         Use
                         <code class="font-mono">[[primary_menu]]</code>
                         inside the Header HTML to position the localized menu.
@@ -224,16 +198,10 @@
                         </span>
                     </div>
 
-                    <textarea
-                        id="layout-html"
-                        wire:model="layoutHtml"
-                        rows="24"
-                        spellcheck="false"
-                        autocapitalize="off"
+                    <textarea id="layout-html" wire:model="layoutHtml" rows="24" spellcheck="false" autocapitalize="off"
                         autocomplete="off"
                         class="w-full rounded-xl border border-zinc-300 bg-zinc-950 px-4 py-4 font-mono text-[13px] leading-6 text-zinc-100 shadow-inner focus:border-emerald-500 focus:ring-emerald-500"
-                        placeholder="<header>[[site_logo]] [[site_name]] [[primary_menu]]</header>"
-                    ></textarea>
+                        placeholder="<header>[[site_logo]] [[site_name]] [[primary_menu]]</header>"></textarea>
 
                     @error('layoutHtml')
                         <p class="mt-2 text-sm font-semibold text-red-600">
@@ -260,16 +228,10 @@
                         </span>
                     </div>
 
-                    <textarea
-                        id="layout-css"
-                        wire:model="layoutCss"
-                        rows="14"
-                        spellcheck="false"
-                        autocapitalize="off"
+                    <textarea id="layout-css" wire:model="layoutCss" rows="14" spellcheck="false" autocapitalize="off"
                         autocomplete="off"
                         class="w-full rounded-xl border border-zinc-300 bg-zinc-950 px-4 py-4 font-mono text-[13px] leading-6 text-zinc-100 shadow-inner focus:border-emerald-500 focus:ring-emerald-500"
-                        placeholder=".school-site-header { background: #0f172a; }"
-                    ></textarea>
+                        placeholder=".school-site-header { background: #0f172a; }"></textarea>
 
                     @error('layoutCss')
                         <p class="mt-2 text-sm font-semibold text-red-600">
@@ -278,22 +240,17 @@
                     @enderror
                 </div>
 
-                <div class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
-                    <button
-                        type="button"
-                        wire:click="publish"
+                <div
+                    class="flex flex-col-reverse gap-3 border-t border-zinc-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+                    <button type="button" wire:click="publish"
                         wire:confirm="Publish the saved {{ strtoupper($locale) }} {{ $region }} draft?"
                         wire:loading.attr="disabled"
-                        class="rounded-xl border border-emerald-700 px-5 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
+                        class="rounded-xl border border-emerald-700 px-5 py-3 text-sm font-bold text-emerald-700 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50">
                         Publish Saved Draft
                     </button>
 
-                    <button
-                        type="submit"
-                        wire:loading.attr="disabled"
-                        class="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
+                    <button type="submit" wire:loading.attr="disabled"
+                        class="rounded-xl bg-emerald-700 px-6 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50">
                         Save {{ strtoupper($locale) }} Draft
                     </button>
                 </div>
@@ -314,7 +271,8 @@
 
             <div class="grid gap-3 p-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($placeholders as $placeholder)
-                    <code class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-800">
+                    <code
+                        class="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs font-semibold text-zinc-800">
                         [[{{ $placeholder }}]]
                     </code>
                 @endforeach

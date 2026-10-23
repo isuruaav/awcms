@@ -1,4 +1,6 @@
 import './page-content-editor.js';
+import './copy-path.js';
+import './admin-confirmations.js';
 import Trix from 'trix';
 
 import Sortable from 'sortablejs';

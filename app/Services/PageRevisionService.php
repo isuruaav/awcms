@@ -122,6 +122,8 @@ final class PageRevisionService
                 $oldEditorMode =
                     $this->editorModeOf($page);
 
+                $oldCustomCss = $this->nullableString($page->custom_css);
+
                 $oldShowTitle =
                     (bool) $page->getAttribute('show_title');
 
@@ -177,6 +179,8 @@ final class PageRevisionService
                 $revisionEditorMode =
                     $this->editorModeOf($lockedRevision);
 
+                $revisionCustomCss = $this->nullableString($lockedRevision->custom_css);
+
                 $revisionShowTitle =
                     (bool) $lockedRevision->getAttribute('show_title');
 
@@ -226,6 +230,7 @@ final class PageRevisionService
                     || $oldSlug !== $restoredSlug
                     || $oldExcerpt !== $revisionExcerpt
                     || $oldContent !== $revisionContent
+                    || $oldCustomCss !== $revisionCustomCss
                     || $oldEditorMode !== $revisionEditorMode
                     || $oldShowTitle !== $revisionShowTitle
                     || $oldBlocks !== $revisionBlocks
@@ -268,6 +273,8 @@ final class PageRevisionService
                         : null,
 
                     'editor_mode' => $revisionEditorMode,
+
+                    'custom_css' => $revisionCustomCss,
 
                     'show_title' => $revisionShowTitle,
 
@@ -320,6 +327,8 @@ final class PageRevisionService
 
                         'content_length' => mb_strlen($oldContent),
 
+                        'custom_css_length' => mb_strlen($oldCustomCss ?? ''),
+
                         'editor_mode' => $oldEditorMode,
 
                         'show_title' => $oldShowTitle,
@@ -352,6 +361,8 @@ final class PageRevisionService
                         ),
 
                         'editor_mode' => $revisionEditorMode,
+
+                        'custom_css_length' => mb_strlen($revisionCustomCss ?? ''),
 
                         'show_title' => $revisionShowTitle,
 
@@ -408,6 +419,7 @@ final class PageRevisionService
          *     slug: string,
          *     excerpt: string|null,
          *     content: string|null,
+         *     custom_css: string|null,
          *     editor_mode: string,
          *     show_title: bool,
          *     seo_title: string|null,
@@ -435,6 +447,8 @@ final class PageRevisionService
             ),
 
             'editor_mode' => $this->editorModeOf($page),
+
+            'custom_css' => $this->nullableString($page->custom_css),
 
             'show_title' => (bool) $page->getAttribute('show_title'),
 
@@ -518,6 +532,8 @@ final class PageRevisionService
             'excerpt' => $snapshot['excerpt'],
 
             'content' => $snapshot['content'],
+
+            'custom_css' => $snapshot['custom_css'],
 
             'editor_mode' => $snapshot['editor_mode'],
 

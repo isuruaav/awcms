@@ -509,57 +509,19 @@
                                items-center gap-2"
                     >
                         @if ($canRestore)
-                            <button
+                            <x-admin.icon-action label="Restore Revision {{ $selectedRevision->revision_number }}" icon="arrow-uturn-left" tone="success"
                                 type="button"
                                 wire:click="restoreSelectedRevision"
                                 wire:confirm="Restore Revision {{ $selectedRevision->revision_number }}? The current article will first be saved as a backup revision."
                                 wire:loading.attr="disabled"
                                 wire:target="restoreSelectedRevision"
-                                class="inline-flex items-center
-                                       justify-center
-                                       rounded-xl
-                                       bg-emerald-700
-                                       px-4 py-2.5
-                                       text-sm font-bold
-                                       text-white
-                                       transition
-                                       hover:bg-emerald-800
-                                       disabled:cursor-not-allowed
-                                       disabled:opacity-60"
-                            >
-                                <span
-                                    wire:loading.remove
-                                    wire:target="restoreSelectedRevision"
-                                >
-                                    Restore Revision
-                                    {{ $selectedRevision->revision_number }}
-                                </span>
-
-                                <span
-                                    wire:loading
-                                    wire:target="restoreSelectedRevision"
-                                >
-                                    Restoring...
-                                </span>
-                            </button>
+                            />
                         @endif
 
-                        <button
+                        <x-admin.icon-action label="Close Preview" icon="x-mark" tone="neutral"
                             type="button"
                             wire:click="clearSelection"
-                            class="inline-flex items-center
-                                   justify-center
-                                   rounded-xl
-                                   border border-zinc-300
-                                   bg-white
-                                   px-4 py-2.5
-                                   text-sm font-semibold
-                                   text-zinc-700
-                                   transition
-                                   hover:bg-zinc-50"
-                        >
-                            Close Preview
-                        </button>
+                        />
                     </div>
                 </div>
 

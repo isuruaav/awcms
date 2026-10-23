@@ -27,13 +27,28 @@
                     <p class="mt-1 text-sm text-zinc-500">{{ $gallery->images_count }} images · {{ $published ? 'Published' : ($draft ? 'Draft' : 'Unpublished') }}</p>
                 </div>
                 <div class="flex shrink-0 flex-wrap gap-3 text-sm font-semibold">
-                    @can('galleries.update')<a href="{{ route('admin.galleries.edit', ['gallery' => $gallery->id]) }}" wire:navigate class="text-blue-700">Edit</a>@endcan
+                    @can('galleries.update')
+                        <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
+                            href="{{ route('admin.galleries.edit', ['gallery' => $gallery->id]) }}" wire:navigate
+                        />
+                    @endcan
                     @can('galleries.publish')
-                        @if ($draft)<button type="button" wire:click="publish({{ $gallery->id }})" wire:confirm="Publish this gallery?" wire:loading.attr="disabled" class="text-emerald-700">Publish</button>
-                        @else<button type="button" wire:click="unpublish({{ $gallery->id }})" wire:confirm="Return this gallery to Draft and keep its images?" wire:loading.attr="disabled" class="text-amber-800">{{ $published ? 'Unpublish' : 'Return to Draft' }}</button>@endif
+                        @if ($draft)
+                            <x-admin.icon-action label="Publish" icon="arrow-up-tray" tone="success"
+                                type="button" wire:click="publish({{ $gallery->id }})" wire:confirm="Publish this gallery?" wire:loading.attr="disabled"
+                            />
+                        @else
+                            <x-admin.icon-action label="{{ $published ? 'Unpublish' : 'Return to Draft' }}" icon="eye-slash" tone="warning"
+                                type="button" wire:click="unpublish({{ $gallery->id }})" wire:confirm="Return this gallery to Draft and keep its images?" wire:loading.attr="disabled"
+                            />
+                        @endif
                     @endcan
                     @can('galleries.delete')
-                        @if (! $published)<button type="button" wire:click="delete({{ $gallery->id }})" wire:confirm="Delete this gallery?" wire:loading.attr="disabled" class="text-red-700">Delete</button>@endif
+                        @if (! $published)
+                            <x-admin.icon-action label="Delete" icon="trash" tone="danger"
+                                type="button" wire:click="delete({{ $gallery->id }})" wire:confirm="Delete this gallery?" wire:loading.attr="disabled"
+                            />
+                        @endif
                     @endcan
                 </div>
             </article>

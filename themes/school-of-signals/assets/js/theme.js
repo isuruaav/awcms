@@ -7,6 +7,21 @@
 (function () {
   'use strict';
 
+  var labels = {};
+  try {
+    labels = JSON.parse(document.documentElement.getAttribute('data-theme-labels') || '{}');
+  } catch (error) {
+    labels = {};
+  }
+
+  function label(key, fallback) {
+    return typeof labels[key] === 'string' ? labels[key] : fallback;
+  }
+
+  function escapeAttribute(value) {
+    return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
 document.addEventListener('DOMContentLoaded', function () {
   initActiveNavigation();
   initMobileMenu();
@@ -18,7 +33,29 @@ document.addEventListener('DOMContentLoaded', function () {
   initImageFallbacks();
   initRevealAnimation();
   initScrollTop();
+  initLeadershipProfileFrames();
 });
+
+  function initLeadershipProfileFrames() {
+    qsa('[data-leadership-profile-frame]').forEach(function (frame) {
+      function observeContent() {
+        var body = frame.contentDocument && frame.contentDocument.body;
+        if (!body) return;
+        function fitHeight() {
+          frame.style.height = Math.max(1, Math.ceil(body.getBoundingClientRect().height)) + 'px';
+        }
+        fitHeight();
+        if ('ResizeObserver' in window) {
+          var observer = new ResizeObserver(fitHeight);
+          observer.observe(body);
+        } else {
+          window.addEventListener('resize', fitHeight);
+        }
+      }
+      frame.addEventListener('load', observeContent);
+      if (frame.contentDocument && frame.contentDocument.readyState === 'complete') observeContent();
+    });
+  }
   function qs(selector, parent) {
     return (parent || document).querySelector(selector);
   }
@@ -64,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var isOpen = mobileMenu.classList.toggle('open');
 
       mobileToggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-      mobileToggle.setAttribute('aria-label', isOpen ? 'Close menu' : 'Open menu');
+      mobileToggle.setAttribute('aria-label', isOpen ? label('close_menu', 'Close menu') : label('open_menu', 'Open menu'));
 
       var icon = qs('i', mobileToggle);
       if (icon) {
@@ -77,6 +114,7 @@ document.addEventListener('DOMContentLoaded', function () {
       link.addEventListener('click', function () {
         mobileMenu.classList.remove('open');
         mobileToggle.setAttribute('aria-expanded', 'false');
+        mobileToggle.setAttribute('aria-label', label('open_menu', 'Open menu'));
 
         var icon = qs('i', mobileToggle);
         if (icon) {
@@ -153,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var dot = document.createElement('button');
         dot.type = 'button';
         dot.className = 'carousel-dot' + (index === 0 ? ' active' : '');
-        dot.setAttribute('aria-label', 'Go to slide ' + (index + 1));
+        dot.setAttribute('aria-label', label('go_to_slide', 'Go to slide :number').replace(':number', index + 1));
         dot.setAttribute('aria-current', index === 0 ? 'true' : 'false');
         dot.addEventListener('click', function () {
           goToSlide(index);
@@ -251,7 +289,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (shouldShow) visible += 1;
       });
 
-      if (countEl) countEl.innerHTML = '<i class="fa-solid fa-list"></i> ' + visible + ' courses';
+      if (countEl) countEl.innerHTML = '<i class="fa-solid fa-list"></i> ' + escapeAttribute(label('course_count', ':number courses').replace(':number', visible));
       if (emptyState) emptyState.classList.toggle('show', visible === 0);
     }
 
@@ -311,8 +349,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       currentIndex = Math.max(0, cards.indexOf(card));
       lightboxImg.src = data.src;
-      lightboxImg.alt = data.title || 'Gallery image';
-      if (lightboxTitle) lightboxTitle.textContent = data.title || 'Gallery image';
+      lightboxImg.alt = data.title || label('gallery_image', 'Gallery image');
+      if (lightboxTitle) lightboxTitle.textContent = data.title || label('gallery_image', 'Gallery image');
 
       lightbox.classList.add('open');
       lightbox.classList.remove('hidden');
@@ -399,15 +437,15 @@ document.addEventListener('DOMContentLoaded', function () {
       lightbox.className = 'lightbox hidden';
       lightbox.setAttribute('aria-hidden', 'true');
       lightbox.innerHTML =
-        '<button class="lightbox-arrow lightbox-prev" id="lightboxPrev" type="button" aria-label="Previous image"><i class="fa-solid fa-chevron-left"></i></button>' +
+        '<button class="lightbox-arrow lightbox-prev" id="lightboxPrev" type="button" aria-label="' + escapeAttribute(label('previous_image', 'Previous image')) + '"><i class="fa-solid fa-chevron-left"></i></button>' +
         '<div class="lightbox-panel">' +
           '<div class="lightbox-top">' +
             '<strong class="lightbox-title" id="lightboxTitle">Gallery image</strong>' +
-            '<button class="lightbox-close" id="lightboxClose" type="button" aria-label="Close image"><i class="fa-solid fa-xmark"></i></button>' +
+            '<button class="lightbox-close" id="lightboxClose" type="button" aria-label="' + escapeAttribute(label('close_image', 'Close image')) + '"><i class="fa-solid fa-xmark"></i></button>' +
           '</div>' +
-          '<img class="lightbox-img" id="lightboxImg" alt="Gallery image">' +
+          '<img class="lightbox-img" id="lightboxImg" alt="' + escapeAttribute(label('gallery_image', 'Gallery image')) + '">' +
         '</div>' +
-        '<button class="lightbox-arrow lightbox-next" id="lightboxNext" type="button" aria-label="Next image"><i class="fa-solid fa-chevron-right"></i></button>';
+        '<button class="lightbox-arrow lightbox-next" id="lightboxNext" type="button" aria-label="' + escapeAttribute(label('next_image', 'Next image')) + '"><i class="fa-solid fa-chevron-right"></i></button>';
       document.body.appendChild(lightbox);
     }
 
@@ -492,7 +530,7 @@ document.addEventListener('DOMContentLoaded', function () {
       scrollTop.id = 'scrollTop';
       scrollTop.className = 'scroll-top';
       scrollTop.type = 'button';
-      scrollTop.setAttribute('aria-label', 'Scroll to top');
+      scrollTop.setAttribute('aria-label', label('scroll_top', 'Scroll to top'));
       scrollTop.innerHTML = '<i class="fa-solid fa-arrow-up"></i>';
       document.body.appendChild(scrollTop);
     }

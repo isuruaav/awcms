@@ -205,16 +205,46 @@ it('locks normal editing after publication', function (): void {
     ))->toThrow(ValidationException::class);
 });
 
-it('archives a published gallery', function (): void {
+it('rejects archiving a published gallery', function (): void {
     $gallery = Gallery::factory()->create();
-    $this->service->addImage(gallery: $gallery, media: galleryTestMedia($this->actor), actor: $this->actor);
+    $this->service->addImage(
+        gallery: $gallery,
+        media: galleryTestMedia($this->actor),
+        actor: $this->actor,
+    );
     $published = $this->service->publish(gallery: $gallery, actor: $this->actor);
-    $archived = $this->service->archive(gallery: $published, actor: $this->actor);
 
-    expect($archived->status)->toBe(GalleryStatus::Archived)
-        ->and($archived->archived_at)->not->toBeNull()
-        ->and($archived->archived_by)->toBe($this->actor->id)
-        ->and($archived->isPublished())->toBeFalse();
+    expect(fn () => $this->service->archive(
+        gallery: $published,
+        actor: $this->actor,
+    ))->toThrow(ValidationException::class, 'Archiving is no longer available.');
+
+    $published->refresh();
+
+    expect($published->status)->toBe(GalleryStatus::Published)
+        ->and($published->archived_at)->toBeNull()
+        ->and($published->archived_by)->toBeNull()
+        ->and($published->isPublished())->toBeTrue();
+});
+
+it('unpublishes a published gallery and returns it to draft', function (): void {
+    $gallery = Gallery::factory()->create();
+    $this->service->addImage(
+        gallery: $gallery,
+        media: galleryTestMedia($this->actor),
+        actor: $this->actor,
+    );
+    $published = $this->service->publish(gallery: $gallery, actor: $this->actor);
+
+    $draft = $this->service->unpublish(gallery: $published, actor: $this->actor);
+
+    expect($draft->status)->toBe(GalleryStatus::Draft)
+        ->and($draft->published_at)->toBeNull()
+        ->and($draft->published_by)->toBeNull()
+        ->and($draft->archived_at)->toBeNull()
+        ->and($draft->archived_by)->toBeNull()
+        ->and($draft->updated_by)->toBe($this->actor->id)
+        ->and($draft->isPublished())->toBeFalse();
 });
 
 it('does not delete a published gallery directly', function (): void {

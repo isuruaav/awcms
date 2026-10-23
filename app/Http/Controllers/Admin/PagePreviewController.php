@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\PageEditorMode;
 use App\Http\Controllers\Controller;
 use App\Models\Page;
 use App\Services\PageBlockRenderer;
@@ -23,15 +24,11 @@ final class PagePreviewController extends Controller
             app()->setLocale($pageLocale);
         }
 
-        $safeContent = app(
-            PageHtmlSanitizer::class,
-        )->sanitize(
-            is_string($page->content)
-                ? $page->content
-                : null,
-        );
-
-        // Existing code continues here.
+        $sanitizer = app(PageHtmlSanitizer::class);
+        $content = is_string($page->content) ? $page->content : null;
+        $safeContent = $page->getRawOriginal('editor_mode') === PageEditorMode::Visual->value
+            ? $sanitizer->sanitizeVisual($content)
+            : $sanitizer->sanitize($content);
 
         $pageBlocks = app(
             PageBlockRenderer::class,

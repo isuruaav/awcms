@@ -12,7 +12,6 @@ use App\Services\MediaDeletionService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 
 beforeEach(function (): void {
     $this->seed(

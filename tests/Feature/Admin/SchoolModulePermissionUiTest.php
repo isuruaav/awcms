@@ -1,8 +1,6 @@
 <?php
 
 use App\Livewire\Admin\HeroSlides\HeroSlideIndex;
-use App\Livewire\Admin\PastChiefInstructors\PastChiefInstructorIndex;
-use App\Livewire\Admin\PastCommandants\PastCommandantIndex;
 use App\Livewire\Admin\Roles\RolePermissionIndex;
 use App\Livewire\Admin\SchoolLeaders\SchoolLeaderIndex;
 use App\Models\User;
@@ -21,8 +19,6 @@ beforeEach(function (): void {
 foreach ([
     'hero-slides' => HeroSlideIndex::class,
     'school-leaders' => SchoolLeaderIndex::class,
-    'past-commandants' => PastCommandantIndex::class,
-    'past-chief-instructors' => PastChiefInstructorIndex::class,
 ] as $module => $component) {
     test($module.' view-only access hides the editor and rejects saving', function () use ($module, $component): void {
         $actor = User::factory()->create(['is_active' => true]);
@@ -40,8 +36,7 @@ foreach ([
 
 foreach ([
     'hero-slides' => HeroSlideIndex::class,
-    'past-commandants' => PastCommandantIndex::class,
-    'past-chief-instructors' => PastChiefInstructorIndex::class,
+    'school-leaders' => SchoolLeaderIndex::class,
 ] as $module => $component) {
     test($module.' view-only access rejects direct delete calls', function () use ($module, $component): void {
         $actor = User::factory()->create(['is_active' => true]);

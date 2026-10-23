@@ -7,8 +7,8 @@ use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
 use App\Models\Gallery;
 use App\Models\GalleryImage;
-use App\Services\PublicGalleryFeed;
 use App\Services\GalleryLocale;
+use App\Services\PublicGalleryFeed;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -157,6 +157,7 @@ final class PublicGalleryController extends Controller
             ],
         );
     }
+
     public function localizedIndex(string $locale, PublicGalleryFeed $feed): View
     {
         return $this->index($feed, $locale);
@@ -173,5 +174,4 @@ final class PublicGalleryController extends Controller
 
         return $this->newsAlbum($newsId, $feed, $locale);
     }
-
 }

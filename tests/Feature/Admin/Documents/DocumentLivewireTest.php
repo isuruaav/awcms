@@ -388,7 +388,7 @@ it(
 );
 
 it(
-    'allows a publisher to publish and archive a document',
+    'allows a publisher to publish a document but rejects archiving',
     function (): void {
         $publisher =
             documentLivewireUser(
@@ -444,18 +444,20 @@ it(
             ->call(
                 'archive',
             )
-            ->assertHasNoErrors();
+            ->assertHasErrors([
+                'workflow',
+            ]);
 
         $document->refresh();
 
         expect($document->status)
             ->toBe(
-                DocumentStatus::Archived,
+                DocumentStatus::Published,
             )
             ->and($document->archived_by)
-            ->toBe(
-                $publisher->id,
-            );
+            ->toBeNull()
+            ->and($document->archived_at)
+            ->toBeNull();
     },
 );
 
@@ -831,65 +833,38 @@ it(
     },
 );
 
-it(
-    'does not show restore controls for an archived document',
-    function (): void {
-        $publisher =
-            documentLivewireUser(
-                'Publisher',
-            );
+it('does not show restore controls for a legacy archived document', function (): void {
+    $publisher = documentLivewireUser('Publisher');
+    $document = documentLivewireDraft($publisher, 'Archived Livewire Restore');
+    $service = app(DocumentService::class);
 
-        $document =
-            documentLivewireDraft(
-                $publisher,
-                'Archived Livewire Restore',
-            );
+    $service->addVersion(
+        document: $document,
+        actor: $publisher,
+        media: documentLivewirePdf($publisher),
+    );
 
-        $service =
-            app(
-                DocumentService::class,
-            );
+    $service->addVersion(
+        document: $document->refresh(),
+        actor: $publisher,
+        media: documentLivewirePdf($publisher),
+    );
 
-        $service->addVersion(
-            document: $document,
-            actor: $publisher,
-            media: documentLivewirePdf(
-                $publisher,
-            ),
-        );
+    $published = $service->publish(
+        document: $document->refresh(),
+        actor: $publisher,
+    );
 
-        $service->addVersion(
-            document: $document->refresh(),
-            actor: $publisher,
-            media: documentLivewirePdf(
-                $publisher,
-            ),
-        );
+    // Simulate a legacy archived row without invoking the removed action.
+    $published->forceFill([
+        'status' => DocumentStatus::Archived->value,
+        'archived_at' => now(),
+        'archived_by' => $publisher->id,
+    ])->save();
 
-        $published =
-            $service->publish(
-                document: $document->refresh(),
-                actor: $publisher,
-            );
+    $this->actingAs($publisher);
 
-        $service->archive(
-            document: $published,
-            actor: $publisher,
-        );
-
-        $this->actingAs(
-            $publisher,
-        );
-
-        Livewire::test(
-            DocumentEdit::class,
-            [
-                'document' => $document->refresh(),
-            ],
-        )
-            ->assertOk()
-            ->assertDontSee(
-                'Restore v1',
-            );
-    },
-);
+    Livewire::test(DocumentEdit::class, ['document' => $published->refresh()])
+        ->assertOk()
+        ->assertDontSee('Restore v1');
+});

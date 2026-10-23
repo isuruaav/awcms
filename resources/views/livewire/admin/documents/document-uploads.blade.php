@@ -41,6 +41,23 @@
         </div>
     @endif
 
+    @if ($savedDocument)
+        <section class="space-y-3 rounded-xl border border-blue-200 bg-white p-5"
+            wire:key="saved-document-paths-{{ $savedDocument->id }}">
+            <h2 class="font-semibold text-zinc-900">{{ $savedDocument->title }}</h2>
+            <p class="text-sm text-zinc-600">
+                Copy a file path, then use the Document button in the page editor to add a document link before publishing.
+            </p>
+            <div class="grid gap-4 lg:grid-cols-2">
+                @foreach (['en' => 'English document path', 'si' => 'Sinhala document path'] as $code => $pathLabel)
+                    <x-admin.copy-path
+                        :path="route('document-files.view', ['locale' => $code, 'slug' => $savedDocument->slug])"
+                        :label="$pathLabel" />
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     @if ($errors->any())
         <div
             role="alert"
@@ -280,40 +297,21 @@
                                 <td class="px-4 py-4 align-top">
                                     @if ($document->isPublished())
                                         <div
-                                            x-data="{ copied: false }"
-                                            class="flex min-w-[180px] flex-wrap items-center gap-2"
+                                            class="flex min-w-max flex-wrap items-center gap-2"
                                         >
-                                            <a
+                                            <x-admin.icon-action label="View" icon="eye" tone="info"
                                                 href="{{ $englishViewUrl }}"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-100"
-                                            >
-                                                View
-                                            </a>
+                                            />
 
-                                            <a
+                                            <x-admin.icon-action label="Download" icon="arrow-down-tray" tone="success"
                                                 href="{{ $englishDownloadUrl }}"
-                                                class="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
-                                            >
-                                                Download
-                                            </a>
+                                            />
 
-                                            <button
-                                                type="button"
-                                                class="rounded-lg bg-zinc-100 px-2.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-200"
-                                                x-on:click="
-                                                    if (navigator.clipboard) {
-                                                        navigator.clipboard.writeText(@js($englishViewUrl))
-                                                            .then(() => { copied = true; })
-                                                            .catch(() => { copied = false; });
-                                                    }
-                                                "
-                                                x-text="copied ? 'Copied' : 'Copy'"
-                                            >
-                                                Copy
-                                            </button>
                                         </div>
+                                        <x-admin.copy-path :path="$englishViewUrl" label="English document path"
+                                            class="mt-3 min-w-64 max-w-sm" />
                                     @else
                                         <span class="text-xs font-semibold text-zinc-400">
                                             Not available
@@ -324,40 +322,21 @@
                                 <td class="px-4 py-4 align-top">
                                     @if ($document->isPublished())
                                         <div
-                                            x-data="{ copied: false }"
-                                            class="flex min-w-[180px] flex-wrap items-center gap-2"
+                                            class="flex min-w-max flex-wrap items-center gap-2"
                                         >
-                                            <a
+                                            <x-admin.icon-action label="View" icon="eye" tone="info"
                                                 href="{{ $sinhalaViewUrl }}"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="rounded-lg bg-sky-50 px-2.5 py-1.5 text-xs font-bold text-sky-700 hover:bg-sky-100"
-                                            >
-                                                View
-                                            </a>
+                                            />
 
-                                            <a
+                                            <x-admin.icon-action label="Download" icon="arrow-down-tray" tone="success"
                                                 href="{{ $sinhalaDownloadUrl }}"
-                                                class="rounded-lg bg-emerald-50 px-2.5 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
-                                            >
-                                                Download
-                                            </a>
+                                            />
 
-                                            <button
-                                                type="button"
-                                                class="rounded-lg bg-zinc-100 px-2.5 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-200"
-                                                x-on:click="
-                                                    if (navigator.clipboard) {
-                                                        navigator.clipboard.writeText(@js($sinhalaViewUrl))
-                                                            .then(() => { copied = true; })
-                                                            .catch(() => { copied = false; });
-                                                    }
-                                                "
-                                                x-text="copied ? 'Copied' : 'Copy'"
-                                            >
-                                                Copy
-                                            </button>
                                         </div>
+                                        <x-admin.copy-path :path="$sinhalaViewUrl" label="Sinhala document path"
+                                            class="mt-3 min-w-64 max-w-sm" />
                                     @else
                                         <span class="text-xs font-semibold text-zinc-400">
                                             Not available
@@ -379,26 +358,20 @@
                                     <td class="px-4 py-4 text-right align-top">
                                         <div class="flex flex-wrap justify-end gap-2">
                                             @if ($canUpdate)
-                                                <button
+                                                <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
                                                     type="button"
                                                     wire:click="edit({{ $document->id }})"
-                                                    class="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800"
-                                                >
-                                                    Edit
-                                                </button>
+                                                />
                                             @endif
 
                                             @if ($canDelete)
-                                                <button
+                                                <x-admin.icon-action label="Delete" icon="trash" tone="danger"
                                                     type="button"
                                                     wire:click="delete({{ $document->id }})"
                                                     wire:confirm="Delete this document? Its document links will no longer be available."
                                                     wire:loading.attr="disabled"
                                                     wire:target="delete({{ $document->id }})"
-                                                    class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                                                >
-                                                    Delete
-                                                </button>
+                                                />
                                             @endif
                                         </div>
                                     </td>

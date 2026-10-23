@@ -994,6 +994,12 @@ final class DocumentService
         Document $document,
         User $actor,
     ): Document {
+        Gate::forUser(
+            $actor,
+        )->authorize(
+            'documents.archive',
+        );
+
         throw ValidationException::withMessages([
             'workflow' => 'Archiving is no longer available.',
         ]);

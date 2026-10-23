@@ -61,7 +61,7 @@
                                 class="document-button document-button-light"
                                 href="{{ route('document-files.download', [
                                     'locale' => $currentLocale,
-                                    'uuid' => $document->uuid,
+                                    'slug' => $document->slug,
                                 ]) }}"
                             >
                                 {{ $isSinhala ? 'බාගත කරන්න' : 'Download' }}

@@ -34,7 +34,11 @@
                 </strong>
 
                 <div style="margin-top:3px;font-size:13px;color:#8a6715;">
-                    This is a preview of the current news article.
+                    @if ($news->trashed())
+                        This news article is in Trash. Restore it before making changes.
+                    @else
+                        This is a preview of the current news article.
+                    @endif
                 </div>
             </div>
 
@@ -60,7 +64,7 @@
                         font-weight:700;
                     "
                 >
-                    {{ $news->status->label() }}
+                    {{ $news->trashed() ? 'Trash' : $news->status->label() }}
                 </span>
             </div>
         </div>
@@ -76,7 +80,7 @@
 
                     <div class="sos-article-toolbar">
                         <a
-                            href="{{ route('admin.news.edit', $news) }}"
+                            href="{{ $news->trashed() ? route('admin.news.index', ['records' => 'trashed']) : route('admin.news.edit', $news) }}"
                             class="sos-article-back"
                         >
                             <i
@@ -84,7 +88,7 @@
                                 aria-hidden="true"
                             ></i>
 
-                            Back to Edit
+                            {{ $news->trashed() ? 'Back to Trash' : 'Back to Edit' }}
                         </a>
                     </div>
 

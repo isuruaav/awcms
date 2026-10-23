@@ -14,6 +14,34 @@
             : route('pages.show.localized', ['locale' => $homeLocale, 'slug' => $slug]);
         $newsIndexUrl =
             $homeLocale === 'en' ? route('news.index') : route('news.index.localized', ['locale' => $homeLocale]);
+        $contactUrl = route('pages.show.localized', ['locale' => $homeLocale, 'slug' => 'contact-us']);
+        $contactAddress = $settings?->localized('address');
+        $contactPhone = trim($settings?->phone_primary ?? '');
+        $contactPhoneNumber = preg_replace('/[^0-9+]/', '', $contactPhone);
+        $contactEmail = trim($settings?->email ?? '');
+        $contactEmailSubject = 'Inquiry - School of Signals';
+        $contactMailtoUrl = 'mailto:'.$contactEmail.'?subject='.rawurlencode($contactEmailSubject);
+        $contactGmailUrl = 'https://mail.google.com/mail/?'.http_build_query([
+            'view' => 'cm',
+            'fs' => '1',
+            'to' => $contactEmail,
+            'su' => $contactEmailSubject,
+        ], '', '&', PHP_QUERY_RFC3986);
+        $contactOutlookUrl = 'https://outlook.live.com/mail/deeplink/compose?'.http_build_query([
+            'to' => $contactEmail,
+            'subject' => $contactEmailSubject,
+        ], '', '&', PHP_QUERY_RFC3986);
+        $contactMapUrl = trim($settings?->map_url ?? '');
+
+        if (! filter_var($contactMapUrl, FILTER_VALIDATE_URL)
+            || ! in_array(strtolower(parse_url($contactMapUrl, PHP_URL_SCHEME) ?? ''), ['http', 'https'], true)) {
+            $contactMapUrl = 'https://www.google.com/maps/search/?api=1&query='.rawurlencode($contactAddress ?? '');
+        }
+
+        $schoolLeadershipUrl =
+            $homeLocale === 'en'
+                ? route('school-leadership.index')
+                : route('school-leadership.localized', ['locale' => $homeLocale]);
     @endphp
 
 @section('content')
@@ -30,7 +58,7 @@
 
                         $slideButtonLabel = $slideTranslation?->button_label ?? $slide->button_label;
 
-                        $slideButtonUrl = $slideTranslation?->button_url ?? $slide->button_url;
+                        $slideButtonUrl = $slide->resolvedButtonUrl($homeLocale);
 
                         $slideImage = $slide->image ? $mediaUrls->mediumOrOriginal($slide->image) : null;
                     @endphp
@@ -104,6 +132,27 @@
                 <div class="carousel-dots" id="carouselDots"
                     aria-label="{{ __('theme-school-of-signals::home.hero.carousel_navigation') }}"></div>
             @endif
+        </div>
+    </section>
+
+    <section class="sos-commandant-section" id="leadership"
+        aria-label="{{ __('theme-school-of-signals::home.leadership.title') }}">
+        <div class="container">
+            @if ($commandant = $schoolLeaders->first())
+                @include('theme-school-of-signals::partials.commandant-feature', [
+                    'commandant' => $commandant,
+                    'commandantLocale' => $homeLocale,
+                    'isCommandantProfile' => false,
+                    'commandantBackdrop' => $slides->first()?->image,
+                ])
+            @endif
+
+            <div class="sos-leadership-link">
+                <a class="btn btn-white" href="{{ $schoolLeadershipUrl }}">
+                    <span>{{ __('theme-school-of-signals::home.leadership.view_all') }}</span>
+                    <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
+                </a>
+            </div>
         </div>
     </section>
 
@@ -256,96 +305,6 @@
         </div>
     </section>
 
-    <?php if ($schoolLeaders->isNotEmpty()): ?>
-
-    <section class="section section-soft" id="leadership">
-        <div class="container">
-            <div class="section-head reveal">
-                <div>
-                    <p class="kicker">
-                        {{ __('theme-school-of-signals::home.leadership.kicker') }}
-                    </p>
-
-                    <h2 class="title-lg">
-                        {{ __('theme-school-of-signals::home.leadership.title') }}
-                    </h2>
-                </div>
-            </div>
-
-            <div class="leadership-grid">
-
-                <?php foreach ($schoolLeaders as $leader): ?>
-
-                <?php
-                $leaderImage = $leader->image ? $mediaUrls->mediumOrOriginal($leader->image) : null;
-                
-                $leaderName = $leader->nameForLocale($homeLocale);
-                $leaderRank = $leader->rankLabelForLocale($homeLocale);
-                ?>
-
-                <article class="card leader-card reveal">
-
-                    <?php if ($leaderImage): ?>
-
-                    <img src="{{ $leaderImage }}"
-                        alt="{{ $leaderName !== '' ? $leaderName : $leader->titleForLocale($homeLocale) }}"
-                        loading="lazy">
-
-                    <?php else: ?>
-
-                    <div class="leader-placeholder" aria-hidden="true">
-                        <i class="fa-solid fa-user-tie"></i>
-                    </div>
-
-                    <?php endif; ?>
-
-                    <div class="leader-body">
-
-                        <p class="role">
-                          {{ $leader->appointmentLabelForLocale($homeLocale) }}
-                        </p>
-
-                        <?php if ($leaderRank !== ''): ?>
-
-                        <p class="leader-rank">
-                            {{ $leaderRank }}
-                        </p>
-
-                        <?php endif; ?>
-
-                        <?php if ($leaderName !== ''): ?>
-
-                        <h3>
-                            {{ $leaderName }}
-                        </h3>
-
-                        <?php endif; ?>
-
-                        <?php if ($leader->start_date): ?>
-
-                        <p class="leader-period">
-                            <i class="fa-regular fa-calendar" aria-hidden="true"></i>
-
-                            <span>
-                                {{ $leader->start_date->format('d M Y') }}
-                                &ndash;
-                                Up to Date
-                            </span>
-                        </p>
-
-                        <?php endif; ?>
-
-                    </div>
-                </article>
-
-                <?php endforeach; ?>
-
-            </div>
-        </div>
-    </section>
-
-    <?php endif; ?>
-
     {{-- <section class="section" id="media">
         <div class="container">
             <div class="section-head reveal">
@@ -419,58 +378,87 @@
                         </h2>
 
                         <p class="school-contact-description">
-                            Contact the School of Signals for official inquiries,
-                            training information and administrative assistance.
+                            {{ __('theme-school-of-signals::home.contact.description') }}
                         </p>
                     </div>
                 </div>
 
                 <div class="school-contact-details">
-                    @if ($settings?->localized('address'))
-                        <a class="school-contact-item" href="{{ $settings->map_url ?: route('contact.create') }}">
+                    @if ($contactAddress)
+                        <a class="school-contact-item" href="{{ $contactMapUrl }}" target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="{{ __('theme-school-of-signals::home.contact.open_map', ['address' => $contactAddress]) }}">
                             <span class="school-contact-item-icon">
                                 <i class="fa-solid fa-location-dot" aria-hidden="true"></i>
                             </span>
 
                             <span>
-                                <small>Location</small>
-                                <strong>{{ $settings->localized('address') }}</strong>
+                                <small>{{ __('theme-school-of-signals::home.contact.location') }}</small>
+                                <strong>{{ $contactAddress }}</strong>
                             </span>
                         </a>
                     @endif
 
-                    @if ($settings?->phone_primary)
+                    @if ($contactPhoneNumber !== '')
                         <a class="school-contact-item"
-                            href="tel:{{ preg_replace('/[^0-9+]/', '', $settings->phone_primary) }}">
+                            href="tel:{{ $contactPhoneNumber }}"
+                            aria-label="{{ __('theme-school-of-signals::home.contact.call', ['phone' => $contactPhone]) }}">
                             <span class="school-contact-item-icon">
                                 <i class="fa-solid fa-phone" aria-hidden="true"></i>
                             </span>
 
                             <span>
-                                <small>Telephone</small>
-                                <strong>{{ $settings->phone_primary }}</strong>
+                                <small>{{ __('theme-school-of-signals::home.contact.telephone') }}</small>
+                                <strong>{{ $contactPhone }}</strong>
                             </span>
                         </a>
                     @endif
 
-                    @if ($settings?->email)
-                        <a class="school-contact-item" href="mailto:{{ $settings->email }}">
-                            <span class="school-contact-item-icon">
-                                <i class="fa-solid fa-envelope" aria-hidden="true"></i>
-                            </span>
+                    @if ($contactEmail !== '')
+                        <details class="school-contact-email">
+                            <summary class="school-contact-item">
+                                <span class="school-contact-item-icon">
+                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                                </span>
 
-                            <span>
-                                <small>Email Address</small>
-                                <strong>{{ $settings->email }}</strong>
-                            </span>
-                        </a>
+                                <span>
+                                    <small>{{ __('theme-school-of-signals::home.contact.email') }}</small>
+                                    <strong>{{ $contactEmail }}</strong>
+                                    <span class="school-contact-email-hint">
+                                        {{ __('theme-school-of-signals::home.contact.choose_email_app') }}
+                                        <i class="fa-solid fa-chevron-down school-contact-email-chevron" aria-hidden="true"></i>
+                                    </span>
+                                </span>
+                            </summary>
+
+                            <div class="school-contact-email-options" role="group"
+                                aria-label="{{ __('theme-school-of-signals::home.contact.choose_email_app') }}">
+                                <a href="{{ $contactGmailUrl }}" target="_blank" rel="noopener noreferrer"
+                                    aria-label="{{ __('theme-school-of-signals::home.contact.compose_with', ['provider' => 'Gmail', 'email' => $contactEmail]) }}">
+                                    <i class="fa-brands fa-google" aria-hidden="true"></i>
+                                    <span>Gmail</span>
+                                </a>
+                                <a href="{{ $contactOutlookUrl }}" target="_blank" rel="noopener noreferrer"
+                                    aria-label="{{ __('theme-school-of-signals::home.contact.compose_with', ['provider' => 'Outlook', 'email' => $contactEmail]) }}">
+                                    <i class="fa-brands fa-microsoft" aria-hidden="true"></i>
+                                    <span>Outlook</span>
+                                </a>
+                                <a href="{{ $contactMailtoUrl }}"
+                                    aria-label="{{ __('theme-school-of-signals::home.contact.send_email', ['email' => $contactEmail]) }}">
+                                    <i class="fa-solid fa-envelope" aria-hidden="true"></i>
+                                    <span>{{ __('theme-school-of-signals::home.contact.email_app') }}</span>
+                                </a>
+                            </div>
+                            <p class="school-contact-email-note">{{ __('theme-school-of-signals::home.contact.email_sign_in') }}</p>
+                        </details>
                     @endif
+
                 </div>
 
                 <div class="school-contact-action">
-                    <p>Need further assistance?</p>
+                    <p>{{ __('theme-school-of-signals::home.contact.assistance') }}</p>
 
-                    <a class="btn btn-green" href="{{ route('contact.create') }}">
+                    <a class="btn btn-green" href="{{ $contactUrl }}">
                         <i class="fa-solid fa-paper-plane" aria-hidden="true"></i>
                         <span>
                             {{ __('theme-school-of-signals::home.contact.button') }}
@@ -490,7 +478,7 @@
             <div class="cta-actions">
                 <a class="btn btn-green" href="{{ $pageUrl('courses') }}"><i
                         class="fa-solid fa-graduation-cap"></i><span>{{ __('theme-school-of-signals::home.cta.courses') }}</span></a>
-                <a class="btn btn-blue" href="{{ route('contact.create') }}"><i
+                <a class="btn btn-blue" href="{{ $contactUrl }}"><i
                         class="fa-solid fa-envelope"></i><span>{{ __('theme-school-of-signals::home.cta.contact') }}</span></a>
             </div>
         </div>

@@ -61,6 +61,10 @@
     @endif
 @endsection
 
+@push('styles')
+    <x-page.custom-styles :page="$page" />
+@endpush
+
 @section('content')
     @php
         $contactPattern = '~<(div|p)\b[^>]*>\s*\[\[contact_page\]\]\s*</\1>~i';
@@ -91,7 +95,7 @@
             <header class="section section-soft">
                 <div class="container">
                     <p class="kicker">
-                        {{ $page->locale->value === 'en' ? 'School Information' : $page->locale->label() }}
+                        {{ __('public.school_information') }}
                     </p>
 
                     @if ($page->show_title)
@@ -107,7 +111,7 @@
 
         @if ($safeContent !== '')
             @if ($page->getRawOriginal('editor_mode') === \App\Enums\PageEditorMode::Visual->value)
-                <section class="section white">
+                <section id="cms-page-{{ $page->getKey() }}" class="section white">
                     <div class="container">
                         <div class="awcms-content">
                             {!! $safeContent !!}
@@ -115,7 +119,7 @@
                     </div>
                 </section>
             @else
-                <div class="page-html-content">
+                <div id="cms-page-{{ $page->getKey() }}" class="page-html-content">
                     {!! $safeContent !!}
                 </div>
             @endif

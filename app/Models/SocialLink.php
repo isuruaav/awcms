@@ -19,6 +19,24 @@ use Illuminate\Support\Str;
  */
 final class SocialLink extends Model
 {
+    /** @var array<string, string> */
+    public const PLATFORM_ICONS = [
+        'Facebook' => 'fa-brands fa-facebook-f',
+        'Instagram' => 'fa-brands fa-instagram',
+        'YouTube' => 'fa-brands fa-youtube',
+        'X (Twitter)' => 'fa-brands fa-x-twitter',
+        'LinkedIn' => 'fa-brands fa-linkedin-in',
+        'TikTok' => 'fa-brands fa-tiktok',
+        'WhatsApp' => 'fa-brands fa-whatsapp',
+        'Telegram' => 'fa-brands fa-telegram',
+        'Threads' => 'fa-brands fa-threads',
+        'Pinterest' => 'fa-brands fa-pinterest-p',
+        'Flickr' => 'fa-brands fa-flickr',
+        'Vimeo' => 'fa-brands fa-vimeo-v',
+        'Discord' => 'fa-brands fa-discord',
+        'Website' => 'fa-solid fa-globe',
+    ];
+
     /** @var list<string> */
     protected $fillable = [
         'platform',
@@ -51,6 +69,18 @@ final class SocialLink extends Model
             'is_active' => 'boolean',
             'sort_order' => 'integer',
         ];
+    }
+
+    public function iconClass(): string
+    {
+        $platform = strtolower(trim($this->platform));
+        $platform = match ($platform) {
+            'fb' => 'facebook',
+            'x', 'twitter', 'x/twitter', 'twitter/x' => 'x (twitter)',
+            default => $platform,
+        };
+
+        return array_change_key_case(self::PLATFORM_ICONS, CASE_LOWER)[$platform] ?? 'fa-solid fa-link';
     }
 
     /**

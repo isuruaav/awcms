@@ -16,6 +16,7 @@ use DateTimeInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 
 final class DocumentEdit extends Component
@@ -304,7 +305,7 @@ final class DocumentEdit extends Component
 
     public function archive(): void
     {
-        throw \Illuminate\Validation\ValidationException::withMessages([
+        throw ValidationException::withMessages([
             'workflow' => 'Archiving is no longer available.',
         ]);
     }

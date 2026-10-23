@@ -193,6 +193,20 @@ final class NewsIndex extends Component
         );
     }
 
+    public function forceDeleteArticle(int $newsId): void
+    {
+        Gate::authorize('news.delete');
+
+        $news = News::withTrashed()->findOrFail($newsId);
+        $title = $news->title;
+
+        app(NewsDeletionService::class)->forceDelete($newsId, $this->actor());
+
+        $this->resetPage();
+
+        session()->flash('status', "{$title} was permanently deleted.");
+    }
+
     public function render(): View
     {
         Gate::authorize('news.view');

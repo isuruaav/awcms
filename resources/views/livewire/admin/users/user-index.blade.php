@@ -371,22 +371,13 @@
                                 >
                                     @can('users.update')
                                         @if ($canManage)
-                                            <a
+                                            <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
                                                 href="{{ route(
                                                     'admin.users.edit',
                                                     ['user' => $user->id],
                                                 ) }}"
                                                 wire:navigate
-                                                class="rounded-lg border
-                                                       border-zinc-300
-                                                       bg-white px-3 py-2
-                                                       text-xs font-semibold
-                                                       text-zinc-700
-                                                       transition
-                                                       hover:bg-zinc-100"
-                                            >
-                                                Edit
-                                            </a>
+                                            />
                                         @endif
                                     @endcan
 
@@ -395,26 +386,13 @@
                                             $canManage
                                             && auth()->id() !== $user->id
                                         )
-                                            <button
+                                            <x-admin.icon-action label="{{ $user->is_active ? 'Disable' : 'Activate' }}" :icon="$user->is_active ? 'pause-circle' : 'play-circle'" :tone="$user->is_active ? 'warning' : 'success'"
                                                 type="button"
                                                 wire:click="toggleActive({{ $user->id }})"
                                                 wire:loading.attr="disabled"
                                                 wire:target="toggleActive({{ $user->id }})"
                                                 wire:confirm="Are you sure you want to {{ $user->is_active ? 'disable' : 'activate' }} this account?"
-                                                class="rounded-lg border
-                                                       px-3 py-2
-                                                       text-xs font-semibold
-                                                       transition
-                                                       disabled:cursor-not-allowed
-                                                       disabled:opacity-60
-                                                       {{ $user->is_active
-                                                           ? 'border-red-200 text-red-700 hover:bg-red-50'
-                                                           : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50' }}"
-                                            >
-                                                {{ $user->is_active
-                                                    ? 'Disable'
-                                                    : 'Activate' }}
-                                            </button>
+                                            />
                                         @elseif (! $canManage)
                                             <span
                                                 class="self-center text-xs

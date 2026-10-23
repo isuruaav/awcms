@@ -89,7 +89,7 @@ final class ThemeLayoutRenderer
         $siteTagline = $siteSettings?->localized('site_tagline', $locale) ?? $siteTagline;
 
         $replacements = [
-            '[[site_logo]]' => $this->siteLogo($logoUrl, $siteName),
+            '[[site_logo]]' => $this->siteLogo($logoUrl, $siteName, $locale),
             '[[site_name]]' => $this->escape($siteName),
             '[[site_tagline]]' => $this->escape($siteTagline),
             '[[footer_text]]' => nl2br(
@@ -101,13 +101,13 @@ final class ThemeLayoutRenderer
                 $primaryMenu,
                 $locale,
             ),
-            '[[mobile_menu_toggle]]' => $this->mobileMenuToggle(),
+            '[[mobile_menu_toggle]]' => $this->mobileMenuToggle($locale),
             '[[language_switcher]]' => $this->languageSwitcher(
                 $languageOptions,
                 $locale,
                 $themeSlug,
             ),
-            '[[social_links]]' => $this->socialLinks($socialLinks),
+            '[[social_links]]' => $this->socialLinks($socialLinks, $locale),
             '[[contact_details]]' => $this->contactDetails($siteSettings, $locale),
             '[[copyright_year]]' => (string) now()->year,
         ];
@@ -157,7 +157,7 @@ final class ThemeLayoutRenderer
             : null;
     }
 
-    private function siteLogo(?string $logoUrl, string $siteName): string
+    private function siteLogo(?string $logoUrl, string $siteName, string $locale): string
     {
         if (! is_string($logoUrl) || trim($logoUrl) === '') {
             return '';
@@ -172,15 +172,17 @@ final class ThemeLayoutRenderer
         return '<img class="cms-site-logo" src="'
             .$this->escape($safeLogoUrl)
             .'" alt="'
-            .$this->escape($siteName)
-            .' logo">';
+            .$this->escape(__('public.logo_label', ['name' => $siteName], $locale))
+            .'">';
     }
 
-    private function mobileMenuToggle(): string
+    private function mobileMenuToggle(string $locale): string
     {
-        return '<button id="mobileToggle" class="mobile-btn cms-mobile-menu-toggle" type="button" aria-label="Open menu" aria-controls="mobileMenu" aria-expanded="false" data-mobile-toggle>'
+        return '<button id="mobileToggle" class="mobile-btn cms-mobile-menu-toggle" type="button" aria-label="'
+            .$this->escape(__('public.open_menu', [], $locale))
+            .'" aria-controls="mobileMenu" aria-expanded="false" data-mobile-toggle>'
             .'<i class="fa-solid fa-bars" aria-hidden="true"></i>'
-            .'<span class="cms-mobile-menu-toggle-label">Menu</span>'
+            .'<span class="cms-mobile-menu-toggle-label">'.$this->escape(__('public.menu', [], $locale)).'</span>'
             .'</button>';
     }
 
@@ -191,9 +193,11 @@ final class ThemeLayoutRenderer
         $menuHtml = $this->primaryMenu($menu, $locale);
 
         return '<div class="cms-responsive-navigation">'
-            .'<button id="mobileToggle" class="cms-mobile-menu-toggle" type="button" aria-label="Open menu" aria-expanded="false" data-mobile-toggle>'
+            .'<button id="mobileToggle" class="cms-mobile-menu-toggle" type="button" aria-label="'
+            .$this->escape(__('public.open_menu', [], $locale))
+            .'" aria-expanded="false" data-mobile-toggle>'
             .'<i class="fa-solid fa-bars" aria-hidden="true"></i>'
-            .'<span>Menu</span>'
+            .'<span>'.$this->escape(__('public.menu', [], $locale)).'</span>'
             .'</button>'
             .'<div id="mobileMenu" class="cms-responsive-menu-panel" data-mobile-menu>'
             .$menuHtml
@@ -282,9 +286,9 @@ final class ThemeLayoutRenderer
             ]);
 
         $links = [
-            'Home' => route('home'),
-            'News' => $newsUrl,
-            'Gallery' => route('galleries.index'),
+            __('public.home', [], $locale) => $locale === 'en' ? route('home') : route('home.localized', ['locale' => $locale]),
+            __('public.news', [], $locale) => $newsUrl,
+            __('public.gallery', [], $locale) => GalleryLocale::indexUrl($locale),
         ];
 
         $html = '<ul class="cms-primary-menu">';
@@ -417,7 +421,7 @@ final class ThemeLayoutRenderer
                 .'</span>';
         }
 
-        return '<nav class="cms-language-switcher" aria-label="Language selection">'
+        return '<nav class="cms-language-switcher" aria-label="'.$this->escape(__('public.language_selection', [], $currentLocale)).'">'
             .$links
             .'</nav>';
     }
@@ -456,7 +460,7 @@ final class ThemeLayoutRenderer
     /**
      * @param  iterable<SocialLink>  $socialLinks
      */
-    private function socialLinks(iterable $socialLinks): string
+    private function socialLinks(iterable $socialLinks, string $locale): string
     {
         $links = '';
 
@@ -474,14 +478,15 @@ final class ThemeLayoutRenderer
 
             $links .= '<a class="cms-social-link" href="'
                 .$this->escape($url)
-                .'" target="_blank" rel="noopener noreferrer">'
-                .$this->escape($label)
+                .'" target="_blank" rel="noopener noreferrer"'
+                .' aria-label="'.$this->escape($label).'" title="'.$this->escape($label).'">'
+                .'<i class="'.$socialLink->iconClass().'" aria-hidden="true"></i>'
                 .'</a>';
         }
 
         return $links === ''
             ? ''
-            : '<nav class="cms-social-links" aria-label="Social media">'
+            : '<nav class="cms-social-links" aria-label="'.$this->escape(__('public.social_media', [], $locale)).'">'
                 .$links
                 .'</nav>';
     }

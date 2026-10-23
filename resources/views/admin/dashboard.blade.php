@@ -88,11 +88,7 @@
                                 class="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 text-sm font-bold text-zinc-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"><span>Create
                                     Document</span><span aria-hidden="true">→</span></a>
                         @endcan
-                        @can('menus.manage')
-                            <a href="{{ route('admin.menus.index') }}" wire:navigate
-                                class="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 text-sm font-bold text-zinc-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"><span>Manage
-                                    Navigation</span><span aria-hidden="true">→</span></a>
-                        @endcan
+
                         @can('settings.manage')
                             <a href="{{ route('admin.site-settings.index') }}" wire:navigate
                                 class="flex items-center justify-between rounded-xl border border-zinc-200 px-4 py-3 text-sm font-bold text-zinc-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-800"><span>Site

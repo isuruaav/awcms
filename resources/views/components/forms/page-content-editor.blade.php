@@ -120,6 +120,9 @@
                 <button type="button" class="awcms-page-editor-button" title="Insert image"
                     aria-label="Insert image" x-on:mousedown.prevent="rememberSelection()"
                     x-on:click="insertImage()">Image</button>
+                <button type="button" class="awcms-page-editor-button" title="Insert document"
+                    aria-label="Insert document" x-on:mousedown.prevent="rememberSelection()"
+                    x-on:click="insertDocument()">Document</button>
                 <button type="button" class="awcms-page-editor-button" title="Insert table"
                     aria-label="Insert table" x-on:mousedown.prevent="rememberSelection()"
                     x-on:click="insertTable()">Table</button>
@@ -163,12 +166,13 @@
 
             <div class="rounded-xl border border-sky-200 bg-sky-50 p-4">
                 <p class="text-sm font-semibold text-sky-950">
-                    Images
+                    Images and documents
                 </p>
 
                 <p class="mt-1 text-sm leading-6 text-sky-800">
-                    Use the Image button and paste a public image URL. For managed website images,
-                    upload/select the image in AWCMS Media Library and use its public URL.
+                    Upload an image in Media Library, click Copy Path, then paste it using the Image button.
+                    For documents, copy a path from Document Uploads or Media Library and use the Document button.
+                    Publish the page to display its images and document links.
                 </p>
             </div>
         </div>

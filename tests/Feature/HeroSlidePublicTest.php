@@ -2,6 +2,7 @@
 
 use App\Enums\PageLocale;
 use App\Models\HeroSlide;
+use App\Models\Page;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -19,6 +20,57 @@ beforeEach(function (): void {
             PageLocale::Sinhala->value,
         ],
     );
+});
+
+it('renders working hero page links when the website is installed in a subdirectory', function (string $locale, string $storedUrl, string $expectedPath, ?string $theme): void {
+    config(['awcms.active_theme' => $theme]);
+
+    Page::factory()->published()->create([
+        'locale' => $locale,
+        'slug' => $locale === 'en' ? 'aboutus' : 'siaboutus',
+        'content' => '<p>Hero button destination</p>',
+    ]);
+    $slide = HeroSlide::query()->create([
+        'title' => 'School slide',
+        'button_label' => 'About Our School',
+        'button_url' => '/page/aboutus',
+        'is_active' => true,
+    ]);
+    $slide->translations()->create([
+        'locale' => $locale,
+        'title' => 'School slide',
+        'button_label' => 'Visit school page',
+        'button_url' => $storedUrl,
+    ]);
+
+    $this->withServerVariables([
+        'SCRIPT_NAME' => '/sch_of_slsc/public/index.php',
+        'SCRIPT_FILENAME' => public_path('index.php'),
+        'PHP_SELF' => '/sch_of_slsc/public/index.php',
+    ]);
+
+    $homepage = 'http://localhost/sch_of_slsc/public/'.$locale;
+    $destination = 'http://localhost/sch_of_slsc/public'.$expectedPath;
+
+    $this->get($homepage)->assertOk()->assertSee('href="'.$destination.'"', false);
+    $this->get($destination)->assertOk()->assertSee('Hero button destination');
+})->with([
+    'saved English URL' => ['en', '/page/aboutus', '/pages/aboutus'],
+    'saved Sinhala URL' => ['si', '/si/page/siaboutus', '/si/pages/siaboutus'],
+    'canonical English URL' => ['en', '/en/pages/aboutus', '/en/pages/aboutus'],
+    'prefixed local URL' => ['en', '/sch_of_slsc/public/en/pages/aboutus', '/en/pages/aboutus'],
+])->with(['school-of-signals', null]);
+
+it('keeps external hero button destinations unchanged', function (): void {
+    HeroSlide::query()->create([
+        'title' => 'External training',
+        'button_label' => 'Training portal',
+        'button_url' => 'https://training.example/page/aboutus?course=signals',
+        'is_active' => true,
+    ]);
+
+    $this->get(route('home'))->assertOk()
+        ->assertSee('href="https://training.example/page/aboutus?course=signals"', false);
 });
 
 it('renders hero slide content in the requested homepage language', function (): void {

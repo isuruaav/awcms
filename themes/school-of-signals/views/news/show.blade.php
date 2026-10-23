@@ -66,7 +66,7 @@
                 <div class="sos-article-container">
                     <div class="sos-article-toolbar">
                         <a class="sos-article-back" href="{{ $indexUrl }}">
-                            ← All News
+                            ← {{ __('theme-school-of-signals::home.news.all') }}
                         </a>
                     </div>
 
@@ -78,7 +78,7 @@
                         @endif
 
                         @if ($news->is_featured)
-                            <span class="sos-article-featured">Featured</span>
+                            <span class="sos-article-featured">{{ __('public.news_page.featured') }}</span>
                         @endif
 
                         @if ($news->published_at)
@@ -117,7 +117,7 @@
                 <section class="sos-article-gallery-section" aria-labelledby="article-gallery-title" data-news-gallery>
                     <div class="sos-article-container">
                         <h2 id="article-gallery-title">
-                            Event Photographs
+                            {{ __('public.news_page.event_photos') }}
                         </h2>
 
                         <div class="sos-article-gallery">
@@ -126,7 +126,7 @@
                                     <button type="button" class="sos-article-photo-button" data-gallery-open
                                         data-gallery-index="{{ $loop->index }}" data-full-url="{{ $photo['url'] }}"
                                         data-alt="{{ $photo['alt'] }}" data-caption="{{ $photo['caption'] ?? '' }}"
-                                        aria-label="Open photograph {{ $loop->iteration }}">
+                                        aria-label="{{ __('public.news_page.open_photo', ['number' => $loop->iteration]) }}">
                                         <img src="{{ $photo['url'] }}" alt="{{ $photo['alt'] }}" loading="lazy">
 
                                         <span class="sos-photo-zoom-icon">
@@ -145,14 +145,14 @@
                     </div>
 
                     <div class="sos-lightbox" data-gallery-lightbox role="dialog" aria-modal="true"
-                        aria-label="Photograph viewer" hidden>
-                        <button type="button" class="sos-lightbox-close" data-gallery-close aria-label="Close photographs">
+                        aria-label="{{ __('public.news_page.photo_viewer') }}" hidden>
+                        <button type="button" class="sos-lightbox-close" data-gallery-close aria-label="{{ __('public.news_page.close_photos') }}">
                             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
                         </button>
 
                         @if ($galleryItems->count() > 1)
                             <button type="button" class="sos-lightbox-arrow sos-lightbox-prev" data-gallery-prev
-                                aria-label="Previous photograph">
+                                aria-label="{{ __('public.news_page.previous_photo') }}">
                                 <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                             </button>
                         @endif
@@ -167,7 +167,7 @@
 
                         @if ($galleryItems->count() > 1)
                             <button type="button" class="sos-lightbox-arrow sos-lightbox-next" data-gallery-next
-                                aria-label="Next photograph">
+                                aria-label="{{ __('public.news_page.next_photo') }}">
                                 <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                             </button>
                         @endif
@@ -189,16 +189,16 @@
                     <div class="sos-related-heading">
                         <div>
                             <p class="sos-related-eyebrow">
-                                Continue Reading
+                                {{ __('public.news_page.continue_reading') }}
                             </p>
 
                             <h2 id="related-articles-title">
-                                Related News
+                                {{ __('public.news_page.related') }}
                             </h2>
                         </div>
 
                         <a href="{{ $indexUrl }}" class="sos-related-view-all">
-                            View All News
+                            {{ __('public.news_page.view_all') }}
 
                             <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                         </a>
@@ -207,7 +207,7 @@
                     <div class="sos-related-carousel">
 
                         <button type="button" class="sos-related-arrow sos-related-arrow-left" data-related-prev
-                            aria-label="Previous related news">
+                            aria-label="{{ __('public.news_page.previous_related') }}">
                             <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
                         </button>
 
@@ -236,7 +236,7 @@
                                     @endif
 
                                     <a class="sos-article-back sos-related-read-more" href="{{ $articleUrl($related) }}">
-                                        Read Article
+                                        {{ __('public.news_page.read_article') }}
 
                                         <i class="fa-solid fa-arrow-right" aria-hidden="true"></i>
                                     </a>
@@ -246,7 +246,7 @@
                         </div>
 
                         <button type="button" class="sos-related-arrow sos-related-arrow-right" data-related-next
-                            aria-label="Next related news">
+                            aria-label="{{ __('public.news_page.next_related') }}">
                             <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
                         </button>
 

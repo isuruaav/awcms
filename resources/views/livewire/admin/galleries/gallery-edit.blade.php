@@ -35,17 +35,20 @@
         <div class="flex flex-wrap gap-3 border-t border-zinc-200 pt-5">
             @can('galleries.publish')
                 @if ($editable)
-                    <button type="button" wire:click="publish" wire:confirm="Save the title and publish this gallery?" wire:loading.attr="disabled"
-                        class="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Publish</button>
+                    <x-admin.icon-action label="Publish" icon="arrow-up-tray" tone="success"
+                        type="button" wire:click="publish" wire:confirm="Save the title and publish this gallery?" wire:loading.attr="disabled"
+                    />
                 @else
-                    <button type="button" wire:click="unpublish" wire:confirm="Return this gallery to Draft? Its images will be kept." wire:loading.attr="disabled"
-                        class="rounded-xl bg-amber-100 px-5 py-3 text-sm font-semibold text-amber-900 disabled:opacity-50">{{ $published ? 'Unpublish' : 'Return to Draft' }}</button>
+                    <x-admin.icon-action label="{{ $published ? 'Unpublish' : 'Return to Draft' }}" icon="eye-slash" tone="warning"
+                        type="button" wire:click="unpublish" wire:confirm="Return this gallery to Draft? Its images will be kept." wire:loading.attr="disabled"
+                    />
                 @endif
             @endcan
             @can('galleries.delete')
                 @if (! $published)
-                    <button type="button" wire:click="delete" wire:confirm="Delete this gallery?" wire:loading.attr="disabled"
-                        class="rounded-xl bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 disabled:opacity-50">Delete Gallery</button>
+                    <x-admin.icon-action label="Delete Gallery" icon="trash" tone="danger"
+                        type="button" wire:click="delete" wire:confirm="Delete this gallery?" wire:loading.attr="disabled"
+                    />
                 @endif
             @endcan
         </div>
@@ -76,12 +79,24 @@
                         @endif
                         @if ($editable)
                             <div class="flex flex-wrap gap-3">
-                                <button type="button" wire:click="selectCover({{ $image->id }})" wire:loading.attr="disabled" class="font-semibold text-blue-700">Set cover</button>
-                                <button type="button" wire:click="removeImage({{ $image->id }})" wire:confirm="Remove this image from the gallery?" wire:loading.attr="disabled" class="font-semibold text-red-700">Remove</button>
+                                <x-admin.icon-action label="Set cover" icon="photo" tone="info"
+                                    type="button" wire:click="selectCover({{ $image->id }})" wire:loading.attr="disabled"
+                                />
+                                <x-admin.icon-action label="Remove" icon="trash" tone="danger"
+                                    type="button" wire:click="removeImage({{ $image->id }})" wire:confirm="Remove this image from the gallery?" wire:loading.attr="disabled"
+                                />
                             </div>
                             <div class="flex gap-3">
-                                @if (! $loop->first)<button type="button" wire:click="moveImageUp({{ $image->id }})" wire:loading.attr="disabled" aria-label="Move image earlier">← Earlier</button>@endif
-                                @if (! $loop->last)<button type="button" wire:click="moveImageDown({{ $image->id }})" wire:loading.attr="disabled" aria-label="Move image later">Later →</button>@endif
+                                @if (! $loop->first)
+                                    <x-admin.icon-action label="Move image earlier" icon="chevron-left" tone="neutral"
+                                        type="button" wire:click="moveImageUp({{ $image->id }})" wire:loading.attr="disabled" aria-label="Move image earlier"
+                                    />
+                                @endif
+                                @if (! $loop->last)
+                                    <x-admin.icon-action label="Move image later" icon="chevron-right" tone="neutral"
+                                        type="button" wire:click="moveImageDown({{ $image->id }})" wire:loading.attr="disabled" aria-label="Move image later"
+                                    />
+                                @endif
                             </div>
                         @endif
                     </div>

@@ -152,3 +152,44 @@ it('saves and publishes only the selected language layout', function (): void {
         'locale' => ThemeLayoutLocale::English->value,
     ]);
 });
+
+it('saves reloads and publishes icon CSS without losing its escapes', function (string $region, string $locale): void {
+    $this->actingAs(themeLayoutAdminUser());
+
+    $css = <<<'CSS'
+.managed-school-footer-contact .cms-contact-address::before { content: "\f3c5"; }
+.managed-school-footer-contact .cms-contact-phone::before { content: "\f095"; }
+.managed-school-footer-contact .cms-contact-email::before { content: "\f0e0"; }
+CSS;
+
+    Livewire::test(ThemeLayoutIndex::class)
+        ->call('selectRegion', $region)
+        ->call('selectLocale', $locale)
+        ->set('layoutHtml', '<'.$region.' class="managed-school-footer">[[site_name]]</'.$region.'>')
+        ->set('layoutCss', $css)
+        ->call('saveDraft')
+        ->assertHasNoErrors();
+
+    Livewire::test(ThemeLayoutIndex::class)
+        ->call('selectRegion', $region)
+        ->call('selectLocale', $locale)
+        ->assertSet('layoutCss', $css)
+        ->call('publish')
+        ->assertHasNoErrors();
+
+    $layout = ThemeLayout::query()->where('region', $region)->where('locale', $locale)->firstOrFail();
+
+    expect($layout->draft_css)->toBe($css)
+        ->and($layout->published_css)->toBe($css)
+        ->and($layout->revisions()->firstOrFail()->content_css)->toBe($css);
+
+    $this->get($locale === 'en' ? route('home') : route('home.localized', ['locale' => $locale]))
+        ->assertOk()
+        ->assertSee('data-awcms-theme-layout="'.$region.'"', false)
+        ->assertSee($css, false);
+})->with([
+    'English header' => ['header', 'en'],
+    'Sinhala header' => ['header', 'si'],
+    'English footer' => ['footer', 'en'],
+    'Sinhala footer' => ['footer', 'si'],
+]);

@@ -112,6 +112,45 @@ final class HeroSlide extends Model
             : null;
     }
 
+    public function resolvedButtonUrl(PageLocale|string $locale = PageLocale::English): ?string
+    {
+        $value = $this->translation($locale)->button_url ?? $this->button_url;
+        $value = trim($value ?? '');
+
+        if ($value === '') {
+            return null;
+        }
+
+        if (str_starts_with($value, '/') && ! str_starts_with($value, '//')) {
+            $root = rtrim(url('/'), '/');
+            $basePath = parse_url($root, PHP_URL_PATH);
+
+            // Accept pasted paths that already include the installation directory.
+            if (is_string($basePath) && $basePath !== '' && (
+                $value === $basePath
+                || str_starts_with($value, $basePath.'/')
+                || str_starts_with($value, $basePath.'?')
+                || str_starts_with($value, $basePath.'#')
+            )) {
+                $value = substr($value, strlen($basePath));
+            }
+
+            // Older slide links used /page/; the CMS page routes use /pages/.
+            $value = preg_replace('~^/page/~', '/pages/', $value) ?? $value;
+            $value = preg_replace('~^/(en|si|ta)/page/~', '/$1/pages/', $value) ?? $value;
+
+            return $root.'/'.ltrim($value, '/');
+        }
+
+        $scheme = parse_url($value, PHP_URL_SCHEME);
+
+        return is_string($scheme)
+            && in_array(strtolower($scheme), ['http', 'https'], true)
+            && filter_var($value, FILTER_VALIDATE_URL) !== false
+                ? $value
+                : null;
+    }
+
     /**
      * @param  Builder<HeroSlide>  $query
      * @return Builder<HeroSlide>

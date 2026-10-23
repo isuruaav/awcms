@@ -4,13 +4,16 @@ namespace App\Livewire\Admin\Media;
 
 use App\Enums\MediaType;
 use App\Enums\MediaVisibility;
+use App\Models\MediaAsset;
 use App\Models\User;
 use App\Services\MediaUploadService;
+use App\Services\MediaUrlService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -34,6 +37,9 @@ final class MediaUpload extends Component
     public string $altText = '';
 
     public string $caption = '';
+
+    #[Locked]
+    public ?int $uploadedMediaId = null;
 
     public function mount(): void
     {
@@ -138,6 +144,8 @@ final class MediaUpload extends Component
         $uploadedTitle =
             (string) $media->title;
 
+        $this->uploadedMediaId = (int) $media->getKey();
+
         $this->reset([
             'file',
             'title',
@@ -238,6 +246,10 @@ final class MediaUpload extends Component
 
     public function render(): View
     {
+        $uploadedMedia = $this->uploadedMediaId !== null
+            ? MediaAsset::query()->find($this->uploadedMediaId)
+            : null;
+
         return view(
             'livewire.admin.media.media-upload',
             [
@@ -253,6 +265,12 @@ final class MediaUpload extends Component
                 'selectedFileName' => $this->selectedFileName(),
 
                 'selectedFileSize' => $this->selectedFileSize(),
+
+                'uploadedMedia' => $uploadedMedia,
+
+                'uploadedMediaUrl' => $uploadedMedia instanceof MediaAsset
+                    ? app(MediaUrlService::class)->namedOriginal($uploadedMedia)
+                    : null,
             ],
         )->layout(
             'components.layouts.admin',

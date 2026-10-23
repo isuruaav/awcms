@@ -51,6 +51,25 @@
         </div>
     @endif
 
+    @if ($uploadedMedia)
+        <section class="space-y-3 rounded-xl border border-blue-200 bg-white p-5"
+            wire:key="uploaded-media-path-{{ $uploadedMedia->id }}">
+            <h2 class="font-semibold text-zinc-900">{{ $uploadedMedia->title }}</h2>
+            @if ($uploadedMediaUrl)
+                <x-admin.copy-path :path="$uploadedMediaUrl"
+                    :label="$uploadedMedia->isImage() ? 'Public image path' : 'Public document path'" />
+                <p class="text-sm text-zinc-600">
+                    Copy this path, then use the {{ $uploadedMedia->isImage() ? 'Image' : 'Document' }} button
+                    in the page editor to insert it before publishing.
+                </p>
+                <a href="{{ $uploadedMediaUrl }}" target="_blank" rel="noopener noreferrer"
+                    class="inline-block text-sm font-semibold text-blue-700 hover:underline">Open uploaded file</a>
+            @else
+                <p class="text-sm text-zinc-600">This file is private. Public paths are available for Public uploads.</p>
+            @endif
+        </section>
+    @endif
+
     <form
         wire:submit="save"
         class="space-y-6"
@@ -259,21 +278,10 @@
                                         @endif
                                     </div>
 
-                                    <button
+                                    <x-admin.icon-action label="Remove" icon="trash" tone="danger"
                                         type="button"
                                         wire:click="clearFile"
-                                        class="rounded-lg
-                                               border
-                                               border-red-200
-                                               bg-red-50
-                                               px-3 py-2
-                                               text-xs
-                                               font-semibold
-                                               text-red-700
-                                               hover:bg-red-100"
-                                    >
-                                        Remove
-                                    </button>
+                                    />
                                 </div>
                             @endif
 

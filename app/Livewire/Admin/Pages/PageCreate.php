@@ -7,6 +7,7 @@ use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
+use App\Rules\ValidPageCss;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
 use App\Services\PageBlockSanitizer;
@@ -32,6 +33,8 @@ final class PageCreate extends Component
     public string $excerpt = '';
 
     public string $content = '';
+
+    public string $customCss = '';
 
     public string $locale = PageLocale::English->value;
 
@@ -142,6 +145,7 @@ final class PageCreate extends Component
         $this->translationGroup = $translationGroup;
         $this->translationSourcePageId = (int) $page->id;
         $this->translationSourceTitle = (string) $page->title;
+        $this->customCss = is_string($page->custom_css) ? $page->custom_css : '';
 
         /*
          * Translation content is intentionally not copied or translated.
@@ -379,6 +383,8 @@ final class PageCreate extends Component
 
                     'editor_mode' => $this->editorMode,
 
+                    'custom_css' => trim($this->customCss) !== '' ? trim($this->customCss) : null,
+
                     'show_title' => $this->showTitle,
 
                     'blocks' => $this->blocks !== []
@@ -446,6 +452,8 @@ final class PageCreate extends Component
                         'excerpt_present' => $page->excerpt !== null,
 
                         'content_present' => $page->content !== null,
+
+                        'custom_css_present' => $page->custom_css !== null,
 
                         'editor_mode' => $this->editorMode,
 
@@ -529,6 +537,8 @@ final class PageCreate extends Component
                 'string',
                 'max:100000',
             ],
+
+            'customCss' => ['nullable', 'string', 'max:50000', new ValidPageCss],
 
             'editorMode' => [
                 'required',

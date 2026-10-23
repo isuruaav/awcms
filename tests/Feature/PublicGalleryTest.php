@@ -667,7 +667,7 @@ test(
         $response
             ->assertOk()
             ->assertSee(
-                '<title>Special Gallery SEO Title</title>',
+                '<title>Special Gallery SEO Title | '.config('app.name').'</title>',
                 false,
             )
             ->assertSee(
@@ -731,7 +731,7 @@ test(
         $response
             ->assertOk()
             ->assertSee(
-                '<title>Fallback Gallery SEO Title</title>',
+                '<title>Fallback Gallery SEO Title | '.config('app.name').'</title>',
                 false,
             )
             ->assertSee(

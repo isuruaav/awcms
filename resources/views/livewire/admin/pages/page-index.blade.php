@@ -362,17 +362,11 @@
                                 <div class="flex min-w-48 flex-wrap justify-end gap-2">
                                     @if ($recordState === 'trashed')
                                         @can('pages.delete')
-                                            <button type="button" wire:click="restorePage({{ $page->id }})"
+                                            <x-admin.icon-action label="Restore" icon="arrow-uturn-left" tone="success"
+                                                type="button" wire:click="restorePage({{ $page->id }})"
                                                 wire:confirm="Restore this page from Trash?" wire:loading.attr="disabled"
                                                 wire:target="restorePage({{ $page->id }})"
-                                                class="inline-flex rounded-lg
-                           bg-emerald-700 px-3 py-2
-                           text-xs font-semibold text-white
-                           hover:bg-emerald-800
-                           disabled:cursor-not-allowed
-                           disabled:opacity-60">
-                                                Restore
-                                            </button>
+                                            />
                                         @else
                                             <span class="text-xs text-zinc-400">
                                                 View only
@@ -380,87 +374,51 @@
                                         @endcan
                                     @else
                                         @can('pages.view')
-                                            <a
+                                            <x-admin.icon-action label="Preview" icon="eye" tone="neutral"
                                                 href="{{ route('admin.pages.preview', $page) }}"
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                class="inline-flex rounded-lg border
-                                                       border-blue-200 bg-blue-50
-                                                       px-3 py-2 text-xs font-semibold
-                                                       text-blue-700 hover:bg-blue-100"
-                                            >
-                                                Preview
-                                            </a>
+                                            />
                                         @endcan
 
                                         @if ($page->status === \App\Enums\PageStatus::Published)
                                             @can('pages.publish')
-                                                <button
+                                                <x-admin.icon-action label="Unpublish" icon="eye-slash" tone="warning"
                                                     type="button"
                                                     wire:click="unpublishPage({{ $page->id }})"
                                                     wire:confirm="Unpublish this page and return it to Draft?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="unpublishPage({{ $page->id }})"
-                                                    class="inline-flex rounded-lg border
-                                                           border-amber-300 bg-amber-50
-                                                           px-3 py-2 text-xs font-semibold
-                                                           text-amber-800 hover:bg-amber-100
-                                                           disabled:cursor-not-allowed
-                                                           disabled:opacity-60"
-                                                >
-                                                    Unpublish
-                                                </button>
+                                                />
                                             @endcan
                                         @else
                                             @can('pages.publish')
-                                                <button
+                                                <x-admin.icon-action label="Publish" icon="arrow-up-tray" tone="success"
                                                     type="button"
                                                     wire:click="publishPage({{ $page->id }})"
                                                     wire:confirm="Publish this page now?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="publishPage({{ $page->id }})"
-                                                    class="inline-flex rounded-lg
-                                                           bg-emerald-700 px-3 py-2
-                                                           text-xs font-semibold text-white
-                                                           hover:bg-emerald-800
-                                                           disabled:cursor-not-allowed
-                                                           disabled:opacity-60"
-                                                >
-                                                    Publish
-                                                </button>
+                                                />
                                             @endcan
                                         @endif
 
                                         @if ($page->status === \App\Enums\PageStatus::Draft)
                                             @can('pages.update')
-                                                <a
+                                                <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
                                                     href="{{ route('admin.pages.edit', $page) }}"
                                                     wire:navigate
-                                                    class="inline-flex rounded-lg border
-                                                           border-zinc-300 bg-white
-                                                           px-3 py-2 text-xs font-semibold
-                                                           text-zinc-700 hover:bg-zinc-100"
-                                                >
-                                                    Edit
-                                                </a>
+                                                />
                                             @endcan
 
                                             @can('pages.delete')
-                                                <button
+                                                <x-admin.icon-action label="Delete" icon="trash" tone="danger"
                                                     type="button"
                                                     wire:click="deletePage({{ $page->id }})"
                                                     wire:confirm="Move this draft page to Trash?"
                                                     wire:loading.attr="disabled"
                                                     wire:target="deletePage({{ $page->id }})"
-                                                    class="inline-flex rounded-lg border
-                                                           border-red-200 bg-red-50
-                                                           px-3 py-2 text-xs font-semibold
-                                                           text-red-700 hover:bg-red-100
-                                                           disabled:cursor-not-allowed
-                                                           disabled:opacity-60"
-                                                >
-                                                    Delete
-                                                </button>
+                                                />
                                             @endcan
                                         @endif
                                     @endif

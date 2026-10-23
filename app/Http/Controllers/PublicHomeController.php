@@ -82,6 +82,10 @@ final class PublicHomeController
                         'positions.show_on_home',
                         true,
                     )
+                    ->where(
+                        'positions.key',
+                        SchoolLeader::ROLE_COMMANDANT,
+                    )
                     ->with([
                         'position',
                         'image.variants',
@@ -93,8 +97,11 @@ final class PublicHomeController
                         'positions.sort_order',
                     )
                     ->orderBy(
-                        'school_leaders.id',
+                        'school_leaders.start_date',
+                        'desc',
                     )
+                    ->orderByDesc('school_leaders.id')
+                    ->limit(1)
                     ->get()
                 : collect();
 

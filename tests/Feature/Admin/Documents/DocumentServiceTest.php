@@ -461,89 +461,64 @@ it(
     },
 );
 
-it(
-    'archives a published document',
-    function (): void {
-        $document =
-            $this->service->create(
-                actor: $this->actor,
-                title: 'Archive Document',
-            );
+it('rejects archiving because the legacy archive workflow is disabled', function (): void {
+    $document = $this->service->create(
+        actor: $this->actor,
+        title: 'Archive Disabled Document',
+    );
 
-        $this->service->addVersion(
-            document: $document,
-            actor: $this->actor,
-            media: documentTestPdf(
-                $this->actor,
-            ),
-        );
+    $this->service->addVersion(
+        document: $document,
+        actor: $this->actor,
+        media: documentTestPdf($this->actor),
+    );
 
-        $published =
-            $this->service->publish(
-                document: $document->refresh(),
-                actor: $this->actor,
-            );
+    $published = $this->service->publish(
+        document: $document->refresh(),
+        actor: $this->actor,
+    );
 
-        $archived =
-            $this->service->archive(
-                document: $published,
-                actor: $this->actor,
-            );
+    // The current roles seeder deliberately does not grant documents.archive.
+    expect(fn () => $this->service->archive(
+        document: $published,
+        actor: $this->actor,
+    ))->toThrow(AuthorizationException::class);
 
-        expect($archived->status)
-            ->toBe(DocumentStatus::Archived)
-            ->and($archived->archived_at)
-            ->not
-            ->toBeNull()
-            ->and($archived->archived_by)
-            ->toBe($this->actor->id)
-            ->and($archived->isPublished())
-            ->toBeFalse();
-    },
-);
+    expect($document->refresh()->status)->toBe(DocumentStatus::Published)
+        ->and($document->archived_by)->toBeNull()
+        ->and($document->archived_at)->toBeNull();
+});
 
-it(
-    'prevents adding new versions to archived documents',
-    function (): void {
-        $document =
-            $this->service->create(
-                actor: $this->actor,
-                title: 'Archived Version Test',
-            );
+it('prevents adding versions to legacy archived documents', function (): void {
+    $document = $this->service->create(
+        actor: $this->actor,
+        title: 'Archived Version Test',
+    );
 
-        $this->service->addVersion(
-            document: $document,
-            actor: $this->actor,
-            media: documentTestPdf(
-                $this->actor,
-            ),
-        );
+    $this->service->addVersion(
+        document: $document,
+        actor: $this->actor,
+        media: documentTestPdf($this->actor),
+    );
 
-        $published =
-            $this->service->publish(
-                document: $document->refresh(),
-                actor: $this->actor,
-            );
+    $published = $this->service->publish(
+        document: $document->refresh(),
+        actor: $this->actor,
+    );
 
-        $archived =
-            $this->service->archive(
-                document: $published,
-                actor: $this->actor,
-            );
+    // Legacy archived fixtures can exist even though archiving is now disabled.
+    $published->forceFill([
+        'status' => DocumentStatus::Archived->value,
+        'archived_at' => now(),
+        'archived_by' => $this->actor->id,
+    ])->save();
 
-        expect(
-            fn () => $this->service->addVersion(
-                document: $archived,
-                actor: $this->actor,
-                media: documentTestPdf(
-                    $this->actor,
-                ),
-            ),
-        )->toThrow(
-            ValidationException::class,
-        );
-    },
-);
+    expect(fn () => $this->service->addVersion(
+        document: $published->refresh(),
+        actor: $this->actor,
+        media: documentTestPdf($this->actor),
+    ))->toThrow(ValidationException::class);
+});
 
 it(
     'does not delete a published document directly',
@@ -587,63 +562,37 @@ it(
     },
 );
 
-it(
-    'allows an archived document to be soft deleted',
-    function (): void {
-        $document =
-            $this->service->create(
-                actor: $this->actor,
-                title: 'Archived Delete Document',
-            );
+it('allows a legacy archived document to be soft deleted', function (): void {
+    $document = $this->service->create(
+        actor: $this->actor,
+        title: 'Archived Delete Document',
+    );
 
-        $this->service->addVersion(
-            document: $document,
-            actor: $this->actor,
-            media: documentTestPdf(
-                $this->actor,
-            ),
-        );
+    $this->service->addVersion(
+        document: $document,
+        actor: $this->actor,
+        media: documentTestPdf($this->actor),
+    );
 
-        $published =
-            $this->service->publish(
-                document: $document->refresh(),
-                actor: $this->actor,
-            );
+    $published = $this->service->publish(
+        document: $document->refresh(),
+        actor: $this->actor,
+    );
 
-        $archived =
-            $this->service->archive(
-                document: $published,
-                actor: $this->actor,
-            );
+    $published->forceFill([
+        'status' => DocumentStatus::Archived->value,
+        'archived_at' => now(),
+        'archived_by' => $this->actor->id,
+    ])->save();
 
-        $this->service->delete(
-            document: $archived,
-            actor: $this->actor,
-        );
+    $this->service->delete(
+        document: $published->refresh(),
+        actor: $this->actor,
+    );
 
-        expect(
-            Document::query()
-                ->whereKey(
-                    $document->id,
-                )
-                ->exists(),
-        )->toBeFalse()
-            ->and(
-                Document::withTrashed()
-                    ->whereKey(
-                        $document->id,
-                    )
-                    ->exists(),
-            )
-            ->toBeTrue();
-    },
-);
-
-/*
-|--------------------------------------------------------------------------
-| Restore Previous Versions
-|--------------------------------------------------------------------------
-*/
+    expect(Document::query()->whereKey($document->id)->exists())->toBeFalse()
+        ->and(Document::withTrashed()->whereKey($document->id)->exists())->toBeTrue();
+});
 
 it(
     'restores a previous pdf version on a draft document',
@@ -805,58 +754,43 @@ it(
     },
 );
 
-it(
-    'prevents restoring a previous version on an archived document',
-    function (): void {
-        $document =
-            $this->service->create(
-                actor: $this->actor,
-                title: 'Archived Restore Document',
-            );
+it('prevents restoring a previous version on a legacy archived document', function (): void {
+    $document = $this->service->create(
+        actor: $this->actor,
+        title: 'Archived Restore Document',
+    );
 
-        $first =
-            $this->service->addVersion(
-                document: $document,
-                actor: $this->actor,
-                media: documentTestPdf(
-                    $this->actor,
-                ),
-            );
+    $first = $this->service->addVersion(
+        document: $document,
+        actor: $this->actor,
+        media: documentTestPdf($this->actor),
+    );
 
-        $this->service->addVersion(
-            document: $document->refresh(),
-            actor: $this->actor,
-            media: documentTestPdf(
-                $this->actor,
-            ),
-        );
+    $this->service->addVersion(
+        document: $document->refresh(),
+        actor: $this->actor,
+        media: documentTestPdf($this->actor),
+    );
 
-        $published =
-            $this->service->publish(
-                document: $document->refresh(),
-                actor: $this->actor,
-            );
+    $published = $this->service->publish(
+        document: $document->refresh(),
+        actor: $this->actor,
+    );
 
-        $archived =
-            $this->service->archive(
-                document: $published,
-                actor: $this->actor,
-            );
+    $published->forceFill([
+        'status' => DocumentStatus::Archived->value,
+        'archived_at' => now(),
+        'archived_by' => $this->actor->id,
+    ])->save();
 
-        expect(
-            fn () => $this->service->restoreVersion(
-                document: $archived,
-                version: $first,
-                actor: $this->actor,
-            ),
-        )->toThrow(
-            ValidationException::class,
-        );
+    expect(fn () => $this->service->restoreVersion(
+        document: $published->refresh(),
+        version: $first,
+        actor: $this->actor,
+    ))->toThrow(ValidationException::class);
 
-        expect($document->refresh()->current_version)
-            ->toBe(2);
-    },
-);
+    expect($document->refresh()->current_version)->toBe(2);
+});
 
 it(
     'prevents restoring a version that belongs to another document',

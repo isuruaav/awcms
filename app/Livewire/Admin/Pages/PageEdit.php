@@ -7,6 +7,7 @@ use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Models\Page;
 use App\Models\User;
+use App\Rules\ValidPageCss;
 use App\Services\AuditLogger;
 use App\Services\ContentSanitizer;
 use App\Services\PageBlockSanitizer;
@@ -42,6 +43,8 @@ final class PageEdit extends Component
     public string $excerpt = '';
 
     public string $content = '';
+
+    public string $customCss = '';
 
     public string $editorMode = PageEditorMode::Html->value;
 
@@ -111,6 +114,8 @@ final class PageEdit extends Component
             is_string($page->content)
             ? $page->content
             : '';
+
+        $this->customCss = is_string($page->custom_css) ? $page->custom_css : '';
 
         $this->editorMode =
             $this->editorModeOf($page)->value;
@@ -368,6 +373,10 @@ final class PageEdit extends Component
         $oldEditorMode =
             $this->editorModeOf($page)->value;
 
+        $oldCustomCss = is_string($page->custom_css) ? $page->custom_css : '';
+        $this->customCss = trim($this->customCss);
+        $customCssChanged = $oldCustomCss !== $this->customCss;
+
         $oldShowTitle =
             (bool) $page->getAttribute('show_title');
 
@@ -463,6 +472,7 @@ final class PageEdit extends Component
             || $slugChanged
             || $excerptChanged
             || $contentChanged
+            || $customCssChanged
             || $editorModeChanged
             || $showTitleChanged
             || $blocksChanged
@@ -492,6 +502,7 @@ final class PageEdit extends Component
                 $oldSlug,
                 $oldExcerpt,
                 $oldContent,
+                $oldCustomCss,
                 $oldEditorMode,
                 $oldShowTitle,
                 $oldBlocks,
@@ -506,6 +517,7 @@ final class PageEdit extends Component
                 $slugChanged,
                 $excerptChanged,
                 $contentChanged,
+                $customCssChanged,
                 $editorModeChanged,
                 $showTitleChanged,
                 $blocksChanged,
@@ -531,6 +543,8 @@ final class PageEdit extends Component
                         : null,
 
                     'editor_mode' => $this->editorMode,
+
+                    'custom_css' => $this->customCss !== '' ? $this->customCss : null,
 
                     'show_title' => $this->showTitle,
 
@@ -617,6 +631,12 @@ final class PageEdit extends Component
 
                     $newValues['content_changed'] =
                         true;
+                }
+
+                if ($customCssChanged) {
+                    $oldValues['custom_css_length'] = mb_strlen($oldCustomCss);
+                    $newValues['custom_css_length'] = mb_strlen($this->customCss);
+                    $newValues['custom_css_changed'] = true;
                 }
 
                 if ($editorModeChanged) {
@@ -781,6 +801,8 @@ final class PageEdit extends Component
                 'string',
                 'max:100000',
             ],
+
+            'customCss' => ['nullable', 'string', 'max:50000', new ValidPageCss],
 
             'editorMode' => [
                 'required',

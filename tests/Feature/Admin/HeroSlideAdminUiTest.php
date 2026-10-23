@@ -3,8 +3,10 @@
 use App\Enums\PageLocale;
 use App\Livewire\Admin\HeroSlides\HeroSlideIndex;
 use App\Models\HeroSlide;
+use App\Models\MediaAsset;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Spatie\Permission\Models\Permission;
@@ -16,7 +18,9 @@ beforeEach(function (): void {
     app(PermissionRegistrar::class)->forgetCachedPermissions();
 
     Permission::findOrCreate('admin.access', 'web');
-    Permission::findOrCreate('settings.manage', 'web');
+    foreach (['view', 'create', 'update', 'delete'] as $action) {
+        Permission::findOrCreate('hero-slides.'.$action, 'web');
+    }
     Permission::findOrCreate('media.upload', 'web');
 
     Storage::fake('public');
@@ -36,7 +40,7 @@ function heroSlideAdminUser(
     ];
 
     if ($mayManageSlides) {
-        $permissions[] = 'settings.manage';
+        array_push($permissions, 'hero-slides.view', 'hero-slides.create', 'hero-slides.update', 'hero-slides.delete');
     }
 
     if ($mayUploadMedia) {
@@ -60,7 +64,7 @@ it('allows an authorized administrator to open the hero slider editor', function
         ->assertSee('Media Library Image');
 });
 
-it('forbids administrators without settings management permission', function (): void {
+it('forbids administrators without hero slide permissions', function (): void {
     $this->actingAs(
         heroSlideAdminUser(
             mayManageSlides: false,
@@ -253,86 +257,211 @@ it('changes slide order and deletes a slide', function (): void {
     $this->assertDatabaseMissing('hero_slides', [
         'id' => $first->id,
     ]);
+});
 
-    it('uploads a new public image and links it to the hero slide', function (): void {
-        $user = heroSlideAdminUser();
+it('uploads a new public image and links it to the hero slide', function (): void {
+    $user = heroSlideAdminUser();
 
-        $file = UploadedFile::fake()
-            ->image(
-                'signals-hero.jpg',
-                1600,
-                900,
-            )
-            ->size(800);
+    $file = UploadedFile::fake()
+        ->image(
+            'signals-hero.jpg',
+            1600,
+            900,
+        )
+        ->size(800);
 
-        Livewire::actingAs($user)
-            ->test(HeroSlideIndex::class)
-            ->set('newImage', $file)
-            ->set(
-                'newImageTitle',
-                'School of Signals Hero',
-            )
-            ->set(
-                'newImageAltText',
-                'School of Signals training activities',
-            )
-            ->set(
-                'englishTitle',
-                'Signals Training Excellence',
-            )
-            ->set(
-                'englishSubtitle',
-                'Professional military signal training',
-            )
-            ->set(
-                'sinhalaTitle',
-                'විශිෂ්ට සංඥා පුහුණුව',
-            )
-            ->set(
-                'sinhalaSubtitle',
-                'වෘත්තීය හමුදා සංඥා පුහුණුව',
-            )
-            ->set('isActive', true)
-            ->call('save')
-            ->assertHasNoErrors()
-            ->assertSet('newImage', null);
+    Livewire::actingAs($user)
+        ->test(HeroSlideIndex::class)
+        ->set('newImage', $file)
+        ->set(
+            'newImageTitle',
+            'School of Signals Hero',
+        )
+        ->set(
+            'newImageAltText',
+            'School of Signals training activities',
+        )
+        ->set(
+            'englishTitle',
+            'Signals Training Excellence',
+        )
+        ->set(
+            'englishSubtitle',
+            'Professional military signal training',
+        )
+        ->set(
+            'sinhalaTitle',
+            'විශිෂ්ට සංඥා පුහුණුව',
+        )
+        ->set(
+            'sinhalaSubtitle',
+            'වෘත්තීය හමුදා සංඥා පුහුණුව',
+        )
+        ->set('isActive', true)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertSet('newImage', null);
 
-        $media = MediaAsset::query()->firstOrFail();
-        $slide = HeroSlide::query()->firstOrFail();
+    $media = MediaAsset::query()->firstOrFail();
+    $slide = HeroSlide::query()->firstOrFail();
 
-        expect($media->title)
-            ->toBe('School of Signals Hero')
-            ->and($media->alt_text)
-            ->toBe('School of Signals training activities')
-            ->and($slide->image_media_id)
-            ->toBe($media->id)
-            ->and($slide->image)
-            ->toBeInstanceOf(MediaAsset::class);
+    expect($media->title)
+        ->toBe('School of Signals Hero')
+        ->and($media->alt_text)
+        ->toBe('School of Signals training activities')
+        ->and($slide->image_media_id)
+        ->toBe($media->id)
+        ->and($slide->image)
+        ->toBeInstanceOf(MediaAsset::class);
 
-        $this->assertDatabaseHas('media_assets', [
-            'id' => $media->id,
-            'type' => 'image',
-            'visibility' => 'public',
-            'title' => 'School of Signals Hero',
-            'alt_text' => 'School of Signals training activities',
-        ]);
+    $this->assertDatabaseHas('media_assets', [
+        'id' => $media->id,
+        'type' => 'image',
+        'visibility' => 'public',
+        'title' => 'School of Signals Hero',
+        'alt_text' => 'School of Signals training activities',
+    ]);
 
-        $this->assertDatabaseHas('hero_slides', [
-            'id' => $slide->id,
-            'image_media_id' => $media->id,
-            'is_active' => true,
-        ]);
+    $this->assertDatabaseHas('hero_slides', [
+        'id' => $slide->id,
+        'image_media_id' => $media->id,
+        'is_active' => true,
+    ]);
 
-        $this->assertDatabaseHas('hero_slide_translations', [
-            'hero_slide_id' => $slide->id,
-            'locale' => PageLocale::English->value,
-            'title' => 'Signals Training Excellence',
-        ]);
+    $this->assertDatabaseHas('hero_slide_translations', [
+        'hero_slide_id' => $slide->id,
+        'locale' => PageLocale::English->value,
+        'title' => 'Signals Training Excellence',
+    ]);
 
-        $this->assertDatabaseHas('hero_slide_translations', [
-            'hero_slide_id' => $slide->id,
-            'locale' => PageLocale::Sinhala->value,
-            'title' => 'විශිෂ්ට සංඥා පුහුණුව',
-        ]);
-    });
+    $this->assertDatabaseHas('hero_slide_translations', [
+        'hero_slide_id' => $slide->id,
+        'locale' => PageLocale::Sinhala->value,
+        'title' => 'විශිෂ්ට සංඥා පුහුණුව',
+    ]);
+});
+
+it('starts with a closed modal and opens a clean create form', function (): void {
+    Livewire::actingAs(heroSlideAdminUser())->test(HeroSlideIndex::class)
+        ->assertSet('showEditor', false)
+        ->assertSeeHtml('data-modal="hero-slide-editor"')
+        ->assertSeeHtml('wire:model.self="showEditor"')
+        ->assertSeeHtml('wire:click="startCreate"')
+        ->assertDontSeeHtml('<aside>')
+        ->set('englishTitle', 'Unsaved title')
+        ->set('sinhalaTitle', 'තාවකාලික මාතෘකාව')
+        ->set('isActive', false)
+        ->call('startCreate')
+        ->assertSet('showEditor', true)
+        ->assertSet('editingId', null)
+        ->assertSet('englishTitle', '')
+        ->assertSet('sinhalaTitle', '')
+        ->assertSet('isActive', true)
+        ->call('closeEditor')
+        ->assertSet('showEditor', false);
+
+    expect(HeroSlide::query()->count())->toBe(0);
+});
+
+it('keeps the modal open on validation errors and closes after creating a slide', function (): void {
+    Livewire::actingAs(heroSlideAdminUser())->test(HeroSlideIndex::class)
+        ->call('startCreate')
+        ->set('englishTitle', 'New English slide')
+        ->call('save')
+        ->assertHasErrors('sinhalaTitle')
+        ->assertSet('showEditor', true)
+        ->assertSet('englishTitle', 'New English slide')
+        ->assertSee('Please correct the following errors:')
+        ->set('sinhalaTitle', 'අලුත් විනිවිදකය')
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertSet('showEditor', false)
+        ->assertSet('editingId', null)
+        ->assertSet('englishTitle', '');
+
+    expect(HeroSlide::query()->count())->toBe(1);
+});
+
+it('cancels edit and resets validation and uploads without changing saved data', function (): void {
+    $slide = HeroSlide::query()->create(['title' => 'Original slide', 'is_active' => true]);
+    $editor = Livewire::actingAs(heroSlideAdminUser())->test(HeroSlideIndex::class)
+        ->call('edit', $slide->id)
+        ->assertSet('showEditor', true)
+        ->assertSet('editingId', $slide->id)
+        ->assertSet('englishTitle', 'Original slide')
+        ->set('englishTitle', '')
+        ->set('newImage', UploadedFile::fake()->image('temporary-hero.jpg'))
+        ->call('save')
+        ->assertHasErrors('englishTitle')
+        ->call('cancelEdit')
+        ->assertSet('showEditor', false)
+        ->assertSet('editingId', null)
+        ->assertSet('newImage', null)
+        ->assertSet('englishTitle', '')
+        ->assertHasNoErrors();
+
+    expect($slide->refresh()->title)->toBe('Original slide');
+
+    $editor->call('startCreate')->assertSet('showEditor', true)->assertSet('editingId', null);
+});
+
+it('opens and saves an existing slide through the modal', function (): void {
+    $slide = HeroSlide::query()->create(['title' => 'Original English', 'is_active' => true]);
+    $slide->translations()->createMany([
+        ['locale' => 'en', 'title' => 'Original English'],
+        ['locale' => 'si', 'title' => 'මුල් මාතෘකාව'],
+    ]);
+
+    Livewire::actingAs(heroSlideAdminUser())->test(HeroSlideIndex::class)
+        ->call('edit', $slide->id)
+        ->assertSet('showEditor', true)
+        ->assertSet('sinhalaTitle', 'මුල් මාතෘකාව')
+        ->assertSee('Edit Hero Slide')
+        ->set('englishTitle', 'Updated English')
+        ->set('isActive', false)
+        ->call('save')
+        ->assertHasNoErrors()
+        ->assertSet('showEditor', false)
+        ->assertSet('editingId', null);
+
+    expect($slide->refresh()->title)->toBe('Updated English')
+        ->and($slide->is_active)->toBeFalse()
+        ->and($slide->translation(PageLocale::Sinhala, fallbackToEnglish: false)?->title)->toBe('මුල් මාතෘකාව');
+});
+
+it('rejects opening create and edit modals without the corresponding permission', function (string $action, string $deniedAction): void {
+    $actor = User::factory()->create();
+    $actor->givePermissionTo(['hero-slides.view', 'hero-slides.'.$action]);
+
+    $component = Livewire::actingAs($actor)->test(HeroSlideIndex::class);
+
+    if ($deniedAction === 'edit') {
+        $component->call('edit', 999999)->assertForbidden();
+    } else {
+        $component->call('startCreate')->assertForbidden();
+    }
+})->with([
+    'create only' => ['create', 'edit'],
+    'update only' => ['update', 'create'],
+]);
+
+it('keeps the modal unavailable to read-only viewers', function (): void {
+    $actor = User::factory()->create();
+    $actor->givePermissionTo('hero-slides.view');
+
+    Livewire::actingAs($actor)->test(HeroSlideIndex::class)
+        ->assertDontSeeHtml('data-modal="hero-slide-editor"')
+        ->assertDontSeeHtml('wire:click="startCreate"')
+        ->call('edit', 999999)->assertForbidden();
+
+    Livewire::actingAs($actor)->test(HeroSlideIndex::class)
+        ->call('startCreate')->assertForbidden();
+});
+
+it('loads the modal with the Flux browser runtime', function (): void {
+    $this->actingAs(heroSlideAdminUser())->get(route('admin.hero-slides.index'))
+        ->assertOk()
+        ->assertSee('data-modal="hero-slide-editor"', false)
+        ->assertSee('wire:close="closeEditor"', false)
+        ->assertSee('/flux/flux.', false);
 });

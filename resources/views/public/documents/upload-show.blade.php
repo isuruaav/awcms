@@ -19,14 +19,14 @@
         ? route('documents.view', ['slug' => $document->slug])
         : route('document-files.view', [
             'locale' => $currentLocale,
-            'uuid' => $document->uuid,
+            'slug' => $document->slug,
         ]);
 
     $downloadUrl = $currentLocale === 'en'
         ? route('documents.download', ['slug' => $document->slug])
         : route('document-files.download', [
             'locale' => $currentLocale,
-            'uuid' => $document->uuid,
+            'slug' => $document->slug,
         ]);
 @endphp
 
@@ -68,8 +68,7 @@
                     <div>
                         <dt>{{ $isSinhala ? 'අනුවාදය' : 'Version' }}</dt>
                         <dd>
-                            {{ $isSinhala ? 'අනුවාදය' : 'Version' }}
-                            {{ $currentVersion->version }}
+                            {{ ($isSinhala ? 'අනුවාදය' : 'Version').' '.$currentVersion->version }}
                         </dd>
                     </div>
                 </dl>

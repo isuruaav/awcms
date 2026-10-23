@@ -6,7 +6,6 @@ use App\Models\NewsCategory;
 use App\Models\User;
 use App\Services\NewsRevisionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use RuntimeException;
 
 uses(RefreshDatabase::class);
 

@@ -48,6 +48,18 @@ it('accepts local presentation css', function (): void {
     expect($clean)->toBe('.site-header { display: flex; color: #ffffff; }');
 });
 
+it('preserves CSS escapes used by footer icons and selectors', function (): void {
+    $css = <<<'CSS'
+.managed-school-footer-contact .cms-contact-address::before { content: "\f3c5"; }
+.managed-school-footer-contact .cms-contact-phone::before { content: "\f095"; }
+.managed-school-footer-contact .cms-contact-email::before { content: "\f0e0"; }
+.managed-school-footer .sm\:flex { display: flex; }
+@media (max-width: 600px) { .managed-school-footer-grid { grid-template-columns: minmax(0, 1fr); } }
+CSS;
+
+    expect(app(ThemeLayoutSanitizer::class)->sanitizeCss($css))->toBe($css);
+});
+
 it('rejects css capable of loading external resources or breaking the style element', function (string $css): void {
     app(ThemeLayoutSanitizer::class)->sanitizeCss($css);
 })->with([
@@ -55,6 +67,13 @@ it('rejects css capable of loading external resources or breaking the style elem
     '.header { background: url("https://example.com/pixel") }',
     '</style><script>alert(1)</script>',
     '.header { background: image-set("https://example.com/image.png" 1x) }',
+    'escaped import' => '@\69mport "https://example.com/tracker.css";',
+    'escaped URL function' => '.header { background: u\72l("https://example.com/pixel") }',
+    'escaped image set' => '.header { background: image-\73 et("https://example.com/image.png" 1x) }',
+    'escaped expression' => '.header { width: e\78pression(alert(1)); }',
+    'escaped binding' => '.header { -moz-\62inding: something; }',
+    'continued URL function' => ".header { background: u\\\nrl(\"https://example.com/pixel\") }",
+    'style breakout in a comment' => '/* </style><script>alert(1)</script> */',
 ])->throws(ValidationException::class);
 
 it('preserves a safe local site url placeholder inside an href attribute', function (): void {

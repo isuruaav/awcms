@@ -198,7 +198,7 @@ test('trash view only displays soft deleted media', function (): void {
         );
 });
 
-test('media display can switch between grid and list', function (): void {
+test('media library can switch between all usage and other media', function (): void {
     $operator = User::factory()->create();
 
     $operator->assignRole(
@@ -208,24 +208,35 @@ test('media display can switch between grid and list', function (): void {
     Livewire::actingAs($operator)
         ->test(MediaIndex::class)
         ->assertSet(
-            'display',
-            'grid',
+            'libraryMode',
+            'all',
         )
         ->call(
-            'setDisplay',
-            'list',
+            'setLibraryMode',
+            'usage',
         )
         ->assertSet(
-            'display',
-            'list',
+            'libraryMode',
+            'usage',
+        )
+        ->assertSee(
+            'Media grouped by content',
         )
         ->call(
-            'setDisplay',
+            'setLibraryMode',
+            'other',
+        )
+        ->assertSet(
+            'libraryMode',
+            'other',
+        )
+        ->call(
+            'setLibraryMode',
             'invalid',
         )
         ->assertSet(
-            'display',
-            'list',
+            'libraryMode',
+            'other',
         );
 });
 

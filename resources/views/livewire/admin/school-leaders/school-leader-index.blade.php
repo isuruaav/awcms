@@ -47,6 +47,8 @@
         @if ($canUpdate)
 
             <div class="flex flex-wrap gap-2">
+                <a href="{{ route('admin.school-leadership-profiles.index') }}"
+                    class="rounded-xl border border-blue-300 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 hover:bg-blue-100">Leadership Profiles</a>
 
                 <a
 
@@ -90,37 +92,7 @@
 
     @endif
 
-    @if ($errors->any())
-
-        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-
-            <p class="font-bold">
-
-                Please correct the following errors:
-
-            </p>
-
-            <ul class="mt-2 list-disc space-y-1 pl-5">
-
-                @foreach ($errors->all() as $error)
-
-                    <li>{{ $error }}</li>
-
-                @endforeach
-
-            </ul>
-
-        </div>
-
-    @endif
-
-    <div @class([
-
-        'grid min-w-0 gap-6',
-
-        'xl:grid-cols-[minmax(0,1fr)\_430px]' => $canUpdate,
-
-    ])>
+    <div class="min-w-0">
 
         <section class="min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
             <div class="border-b border-zinc-200 bg-zinc-50 px-5 py-4">
@@ -406,13 +378,27 @@
 
                                 @if ($canUpdate)
                                     <td class="px-4 py-4 text-right align-top">
-                                        <button
-                                            type="button"
-                                            wire:click="edit({{ $leader->id }})"
-                                            class="rounded-lg bg-blue-700 px-3 py-2 text-xs font-bold text-white hover:bg-blue-800"
-                                        >
-                                            Edit
-                                        </button>
+                                        <div class="flex items-center justify-end gap-2">
+                                            <x-admin.icon-action label="Edit" icon="pencil-square" tone="primary"
+                                                wire:click="edit({{ $leader->id }})"
+                                            />
+                                            <x-admin.icon-action label="Delete" icon="trash" tone="danger"
+                                                wire:click="delete({{ $leader->id }})"
+                                                wire:confirm="Delete the appointment for {{ $leader->name_en }}? This will also delete its saved profile. This action cannot be undone."
+                                                wire:loading.attr="disabled"
+                                                wire:target="delete({{ $leader->id }})"
+                                            />
+                                            @if ($leader->supportsProfile())
+                                                <x-admin.icon-action :label="$leader->profile_enabled ? 'Edit Profile' : 'Create Profile'" icon="document-text" tone="info"
+                                                    href="{{ route('admin.school-leadership-profiles.index', ['leader' => $leader->id]) }}"
+                                                />
+                                                @if ($leader->hasPublicProfile())
+                                                    <x-admin.icon-action label="View Profile" icon="eye"
+                                                        href="{{ $leader->profileUrlForLocale('en') }}" target="_blank" rel="noopener"
+                                                    />
+                                                @endif
+                                            @endif
+                                        </div>
                                     </td>
                                 @endif
                             </tr>
@@ -477,19 +463,22 @@
 
         @if ($canUpdate)
 
-            <aside>
+            <flux:modal name="school-leader-editor" wire:model="showEditor" @close="closeEditor"
+                class="w-[calc(100%-2rem)] min-w-0 max-w-3xl max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl p-0!">
 
                 <form
 
                     wire:submit="save"
 
-                    class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm xl:sticky xl:top-6"
+                    x-init="$el.closest('dialog').setAttribute('aria-labelledby', 'school-leader-editor-title')"
+
+                    class="flex max-h-[calc(100dvh-2rem)] flex-col overflow-hidden bg-white"
 
                 >
 
-                    <div class="border-b border-zinc-200 bg-zinc-50 px-6 py-4">
+                    <div class="shrink-0 border-b border-zinc-200 bg-zinc-50 px-6 py-4 pr-16">
 
-                        <h2 class="font-bold text-zinc-900">
+                        <h2 id="school-leader-editor-title" class="font-bold text-zinc-900">
 
                             {{ $editingId === null
 
@@ -507,7 +496,18 @@
 
                     </div>
 
-                    <div class="space-y-5 p-6">
+                    <div class="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain p-6">
+                        @if ($errors->any())
+                            <div role="alert" tabindex="-1" x-init="$el.focus()"
+                                class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                <p class="font-bold">Please correct the following errors:</p>
+                                <ul class="mt-2 list-disc space-y-1 pl-5">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
 
                         <div>
 
@@ -677,7 +677,7 @@
 
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                        <div class="grid gap-4 sm:grid-cols-2">
 
                             <div>
 
@@ -767,7 +767,7 @@
 
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                        <div class="grid gap-4 sm:grid-cols-2">
 
                             <div>
 
@@ -1035,19 +1035,10 @@
 
                                 @if ($newImage)
 
-                                    <button
-
+                                    <x-admin.icon-action label="Remove New Image" icon="x-mark" tone="danger"
                                         type="button"
-
                                         wire:click="clearNewImage"
-
-                                        class="mt-3 w-full rounded-lg border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50"
-
-                                    >
-
-                                        Remove New Image
-
-                                    </button>
+                                    />
 
                                 @endif
 
@@ -1125,6 +1116,12 @@
 
                         </div>
 
+                    </div>
+
+                    <div class="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+                        <button type="button" wire:click="closeEditor" wire:loading.attr="disabled" wire:target="save"
+                            class="rounded-xl border border-zinc-300 bg-white px-5 py-3 text-sm font-bold text-zinc-700 hover:bg-zinc-100 disabled:opacity-60">Cancel</button>
+
                         <button
 
                             type="submit"
@@ -1133,7 +1130,7 @@
 
                             wire:target="save"
 
-                            class="w-full rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
+                            class="rounded-xl bg-emerald-700 px-5 py-3 text-sm font-bold text-white hover:bg-emerald-800 disabled:opacity-60"
 
                         >
 
@@ -1159,7 +1156,7 @@
 
                 </form>
 
-            </aside>
+            </flux:modal>
 
         @endif
 

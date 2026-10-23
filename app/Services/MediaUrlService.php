@@ -29,12 +29,35 @@ final class MediaUrlService
         if (
             $disk === null
             || $path === null
+            || $disk !== config('media.disks.public', 'public')
         ) {
             return null;
         }
 
         return Storage::disk($disk)
             ->url($path);
+    }
+
+    public function namedOriginal(MediaAsset $media): ?string
+    {
+        $filename = $this->stringValue($media->getAttribute('public_filename'));
+
+        if ($this->original($media) === null || $filename === null) {
+            return null;
+        }
+
+        return route('media.file', [
+            'filename' => rawurlencode($filename),
+        ]);
+    }
+
+    public function originalFileName(MediaAsset $media): string
+    {
+        $name = $this->stringValue($media->getAttribute('original_name'))
+            ?? $this->stringValue($media->getAttribute('stored_name'))
+            ?? 'download';
+
+        return basename(str_replace('\\', '/', $name));
     }
 
     public function variant(
@@ -159,7 +182,8 @@ final class MediaUrlService
             'source',
         );
 
-        return $visibility
+        return ! $media->trashed()
+            && $visibility
             instanceof MediaVisibility
             && $visibility ===
             MediaVisibility::Public

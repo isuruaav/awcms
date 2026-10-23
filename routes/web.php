@@ -5,16 +5,20 @@ use App\Http\Controllers\Admin\NewsPreviewController;
 use App\Http\Controllers\Admin\PagePreviewController;
 use App\Http\Controllers\PastChiefInstructorController;
 use App\Http\Controllers\PastCommandantController;
+use App\Http\Controllers\PastSergeantMajorController;
 use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\PublicGalleryController;
 use App\Http\Controllers\PublicHomeController;
+use App\Http\Controllers\PublicMediaFileController;
 use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
 use App\Http\Controllers\PublicRedirectController;
+use App\Http\Controllers\PublicSchoolLeadershipController;
 use App\Livewire\Admin\Documents\DocumentUploads;
 use App\Livewire\Admin\HeroSlides\HeroSlideIndex;
 use App\Livewire\Admin\SchoolLeaders\SchoolLeaderIndex;
+use App\Livewire\Admin\SchoolLeaders\SchoolLeaderProfiles;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -229,6 +233,15 @@ Route::get(
     'documents.index',
 );
 
+Route::get('/{locale}/documents', [PublicDocumentController::class, 'index'])
+    ->whereIn('locale', ['en', 'si'])
+    ->name('documents.index.localized');
+
+Route::get('/{locale}/documents/{slug}', [PublicDocumentController::class, 'showLocalized'])
+    ->whereIn('locale', ['en', 'si'])
+    ->where('slug', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('documents.show.localized');
+
 Route::get(
     '/documents/{slug}/view',
     [
@@ -285,12 +298,21 @@ Route::get(
     [PublicContactController::class, 'create'],
 )->name('contact.create');
 
+Route::get('/{locale}/contact', [PublicContactController::class, 'create'])
+    ->whereIn('locale', ['en', 'si'])
+    ->name('contact.create.localized');
+
 Route::post(
     '/contact',
     [PublicContactController::class, 'store'],
 )
     ->middleware('throttle:5,1')
     ->name('contact.store');
+
+Route::post('/{locale}/contact', [PublicContactController::class, 'store'])
+    ->whereIn('locale', ['en', 'si'])
+    ->middleware('throttle:5,1')
+    ->name('contact.store.localized');
 
 Route::get(
     '/en/history/past-commandants',
@@ -319,6 +341,20 @@ Route::get(
 )
     ->defaults('locale', 'si')
     ->name('history.past-chief-instructors.localized');
+
+Route::get(
+    '/en/history/past-sgt-major',
+    PastSergeantMajorController::class,
+)
+    ->defaults('locale', 'en')
+    ->name('history.past-sgt-major');
+
+Route::get(
+    '/si/history/past-sgt-major',
+    PastSergeantMajorController::class,
+)
+    ->defaults('locale', 'si')
+    ->name('history.past-sgt-major.localized');
 
 /*
 |--------------------------------------------------------------------------
@@ -571,6 +607,7 @@ Route::middleware([
                 '/news/{news}/preview',
                 NewsPreviewController::class,
             )
+                ->withTrashed()
                 ->whereNumber(
                     'news',
                 )
@@ -724,6 +761,17 @@ Route::middleware([
                 ->name('documents.index');
 
             Route::livewire(
+                '/documents/categories',
+                'admin.documents.document-category-index',
+            )
+                ->middleware(
+                    'can:documents.categories.manage',
+                )
+                ->name(
+                    'documents.categories.index',
+                );
+
+            Route::livewire(
                 '/documents/create',
                 DocumentUploads::class,
             )
@@ -756,19 +804,6 @@ Route::middleware([
             )
                 ->middleware('can:roles.manage')
                 ->name('roles.index');
-
-            /*
-            |--------------------------------------------------------------------------
-            | Menu Builder
-            |--------------------------------------------------------------------------
-            */
-
-            Route::livewire(
-                '/menus',
-                'admin.menus.menu-index',
-            )
-                ->middleware('can:menus.manage')
-                ->name('menus.index');
 
             /*
             |--------------------------------------------------------------------------
@@ -815,6 +850,10 @@ Route::middleware([
             )
                 ->middleware('can:school-leaders.view')
                 ->name('school-leadership-positions.index');
+
+            Route::get('/school-leadership-profiles', SchoolLeaderProfiles::class)
+                ->middleware('can:school-leaders.view')
+                ->name('school-leadership-profiles.index');
 
             /*
             |--------------------------------------------------------------------------
@@ -873,6 +912,67 @@ Route::middleware([
                 );
         });
 });
+
+Route::get(
+    '/{locale}/school-leadership/commandant',
+    [PublicSchoolLeadershipController::class, 'commandant'],
+)
+    ->where('locale', 'en|si|ta')
+    ->name('school-leadership.commandant.localized');
+
+Route::get(
+    '/school-leadership/commandant',
+    [PublicSchoolLeadershipController::class, 'commandant'],
+)->name('school-leadership.commandant');
+
+Route::get('/{locale}/school-leadership/history', [PublicSchoolLeadershipController::class, 'history'])
+    ->where('locale', 'en|si')
+    ->name('school-leadership.history.localized');
+
+Route::get('/school-leadership/history', [PublicSchoolLeadershipController::class, 'history'])
+    ->name('school-leadership.history');
+
+Route::get('/{locale}/school-leadership/profiles/{leader}', [PublicSchoolLeadershipController::class, 'show'])
+    ->where('locale', 'en|si')
+    ->whereNumber('leader')
+    ->name('school-leadership.show.localized');
+
+Route::get('/school-leadership/profiles/{leader}', [PublicSchoolLeadershipController::class, 'show'])
+    ->whereNumber('leader')
+    ->name('school-leadership.show');
+
+Route::get('/{locale}/school-leadership/{appointment}', [PublicSchoolLeadershipController::class, 'profile'])
+    ->where('locale', 'en|si')
+    ->where('appointment', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('school-leadership.profile.localized');
+
+Route::get('/school-leadership/{appointment}', [PublicSchoolLeadershipController::class, 'profile'])
+    ->where('appointment', '[a-z0-9]+(?:-[a-z0-9]+)*')
+    ->name('school-leadership.profile');
+
+Route::get(
+    '/{locale}/school-leadership',
+    [PublicSchoolLeadershipController::class, 'index'],
+)
+    ->where('locale', 'en|si|ta')
+    ->name('school-leadership.localized');
+
+Route::get(
+    '/school-leadership',
+    [PublicSchoolLeadershipController::class, 'index'],
+)->name('school-leadership.index');
+
+Route::get(
+    '/media-files/{filename}',
+    [PublicMediaFileController::class, 'show'],
+)->name('media.file');
+
+Route::get(
+    '/media-files/{media:uuid}/{filename}',
+    PublicMediaFileController::class,
+)
+    ->whereUuid('media')
+    ->name('media.file.legacy');
 
 Route::get(
     '/document-files/{locale}/{slug}/view',

@@ -43,12 +43,14 @@ final class ContactMessageIndex extends Component
         $message = ContactMessage::query()->findOrFail($id);
         app(ContactMessageService::class)->markRead($message, $this->actor());
         $this->selectedMessageId = $id;
+        $this->dispatch('contact-messages-updated');
     }
 
     public function resolve(int $id): void
     {
         $message = ContactMessage::query()->findOrFail($id);
         app(ContactMessageService::class)->resolve($message, $this->actor());
+        $this->dispatch('contact-messages-updated');
         session()->flash('status', 'Contact message resolved.');
     }
 

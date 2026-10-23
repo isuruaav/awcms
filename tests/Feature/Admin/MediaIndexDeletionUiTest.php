@@ -174,7 +174,7 @@ test('active media view shows normal media actions', function (): void {
         'Media Operator',
     );
 
-    MediaAsset::factory()->create([
+    $media = MediaAsset::factory()->create([
         'title' => 'Active Action Test',
     ]);
 
@@ -188,7 +188,8 @@ test('active media view shows normal media actions', function (): void {
             'Active Action Test',
         )
         ->assertSee(
-            'View Details',
+            route('admin.media.edit', $media),
+            false,
         )
         ->assertSee(
             'Move to Trash',
@@ -242,7 +243,7 @@ test('auditor does not see destructive media actions', function (): void {
         'Auditor',
     );
 
-    MediaAsset::factory()->create([
+    $media = MediaAsset::factory()->create([
         'title' => 'Auditor Media',
     ]);
 
@@ -256,7 +257,8 @@ test('auditor does not see destructive media actions', function (): void {
             'Auditor Media',
         )
         ->assertSee(
-            'View Details',
+            route('admin.media.edit', $media),
+            false,
         )
         ->assertDontSee(
             'Move to Trash',

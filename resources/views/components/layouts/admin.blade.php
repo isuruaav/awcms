@@ -235,6 +235,9 @@
         </div>
     </div>
 
+    <x-admin.confirmation-dialog />
+
+    @fluxScripts
     @livewireScripts
 </body>
 </html>

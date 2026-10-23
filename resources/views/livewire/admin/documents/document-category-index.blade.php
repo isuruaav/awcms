@@ -629,36 +629,18 @@
                                            flex-wrap
                                            justify-end
                                            gap-2">
-                                    <button type="button" wire:click="openEdit({{ $category->id }})"
+                                    <x-admin.icon-action label="Edit" icon="pencil-square" tone="info"
+                                        type="button" wire:click="openEdit({{ $category->id }})"
                                         wire:loading.attr="disabled" wire:target="openEdit({{ $category->id }})"
-                                        class="rounded-lg
-                                               border border-zinc-300
-                                               bg-white
-                                               px-3 py-2
-                                               text-xs font-bold
-                                               text-zinc-700
-                                               transition
-                                               hover:bg-zinc-100
-                                               disabled:opacity-50">
-                                        Edit
-                                    </button>
+                                    />
 
-                                    <button type="button" wire:click="toggleActive({{ $category->id }})"
+                                    <x-admin.icon-action label="{{ $category->is_active ? 'Deactivate' : 'Activate' }}" :icon="$category->is_active ? 'pause-circle' : 'play-circle'" :tone="$category->is_active ? 'warning' : 'success'"
+                                        type="button" wire:click="toggleActive({{ $category->id }})"
                                         wire:confirm="{{ $category->is_active
                                             ? 'Deactivate this document category? Existing documents will keep their category, but it will no longer be available for new selections.'
                                             : 'Activate this document category?' }}"
                                         wire:loading.attr="disabled" wire:target="toggleActive({{ $category->id }})"
-                                        class="rounded-lg
-                                               px-3 py-2
-                                               text-xs font-bold
-                                               transition
-                                               disabled:cursor-not-allowed
-                                               disabled:opacity-50
-                                               {{ $category->is_active
-                                                   ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
-                                                   : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200' }}">
-                                        {{ $category->is_active ? 'Deactivate' : 'Activate' }}
-                                    </button>
+                                    />
                                 </div>
                             </td>
 

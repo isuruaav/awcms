@@ -6,6 +6,7 @@ use App\Enums\MediaSource;
 use App\Enums\MediaType;
 use App\Enums\MediaVariantPreset;
 use App\Enums\MediaVisibility;
+use App\Services\MediaPublicFilename;
 use Database\Factories\MediaAssetFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +45,11 @@ final class MediaAsset extends Model
                         'uuid',
                         Str::uuid()->toString(),
                     );
+                }
+
+                if (! is_string($media->public_filename) || trim($media->public_filename) === '') {
+                    $name = (string) ($media->original_name ?? $media->stored_name ?? 'file');
+                    $media->public_filename = app(MediaPublicFilename::class)->unique($name);
                 }
             },
         );

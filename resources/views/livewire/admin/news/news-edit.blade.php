@@ -68,16 +68,14 @@
 
         <div class="flex flex-wrap gap-2">
 
-            <a href="{{ route('admin.news.preview', $news) }}" target="_blank" rel="noopener noreferrer"
-                class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-100">
-                {{ $bilingual ? 'Preview English' : 'Preview' }}
-            </a>
+            <x-admin.icon-action label="{{ $bilingual ? 'Preview English' : 'Preview' }}" icon="eye" tone="info"
+                href="{{ route('admin.news.preview', $news) }}" target="_blank" rel="noopener noreferrer"
+            />
 
             @if ($bilingual && $sinhalaNews instanceof \App\Models\News)
-                <a href="{{ route('admin.news.preview', $sinhalaNews) }}" target="_blank" rel="noopener noreferrer"
-                    class="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-sm font-semibold text-blue-700 hover:bg-blue-50">
-                    Preview සිංහල
-                </a>
+                <x-admin.icon-action label="Preview සිංහල" icon="eye" tone="info"
+                    href="{{ route('admin.news.preview', $sinhalaNews) }}" target="_blank" rel="noopener noreferrer"
+                />
             @endif
 
         </div>
@@ -334,7 +332,7 @@
 
     @else
 
-        <form wire:submit="save" class="space-y-6">
+        <form wire:submit="save" wire:confirm="Save changes to this news draft?" class="space-y-6">
 
 
 
@@ -1278,21 +1276,13 @@
 
 
 
-                                            <button type="button"
-
+                                            <x-admin.icon-action label="Remove" icon="trash" tone="danger"
+                                                type="button"
                                                 wire:click="removeGalleryImage({{ $newsImage->id }})"
-
                                                 wire:confirm="Remove this image from the news article? The Media Library asset will be kept."
-
                                                 wire:loading.attr="disabled"
-
                                                 wire:target="removeGalleryImage({{ $newsImage->id }})"
-
-                                                class="inline-flex w-full items-center justify-center rounded-lg border border-red-200 bg-white px-3 py-2.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 disabled:opacity-60">
-
-                                                Remove
-
-                                            </button>
+                                            />
 
                                         </div>
 
@@ -1356,19 +1346,10 @@
 
 
 
-                            <button type="button" wire:click="clearFeaturedImage"
-
+                            <x-admin.icon-action label="Clear featured image" icon="x-mark" tone="danger"
+                                type="button" wire:click="clearFeaturedImage"
                                 wire:confirm="Clear the featured image from this article?"
-
-                                class="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-50">
-
-
-
-                                Clear featured image
-
-
-
-                            </button>
+                            />
 
 
 

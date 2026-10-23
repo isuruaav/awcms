@@ -84,10 +84,10 @@
                     @error('website') <p>{{ $message }}</p> @enderror
                 </div>
             @endif
-            <form method="POST" action="{{ route('contact.store') }}">
+            <form method="POST" action="{{ $si ? route('contact.store.localized', ['locale' => 'si']) : route('contact.store') }}">
                 @csrf
                 <div class="sos-contact-honey" aria-hidden="true">
-                    <label for="sos-contact-website">Website</label>
+                    <label for="sos-contact-website">{{ __('public.contact_page.website') }}</label>
                     <input id="sos-contact-website" type="text" name="website" value="" tabindex="-1" autocomplete="off">
                 </div>
                 <div class="sos-contact-fields">

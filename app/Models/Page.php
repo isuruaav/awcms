@@ -6,6 +6,7 @@ use App\Enums\PageEditorMode;
 use App\Enums\PageLocale;
 use App\Enums\PageStatus;
 use App\Services\ContentSanitizer;
+use App\Services\PageCss;
 use App\Services\PageHtmlSanitizer;
 use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 final class Page extends Model
 {
@@ -155,6 +157,18 @@ final class Page extends Model
                 $attributes = $page->getAttributes();
 
                 $rawContent = $attributes['content'] ?? null;
+
+                $rawCss = $attributes['custom_css'] ?? null;
+
+                if (is_string($rawCss)) {
+                    $cssError = app(PageCss::class)->error($rawCss);
+
+                    if ($cssError !== null) {
+                        throw ValidationException::withMessages(['customCss' => $cssError]);
+                    }
+
+                    $attributes['custom_css'] = trim($rawCss) !== '' ? trim($rawCss) : null;
+                }
 
                 $content = is_string($rawContent)
                     ? $rawContent

@@ -24,6 +24,8 @@ final class SchoolLeadershipPositionIndex extends Component
     #[Locked]
     public ?int $editingId = null;
 
+    public bool $showEditor = false;
+
     public string $nameEn = '';
 
     public string $nameSi = '';
@@ -62,11 +64,13 @@ final class SchoolLeadershipPositionIndex extends Component
         Gate::authorize('school-leaders.update');
 
         $this->resetForm();
+        $this->showEditor = true;
     }
 
     public function edit(int $id): void
     {
         Gate::authorize('school-leaders.view');
+        Gate::authorize('school-leaders.update');
 
         $position = SchoolLeadershipPosition::query()
             ->findOrFail($id);
@@ -82,6 +86,16 @@ final class SchoolLeadershipPositionIndex extends Component
         $this->isActive = $position->is_active;
 
         $this->resetValidation();
+        $this->showEditor = true;
+    }
+
+    public function closeEditor(): void
+    {
+        Gate::authorize('school-leaders.view');
+        Gate::authorize('school-leaders.update');
+
+        $this->showEditor = false;
+        $this->resetForm();
     }
 
     public function updatedSearch(): void
@@ -276,7 +290,7 @@ final class SchoolLeadershipPositionIndex extends Component
                 : 'Appointment type updated successfully.',
         );
 
-        $this->edit($position->id);
+        $this->closeEditor();
     }
 
     public function render(): View

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PastCommandant;
 use App\Models\SchoolLeader;
 use App\Services\ThemeViewResolver;
 use Illuminate\Contracts\View\View;
@@ -122,7 +123,7 @@ final class PastCommandantController extends Controller
             );
         }
 
-        return $query
+        $leaders = $query
             ->orderByRaw(
                 'CASE WHEN end_date IS NULL THEN 1 ELSE 0 END',
             )
@@ -130,6 +131,45 @@ final class PastCommandantController extends Controller
             ->orderBy('end_date')
             ->orderBy('id')
             ->get();
+
+        if (! Schema::hasTable('past_commandants')) {
+            return $leaders;
+        }
+
+        $legacyCommandants = PastCommandant::query()
+            ->with('image.variants')
+            ->get()
+            ->map(static function (PastCommandant $commandant): SchoolLeader {
+                $leader = new SchoolLeader([
+                    'role_key' => SchoolLeader::ROLE_COMMANDANT,
+                    'title_en' => 'Commandant',
+                    'title_si' => 'සේනාවිධායක',
+                    'name_en' => $commandant->name_en,
+                    'name_si' => $commandant->name_si,
+                    'start_date' => $commandant->from_date,
+                    'end_date' => $commandant->to_date,
+                    'image_media_id' => $commandant->image_media_id,
+                    'is_active' => true,
+                ]);
+                $leader->setRelation('image', $commandant->image);
+
+                return $leader;
+            });
+
+        return $leaders
+            ->concat($legacyCommandants)
+            ->sort(static function (SchoolLeader $left, SchoolLeader $right): int {
+                return [
+                    $left->end_date === null ? 1 : 0,
+                    $left->start_date?->getTimestamp() ?? 0,
+                    $left->id ?? 0,
+                ] <=> [
+                    $right->end_date === null ? 1 : 0,
+                    $right->start_date?->getTimestamp() ?? 0,
+                    $right->id ?? 0,
+                ];
+            })
+            ->values();
     }
 
     private function routeLocale(

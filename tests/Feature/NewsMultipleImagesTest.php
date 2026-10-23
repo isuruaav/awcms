@@ -38,7 +38,7 @@ test('public news renders attached images after the body in a four column deskto
 
     $response
         ->assertOk()
-        ->assertSee('lg:grid-cols-4', false)
+        ->assertSee('sos-article-gallery', false)
         ->assertSeeInOrder([
             'NEWS BODY MARKER',
             'News Gallery Image 1',
@@ -47,4 +47,11 @@ test('public news renders attached images after the body in a four column deskto
             'News Gallery Image 4',
             'News Gallery Image 5',
         ]);
+
+    $themeCss = file_get_contents(base_path('themes/school-of-signals/assets/css/theme.css'));
+
+    expect($themeCss)->toContain(
+        '.sos-article-gallery {',
+        'grid-template-columns: repeat(4, minmax(0, 1fr));',
+    );
 });

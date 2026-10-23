@@ -8,6 +8,14 @@
     .aw-gallery-description { max-width: 820px; margin: 0; color: #465570; font-size: 17px; line-height: 1.8; white-space: pre-line; overflow-wrap: anywhere; }
     .aw-gallery-main { padding-block: 36px 56px; }
     .aw-gallery-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+    /* Keep the index independent of utility styles overridden by the theme reset. */
+    .aw-gallery-albums { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .aw-gallery-index .aw-gallery-hero { text-align: center; }
+    .aw-gallery-index .aw-gallery-kicker { display: inline-block; padding: 4px 14px; border: 1px solid #bdd5ca; border-radius: 999px; background: #effbf5; }
+    .aw-gallery-index .aw-gallery-description { margin-inline: auto; }
+    .aw-gallery-albums .aw-gallery-card-meta { justify-content: space-between; font-size: 13px; }
+    .aw-gallery-album-type { padding: 3px 8px; border-radius: 6px; background: #edf1f6; color: #26344f; font-weight: 700; }
+    .aw-gallery-albums .aw-gallery-link { gap: 8px; padding-top: 12px; border-top: 1px solid #edf1f6; }
     .aw-gallery-card { min-width: 0; overflow: hidden; display: flex; flex-direction: column; background: #fff; border: 1px solid #dce5f2; border-radius: 18px; box-shadow: 0 12px 28px rgba(17,25,54,.06); }
     .aw-gallery-cover { display: block; width: 100%; aspect-ratio: 4 / 3; overflow: hidden; background: #e8eff6; color: #465570; text-decoration: none; }
     .aw-gallery-cover img { display: block; width: 100%; height: 100%; max-width: 100%; object-fit: cover; transition: transform .2s ease; }

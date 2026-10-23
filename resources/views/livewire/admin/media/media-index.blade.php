@@ -455,6 +455,10 @@
                                         && trim($asset->title) !== ''
                                             ? $asset->title
                                             : $asset->original_name;
+
+                                    $assetUrl = $view === 'active'
+                                        ? app(\App\Services\MediaUrlService::class)->namedOriginal($asset)
+                                        : null;
                                 @endphp
 
                                 <tr
@@ -528,6 +532,11 @@
                                         >
                                             {{ $asset->original_name }}
                                         </p>
+                                        @if ($assetUrl)
+                                            <x-admin.copy-path :path="$assetUrl"
+                                                :label="$asset->isImage() ? 'Public image path' : 'Public document path'"
+                                                class="mt-3 min-w-64 max-w-sm" />
+                                        @endif
                                     </td>
 
                                     <td class="px-5 py-4 align-top text-sm text-zinc-600">
@@ -573,39 +582,30 @@
                                         <div class="flex flex-wrap justify-end gap-2">
                                             @if ($view === 'active')
                                                 @can('media.delete')
-                                                    <button
+                                                    <x-admin.icon-action label="Move to Trash" icon="trash" tone="danger"
                                                         type="button"
                                                         wire:click="deleteMedia({{ $asset->id }})"
                                                         wire:confirm="Move this media asset to trash?"
                                                         wire:loading.attr="disabled"
                                                         wire:target="deleteMedia({{ $asset->id }})"
-                                                        class="inline-flex items-center justify-center rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-100 disabled:opacity-50"
-                                                    >
-                                                        Move to Trash
-                                                    </button>
+                                                    />
                                                 @endcan
                                             @else
                                                 @can('media.delete')
-                                                    <button
+                                                    <x-admin.icon-action label="Restore" icon="arrow-uturn-left" tone="success"
                                                         type="button"
                                                         wire:click="restoreMedia({{ $asset->id }})"
                                                         wire:loading.attr="disabled"
                                                         wire:target="restoreMedia({{ $asset->id }})"
-                                                        class="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
-                                                    >
-                                                        Restore
-                                                    </button>
+                                                    />
 
-                                                    <button
+                                                    <x-admin.icon-action label="Delete Permanently" icon="trash" tone="danger"
                                                         type="button"
                                                         wire:click="forceDeleteMedia({{ $asset->id }})"
                                                         wire:confirm="Permanently delete this media asset? This action cannot be undone."
                                                         wire:loading.attr="disabled"
                                                         wire:target="forceDeleteMedia({{ $asset->id }})"
-                                                        class="inline-flex items-center justify-center rounded-lg bg-red-700 px-3 py-2 text-xs font-bold text-white hover:bg-red-800 disabled:opacity-50"
-                                                    >
-                                                        Delete Permanently
-                                                    </button>
+                                                    />
                                                 @endcan
                                             @endif
                                         </div>

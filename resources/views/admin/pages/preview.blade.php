@@ -19,6 +19,10 @@
     <meta name="robots" content="{{ $robots }}">
 @endsection
 
+@push('styles')
+    <x-page.custom-styles :page="$page" />
+@endpush
+
 @section('content')
     <div class="border-b border-amber-200 bg-amber-50">
         <div class="mx-auto flex max-w-5xl flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
@@ -59,7 +63,7 @@
 
         @if ($safeContent !== '')
             @if ($page->getRawOriginal('editor_mode') === \App\Enums\PageEditorMode::Visual->value)
-                <div
+                <div id="cms-page-{{ $page->getKey() }}"
                     @class([
                         'mx-auto max-w-5xl px-5 sm:px-6 lg:px-8',
                         'pb-12 pt-4 lg:pb-16 lg:pt-6' => $page->show_title || $page->excerpt,
@@ -71,7 +75,7 @@
                     </div>
                 </div>
             @else
-                <div class="page-html-content">
+                <div id="cms-page-{{ $page->getKey() }}" class="page-html-content">
                     {!! $safeContent !!}
                 </div>
             @endif

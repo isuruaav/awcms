@@ -536,6 +536,32 @@ window.awcmsPageContentEditor = function awcmsPageContentEditor(
             this.finishVisualCommand();
         },
 
+        insertDocument() {
+            this.restoreSelection();
+
+            const url = window.prompt(
+                'Paste the document path copied from Document Uploads or the Media Library.',
+                '',
+            );
+
+            if (! url || url.trim() === '') {
+                return;
+            }
+
+            const label = window.prompt('Enter the document link text.', 'View document');
+
+            if (label === null) {
+                return;
+            }
+
+            const anchor = document.createElement('a');
+            anchor.setAttribute('href', url.trim());
+            anchor.textContent = label.trim() || 'View document';
+
+            this.insertElement(anchor, false);
+            this.finishVisualCommand();
+        },
+
         insertImage() {
             this.restoreSelection();
 

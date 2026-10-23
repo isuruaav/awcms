@@ -28,6 +28,8 @@ final class HeroSlideIndex extends Component
     #[Locked]
     public ?int $editingId = null;
 
+    public bool $showEditor = false;
+
     public string $imageMediaId = '';
 
     /*
@@ -61,6 +63,15 @@ final class HeroSlideIndex extends Component
     public function mount(): void
     {
         Gate::authorize('hero-slides.view');
+    }
+
+    public function startCreate(): void
+    {
+        Gate::authorize('hero-slides.view');
+        Gate::authorize('hero-slides.create');
+
+        $this->resetForm();
+        $this->showEditor = true;
     }
 
     public function save(): void
@@ -266,6 +277,7 @@ final class HeroSlideIndex extends Component
     public function edit(int $id): void
     {
         Gate::authorize('hero-slides.view');
+        Gate::authorize('hero-slides.update');
 
         $slide = HeroSlide::query()
             ->with('translations')
@@ -317,9 +329,15 @@ final class HeroSlideIndex extends Component
         $this->isActive = $slide->is_active;
 
         $this->resetValidation();
+        $this->showEditor = true;
     }
 
     public function cancelEdit(): void
+    {
+        $this->closeEditor();
+    }
+
+    public function closeEditor(): void
     {
         Gate::authorize('hero-slides.view');
 
@@ -585,6 +603,7 @@ final class HeroSlideIndex extends Component
     {
         $this->reset([
             'editingId',
+            'showEditor',
             'imageMediaId',
             'englishTitle',
             'englishSubtitle',

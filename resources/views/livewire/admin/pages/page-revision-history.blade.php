@@ -30,16 +30,9 @@
         </div>
 
         <div class="flex flex-wrap gap-2">
-            <a href="{{ route('admin.pages.preview', $page) }}" target="_blank" rel="noopener noreferrer"
-                class="inline-flex items-center
-                       justify-center rounded-xl
-                       border border-blue-200
-                       bg-blue-50 px-4 py-2.5
-                       text-sm font-semibold
-                       text-blue-700
-                       hover:bg-blue-100">
-                Preview Current
-            </a>
+            <x-admin.icon-action label="Preview Current" icon="eye" tone="neutral"
+                href="{{ route('admin.pages.preview', $page) }}" target="_blank" rel="noopener noreferrer"
+            />
 
             <a href="{{ route('admin.pages.index') }}" wire:navigate
                 class="inline-flex items-center
@@ -204,7 +197,8 @@
 
                         @can('pages.revisions.restore')
                             @if ($page->status === \App\Enums\PageStatus::Draft)
-                                <button type="button"
+                                <x-admin.icon-action label="Restore Revision" icon="arrow-uturn-left" tone="success"
+                                    type="button"
                                     wire:click="restoreRevision(
                                         {{ $selectedRevision->id }}
                                     )"
@@ -219,17 +213,7 @@
                                     wire:target="restoreRevision(
                                         {{ $selectedRevision->id }}
                                     )"
-                                    class="inline-flex items-center
-                                           justify-center rounded-xl
-                                           bg-violet-700
-                                           px-4 py-2.5
-                                           text-sm font-semibold
-                                           text-white
-                                           hover:bg-violet-800
-                                           disabled:cursor-not-allowed
-                                           disabled:opacity-60">
-                                    Restore Revision
-                                </button>
+                                />
                             @else
                                 <div
                                     class="rounded-xl border
@@ -442,6 +426,20 @@
                         </div>
                     </div>
                 </div>
+
+                <section class="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
+                    <h2 class="border-b border-zinc-200 px-5 py-4 font-semibold text-zinc-900">Custom CSS Comparison</h2>
+                    <div class="grid lg:grid-cols-2">
+                        <div class="min-w-0 border-b border-zinc-200 p-5 lg:border-b-0 lg:border-r">
+                            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-violet-700">Revision CSS</p>
+                            <pre class="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-zinc-50 p-4 text-xs">{{ $selectedRevision->custom_css ?: 'No custom CSS.' }}</pre>
+                        </div>
+                        <div class="min-w-0 p-5">
+                            <p class="mb-3 text-xs font-bold uppercase tracking-wide text-emerald-700">Current CSS</p>
+                            <pre class="max-h-96 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-zinc-50 p-4 text-xs">{{ $page->custom_css ?: 'No custom CSS.' }}</pre>
+                        </div>
+                    </div>
+                </section>
 
                 {{-- Content comparison --}}
                 <div

@@ -14,6 +14,8 @@ use App\Models\User;
 use App\Services\GalleryService;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 
@@ -77,14 +79,15 @@ it('allows an auditor to view the gallery index', function (): void {
     Livewire::test(GalleryIndex::class)->assertOk();
 });
 
-it('allows a content editor to create a gallery', function (): void {
+it('allows a content editor to create a gallery with an image', function (): void {
+    Storage::fake('public');
     $editor = galleryLivewireUser('Content Editor');
     $this->actingAs($editor);
 
     $component = Livewire::test(GalleryCreate::class)
         ->set('title', 'Livewire Gallery Test')
-        ->set('eventDate', '2026-08-25')
-        ->set('description', 'Gallery created through Livewire.')
+        ->set('titleSi', 'පුහුණු ගැලරිය')
+        ->set('images', [UploadedFile::fake()->image('gallery-cover.jpg', 1200, 800)])
         ->call('save')
         ->assertHasNoErrors();
 
@@ -92,7 +95,9 @@ it('allows a content editor to create a gallery', function (): void {
 
     expect($gallery->status)->toBe(GalleryStatus::Draft)
         ->and($gallery->slug)->toBe('livewire-gallery-test')
-        ->and($gallery->created_by)->toBe($editor->id);
+        ->and($gallery->created_by)->toBe($editor->id)
+        ->and(GalleryImage::query()->where('gallery_id', $gallery->id)->count())->toBe(1)
+        ->and($gallery->cover_media_id)->not->toBeNull();
 
     $component->assertRedirect(route('admin.galleries.edit', ['gallery' => $gallery->id]));
 });
@@ -242,7 +247,7 @@ it('prevents a media operator from publishing a gallery', function (): void {
     expect($gallery->refresh()->status)->toBe(GalleryStatus::Draft);
 });
 
-it('allows a publisher to publish and archive a gallery', function (): void {
+it('allows a publisher to publish and then unpublish a gallery', function (): void {
     $publisher = galleryLivewireUser('Publisher');
     $gallery = Gallery::factory()->create();
 
@@ -261,9 +266,11 @@ it('allows a publisher to publish and archive a gallery', function (): void {
     expect($gallery->status)->toBe(GalleryStatus::Published)
         ->and($gallery->published_by)->toBe($publisher->id);
 
-    $component->call('archive')->assertHasNoErrors();
+    // Archive was removed in favor of Unpublish in the current gallery workflow.
+    $component->call('unpublish')->assertHasNoErrors();
     $gallery->refresh();
 
-    expect($gallery->status)->toBe(GalleryStatus::Archived)
-        ->and($gallery->archived_by)->toBe($publisher->id);
+    expect($gallery->status)->toBe(GalleryStatus::Draft)
+        ->and($gallery->published_by)->toBeNull()
+        ->and($gallery->archived_by)->toBeNull();
 });

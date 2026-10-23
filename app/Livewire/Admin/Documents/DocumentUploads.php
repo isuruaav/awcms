@@ -29,6 +29,9 @@ final class DocumentUploads extends Component
     #[Locked]
     public ?int $editingId = null;
 
+    #[Locked]
+    public ?int $savedDocumentId = null;
+
     public string $title = '';
 
     public string $titleSi = '';
@@ -233,7 +236,7 @@ final class DocumentUploads extends Component
             $actor,
         );
 
-        app(DocumentUploadManager::class)->save(
+        $document = app(DocumentUploadManager::class)->save(
             actor: $actor,
             documentId: $this->editingId,
             title: $this->title,
@@ -241,6 +244,8 @@ final class DocumentUploads extends Component
             englishFile: $english,
             sinhalaFile: $sinhala,
         );
+
+        $this->savedDocumentId = (int) $document->getKey();
 
         $this->clearForm();
         $this->resetPage();
@@ -363,6 +368,9 @@ final class DocumentUploads extends Component
                 'documents' => $query->paginate(
                     $this->perPage,
                 ),
+                'savedDocument' => $this->savedDocumentId !== null
+                    ? Document::query()->published()->find($this->savedDocumentId)
+                    : null,
             ],
         )->layout(
             'components.layouts.admin',

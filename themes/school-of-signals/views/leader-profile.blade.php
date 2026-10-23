@@ -1,0 +1,47 @@
+@extends('theme-school-of-signals::layout')
+
+@section('title', $pageTitle)
+@section('meta_description', $metaDescription)
+
+@section('content')
+    @php
+        $leaderImage = $leader->image ? app(\App\Services\MediaUrlService::class)->mediumOrOriginal($leader->image) : null;
+        $leaderName = $leader->nameForLocale($currentLocale);
+    @endphp
+    <section class="section section-soft sos-leader-profile-page">
+        <div class="container">
+            <header class="sos-leader-profile-header">
+                @if ($leaderImage)
+                    <img src="{{ $leaderImage }}" alt="{{ $leaderName }}" width="200" height="250">
+                @endif
+                <div>
+                    <p class="kicker">{{ $leader->appointmentLabelForLocale($currentLocale) }}</p>
+                    <h1 class="title-lg">{{ $leaderName !== '' ? $leaderName : $pageTitle }}</h1>
+                    @if ($leader->rankLabelForLocale($currentLocale) !== '')
+                        <p class="lead">{{ $leader->rankLabelForLocale($currentLocale) }}</p>
+                    @endif
+                    @if ($leader->start_date)
+                        <p class="leader-period">{{ __('theme-school-of-signals::home.leadership.assumed_office') }}:
+                            <time datetime="{{ $leader->start_date->toDateString() }}">{{ $leader->start_date->format('d M Y') }}</time>
+                        </p>
+                    @endif
+                    @if ($leader->end_date)
+                        <p class="leader-period">{{ __('theme-school-of-signals::home.leadership.completed_service') }}:
+                            <time datetime="{{ $leader->end_date->toDateString() }}">{{ $leader->end_date->format('d M Y') }}</time>
+                        </p>
+                    @endif
+                    <p class="leader-rank">{{ __('theme-school-of-signals::home.leadership.'.($leader->isCurrentAppointment() ? 'present' : 'past')) }}</p>
+                </div>
+            </header>
+            @include('theme-school-of-signals::partials.leadership-profile-content')
+            <div class="sos-leadership-link">
+                <a class="btn btn-green" href="{{ $leader->isCurrentAppointment()
+                    ? ($currentLocale === 'en' ? route('school-leadership.index') : route('school-leadership.localized', ['locale' => $currentLocale]))
+                    : ($currentLocale === 'en' ? route('school-leadership.history') : route('school-leadership.history.localized', ['locale' => $currentLocale])) }}">
+                    <i class="fa-solid fa-arrow-left" aria-hidden="true"></i>
+                    <span>{{ __('theme-school-of-signals::home.leadership.'.($leader->isCurrentAppointment() ? 'view_all' : 'past_leadership')) }}</span>
+                </a>
+            </div>
+        </div>
+    </section>
+@endsection
