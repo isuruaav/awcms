@@ -20,7 +20,16 @@ test('super administrator sees the secure admin layout', function (): void {
         ->assertSee('AWCMS Dashboard')
         ->assertSee('Content Management')
         ->assertSee('Administration')
+        ->assertSee('School & Training')
         ->assertSee('Pages')
+        ->assertSee('fa-house', false)
+        ->assertSee('fa-graduation-cap', false)
+        ->assertSee('View public website')
+        ->assertSee('/themes/school-of-signals/assets/fonts/NotoSerifSinhala-Regular.woff2', false)
+        ->assertSee('AWCMS Noto Serif Sinhala', false)
+        ->assertSee('Find a section…')
+        ->assertSee('Skip to main content')
+        ->assertSee('aria-current="page"', false)
         ->assertSee('Users')
         ->assertSee('Activity Logs');
 });

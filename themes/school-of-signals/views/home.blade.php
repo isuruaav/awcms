@@ -14,6 +14,7 @@
             : route('pages.show.localized', ['locale' => $homeLocale, 'slug' => $slug]);
         $newsIndexUrl =
             $homeLocale === 'en' ? route('news.index') : route('news.index.localized', ['locale' => $homeLocale]);
+        $coursesUrl = \App\Services\CourseLocale::indexUrl($homeLocale);
         $contactUrl = route('pages.show.localized', ['locale' => $homeLocale, 'slug' => 'contact-us']);
         $contactAddress = $settings?->localized('address');
         $contactPhone = trim($settings?->phone_primary ?? '');
@@ -238,7 +239,7 @@
                     <div class="about-point"><i class="fa-solid fa-check-circle"></i>
                         {{ __('theme-school-of-signals::home.about.cyber_awareness') }}</div>
                 </div>
-                <a href="{{ $pageUrl('about-us') }}"
+                <a href="{{ $pageUrl('aboutus') }}"
                     class="btn btn-green"><span>{{ __('theme-school-of-signals::home.about.explore_more') }}</span><i
                         class="fa-solid fa-arrow-right"></i></a>
             </div>
@@ -476,7 +477,7 @@
             <h2>{{ __('theme-school-of-signals::home.cta.title') }}</h2>
             <p>{{ __('theme-school-of-signals::home.cta.description') }}</p>
             <div class="cta-actions">
-                <a class="btn btn-green" href="{{ $pageUrl('courses') }}"><i
+                <a class="btn btn-green" href="{{ $coursesUrl }}"><i
                         class="fa-solid fa-graduation-cap"></i><span>{{ __('theme-school-of-signals::home.cta.courses') }}</span></a>
                 <a class="btn btn-blue" href="{{ $contactUrl }}"><i
                         class="fa-solid fa-envelope"></i><span>{{ __('theme-school-of-signals::home.cta.contact') }}</span></a>

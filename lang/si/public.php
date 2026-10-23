@@ -1,6 +1,8 @@
 <?php
 
 return [
+    'publications' => 'ප්‍රකාශන',
+    'courses' => 'පාඨමාලා',
     'home' => 'මුල් පිටුව',
     'news' => 'පුවත්',
     'gallery' => 'ඡායාරූප ගැලරිය',

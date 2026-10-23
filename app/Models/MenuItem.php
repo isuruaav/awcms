@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\MenuLocale;
 use App\Enums\NewsLocale;
 use App\Enums\PageLocale;
+use App\Services\CourseLocale;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -118,6 +119,10 @@ final class MenuItem extends Model
         if ($this->type === 'route' && is_string($this->route_name) && $this->route_name !== '') {
             if ($this->route_name === 'news.index' && $menuLocale !== MenuLocale::English) {
                 return route('news.index.localized', ['locale' => $menuLocale->value]);
+            }
+
+            if ($this->route_name === 'courses.index') {
+                return CourseLocale::indexUrl($menuLocale->value);
             }
 
             return route($this->route_name);

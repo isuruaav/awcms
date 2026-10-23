@@ -75,14 +75,15 @@
     unicode-range: U+0000-0D7F, U+0E00-10FFFF;
 }
 
-/* Sinhala */
-/* @font-face {
+/* Sinhala glyphs are served locally so rendering does not depend on client fonts. */
+@font-face {
     font-family: "AWCMS Noto Serif Sinhala";
     src: url("../fonts/NotoSerifSinhala-Regular.woff2") format("woff2");
     font-weight: 400;
     font-style: normal;
     font-display: swap;
-} */
+    unicode-range: U+0D80-0DFF, U+200C-200D;
+}
 
 
 /* Public website typography */
@@ -126,7 +127,7 @@ body :where(
 :root {
     --awcms-font-family:
         "AWCMS Exo 2",
-        /* "AWCMS Noto Serif Sinhala", */
+        "AWCMS Noto Serif Sinhala",
         sans-serif;
 }
 
@@ -3703,6 +3704,66 @@ img.image-fallback {
   margin-top: 32px;
 }
 
+.school-news-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.school-news-page-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 1px solid #ccd9e6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #26344f;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.6;
+  text-decoration: none;
+}
+
+.school-news-page-button[aria-current="page"] {
+  border-color: #006b39;
+  background: #006b39;
+  color: #ffffff;
+}
+
+.school-news-page-button[aria-disabled="true"] {
+  background: #edf1f6;
+  color: #5f6b7f;
+}
+
+.school-news-page-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.school-news-page-gap {
+  padding: 8px 4px;
+}
+
+.school-news-page-count {
+  display: none;
+  color: #465570;
+  font-size: 14px;
+}
+
+.school-news-page-button[href]:hover {
+  border-color: #007634;
+  background: #effbf5;
+  color: #006b39;
+}
+
 .school-news-index-page a:focus-visible {
   outline: 3px solid #0877a5;
   outline-offset: 4px;
@@ -3716,6 +3777,24 @@ img.image-fallback {
 }
 
 @media (max-width: 640px) {
+  .school-news-pager {
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .school-news-page-numbers {
+    display: none;
+  }
+
+  .school-news-page-count {
+    display: inline;
+  }
+
+  .school-news-page-button {
+    padding-inline: 11px;
+    font-size: 14px;
+  }
+
   .school-news-index-page .school-news-container {
     width: calc(100% - 32px);
   }

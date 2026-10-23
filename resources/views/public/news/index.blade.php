@@ -136,9 +136,9 @@
                     </div>
 
                     @if ($news->hasPages())
-                        <nav class="school-news-pagination" aria-label="News pagination">
-                            {{ $news->links() }}
-                        </nav>
+                        <div class="school-news-pagination">
+                            {{ $news->onEachSide(1)->links('public.news.pagination') }}
+                        </div>
                     @endif
                 @endif
             </div>

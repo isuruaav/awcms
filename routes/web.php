@@ -7,16 +7,20 @@ use App\Http\Controllers\PastChiefInstructorController;
 use App\Http\Controllers\PastCommandantController;
 use App\Http\Controllers\PastSergeantMajorController;
 use App\Http\Controllers\PublicContactController;
+use App\Http\Controllers\PublicCourseController;
 use App\Http\Controllers\PublicDocumentController;
 use App\Http\Controllers\PublicGalleryController;
 use App\Http\Controllers\PublicHomeController;
 use App\Http\Controllers\PublicMediaFileController;
 use App\Http\Controllers\PublicNewsController;
 use App\Http\Controllers\PublicPageController;
+use App\Http\Controllers\PublicPublicationController;
 use App\Http\Controllers\PublicRedirectController;
 use App\Http\Controllers\PublicSchoolLeadershipController;
 use App\Livewire\Admin\Documents\DocumentUploads;
+use App\Livewire\Admin\Courses\CourseIndex;
 use App\Livewire\Admin\HeroSlides\HeroSlideIndex;
+use App\Livewire\Admin\Publications\PublicationUploads;
 use App\Livewire\Admin\SchoolLeaders\SchoolLeaderIndex;
 use App\Livewire\Admin\SchoolLeaders\SchoolLeaderProfiles;
 use Illuminate\Support\Facades\Route;
@@ -222,6 +226,15 @@ Route::get(
 | - Documents with a valid current public PDF version
 |
 */
+
+Route::get('/publications', [PublicPublicationController::class, 'index'])->name('publications.index');
+Route::get('/{locale}/publications', [PublicPublicationController::class, 'index'])
+    ->whereIn('locale', ['en', 'si'])->name('publications.index.localized');
+Route::get('/courses', [PublicCourseController::class, 'index'])->name('courses.index');
+Route::get('/{locale}/courses', [PublicCourseController::class, 'index'])
+    ->whereIn('locale', ['en', 'si'])->name('courses.index.localized');
+Route::get('/publications/{publication:uuid}/pdf', [PublicPublicationController::class, 'pdf'])->name('publications.pdf');
+Route::get('/publications/{publication:uuid}/cover', [PublicPublicationController::class, 'cover'])->name('publications.cover');
 
 Route::get(
     '/documents',
@@ -753,6 +766,15 @@ Route::middleware([
 | Documents
 |--------------------------------------------------------------------------
 */
+            Route::livewire('/publications', PublicationUploads::class)
+                ->middleware('can:documents.view')->name('publications.index');
+            Route::livewire('/courses', CourseIndex::class)
+                ->middleware('can:settings.manage')->name('courses.index');
+            Route::get('/publications/{publication:uuid}/pdf', [PublicPublicationController::class, 'previewPdf'])
+                ->middleware('can:documents.view')->name('publications.pdf');
+            Route::get('/publications/{publication:uuid}/cover', [PublicPublicationController::class, 'previewCover'])
+                ->middleware('can:documents.view')->name('publications.cover');
+
             Route::livewire(
                 '/documents',
                 DocumentUploads::class,

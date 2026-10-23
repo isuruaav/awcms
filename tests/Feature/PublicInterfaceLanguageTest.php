@@ -43,6 +43,15 @@ it('localizes the public footer header contact section and navigation links', fu
     ['si', 'කඩිනම් සබැඳි', 'සියලු හිමිකම් ඇවිරිණි.', 'වැඩිදුර සහාය අවශ්‍යද?'],
 ]);
 
+it('serves the local Sinhala font from the application base path on the generic public layout', function (): void {
+    config()->set('awcms.active_theme', 'unavailable-theme');
+
+    $this->get(route('home.localized', ['locale' => 'si']))
+        ->assertOk()
+        ->assertSee('/themes/school-of-signals/assets/fonts/NotoSerifSinhala-Regular.woff2', false)
+        ->assertSee('AWCMS Noto Serif Sinhala', false);
+});
+
 it('localizes news listings empty states and article controls', function (): void {
     $indexUrl = route('news.index.localized', ['locale' => 'si']);
     $this->get($indexUrl)->assertOk()->assertSeeText('පුවත් නොමැත')->assertDontSeeText('No News Available');
@@ -61,8 +70,9 @@ it('localizes news listings empty states and article controls', function (): voi
 it('localizes pagination on sinhala news pages', function (): void {
     News::factory()->count(13)->published()->create(['locale' => 'si']);
     $this->get(route('news.index.localized', ['locale' => 'si']))->assertOk()
-        ->assertSeeText('පෙන්වන්නේ')->assertSeeText('ප්‍රතිඵල අතරින්')
         ->assertSee('aria-label="'.__('public.news_page.pagination', [], 'si').'"', false)
+        ->assertSeeText('ඊළඟ')->assertSeeText('1 / 2')
+        ->assertSee('/si/news?page=2', false)
         ->assertDontSeeText('Showing')->assertDontSeeText('results');
 });
 

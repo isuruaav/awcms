@@ -132,3 +132,29 @@ test('active news list exposes only the simplified page style actions', function
         ->assertDontSee('Return')
         ->assertDontSee('Archive');
 });
+
+test('news list displays language codes and icon-only statuses', function (): void {
+    $administrator = User::factory()->create();
+    $administrator->assignRole('Site Administrator');
+
+    News::factory()->create([
+        'title' => 'English draft article',
+        'locale' => 'en',
+        'status' => NewsStatus::Draft->value,
+    ]);
+    News::factory()->published()->create([
+        'title' => 'සිංහල පළ කළ ලිපිය',
+        'locale' => 'si',
+    ]);
+
+    Livewire::actingAs($administrator)
+        ->test(NewsIndex::class)
+        ->assertSee('EN')
+        ->assertSee('SI')
+        ->assertSee('title="English"', false)
+        ->assertSee('title="සිංහල"', false)
+        ->assertSee('fa-file-lines', false)
+        ->assertSee('fa-globe', false)
+        ->assertSee('title="Draft" aria-label="Draft"', false)
+        ->assertSee('title="Published" aria-label="Published"', false);
+});

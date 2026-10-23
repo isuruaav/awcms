@@ -76,6 +76,33 @@ test('pages can be filtered by workflow status', function (): void {
         ->assertDontSee('Draft Page');
 });
 
+test('pages index displays language codes and icon-only statuses', function (): void {
+    $editor = User::factory()->create();
+    $editor->assignRole('Content Editor');
+
+    Page::factory()->create([
+        'title' => 'English Draft Page',
+        'locale' => 'en',
+        'status' => PageStatus::Draft->value,
+    ]);
+
+    Page::factory()->published()->create([
+        'title' => 'සිංහල පළ කළ පිටුව',
+        'locale' => 'si',
+    ]);
+
+    Livewire::actingAs($editor)
+        ->test(PageIndex::class)
+        ->assertSee('EN')
+        ->assertSee('SI')
+        ->assertSee('title="English"', false)
+        ->assertSee('title="සිංහල"', false)
+        ->assertSee('fa-file-lines', false)
+        ->assertSee('fa-globe', false)
+        ->assertSee('title="Draft" aria-label="Draft"', false)
+        ->assertSee('title="Published" aria-label="Published"', false);
+});
+
 test('invalid page filters are normalised', function (): void {
     $editor = User::factory()->create();
     $editor->assignRole('Content Editor');

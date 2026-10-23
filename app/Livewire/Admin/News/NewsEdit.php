@@ -23,6 +23,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -1701,16 +1702,11 @@ final class NewsEdit extends Component
 
     private function assertDraft(News $news): void
     {
-
-        abort_if(
-
-            $this->statusOf($news) !== NewsStatus::Draft,
-
-            409,
-
-            'Unpublish this article before editing it.',
-
-        );
+        if ($this->statusOf($news) !== NewsStatus::Draft) {
+            throw ValidationException::withMessages([
+                'news' => 'Unpublish this article before editing it.',
+            ]);
+        }
 
     }
 

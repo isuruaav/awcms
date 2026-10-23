@@ -242,15 +242,18 @@
                     @forelse ($pages as $page)
                         @php
                             $statusClasses = match ($page->status) {
-                                \App\Enums\PageStatus::Draft => 'bg-zinc-100 text-zinc-700',
-
-                                \App\Enums\PageStatus::Submitted => 'bg-blue-50 text-blue-700',
-
-                                \App\Enums\PageStatus::Approved => 'bg-violet-50 text-violet-700',
-
-                                \App\Enums\PageStatus::Published => 'bg-emerald-50 text-emerald-700',
-
-                                \App\Enums\PageStatus::Archived => 'bg-amber-50 text-amber-700',
+                                \App\Enums\PageStatus::Draft => 'bg-zinc-100 text-zinc-700 ring-zinc-200',
+                                \App\Enums\PageStatus::Submitted => 'bg-blue-50 text-blue-700 ring-blue-200',
+                                \App\Enums\PageStatus::Approved => 'bg-violet-50 text-violet-700 ring-violet-200',
+                                \App\Enums\PageStatus::Published => 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+                                \App\Enums\PageStatus::Archived => 'bg-amber-50 text-amber-700 ring-amber-200',
+                            };
+                            $statusIcon = match ($page->status) {
+                                \App\Enums\PageStatus::Draft => 'fa-regular fa-file-lines',
+                                \App\Enums\PageStatus::Submitted => 'fa-regular fa-paper-plane',
+                                \App\Enums\PageStatus::Approved => 'fa-regular fa-circle-check',
+                                \App\Enums\PageStatus::Published => 'fa-solid fa-globe',
+                                \App\Enums\PageStatus::Archived => 'fa-solid fa-box-archive',
                             };
                         @endphp
 
@@ -302,21 +305,20 @@
                             </td>
 
                             <td class="whitespace-nowrap px-5 py-4">
-                                <span class="inline-flex rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
-                                    {{ $page->locale->nativeLabel() }}
+                                <span @class([
+                                    'inline-flex min-w-12 justify-center rounded-md border px-2.5 py-1 text-[11px] font-bold tracking-wide',
+                                    'border-blue-200 bg-blue-50 text-blue-700' => $page->locale === \App\Enums\PageLocale::English,
+                                    'border-emerald-200 bg-emerald-50 text-emerald-700' => $page->locale === \App\Enums\PageLocale::Sinhala,
+                                    'border-violet-200 bg-violet-50 text-violet-700' => $page->locale === \App\Enums\PageLocale::Tamil,
+                                ]) title="{{ $page->locale->nativeLabel() }}">
+                                    {{ strtoupper($page->locale->value) }}
                                 </span>
-
-                                <p class="mt-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
-                                    {{ $page->locale->value }}
-                                </p>
                             </td>
 
                             <td class="whitespace-nowrap px-5 py-4">
-                                <span
-                                    class="inline-flex rounded-full
-                                           px-2.5 py-1 text-xs font-semibold
-                                           {{ $statusClasses }}">
-                                    {{ $page->status->label() }}
+                                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full ring-1 ring-inset {{ $statusClasses }}"
+                                    title="{{ $page->status->label() }}" aria-label="{{ $page->status->label() }}">
+                                    <i class="{{ $statusIcon }}" aria-hidden="true"></i>
                                 </span>
                             </td>
 

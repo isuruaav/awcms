@@ -1,4 +1,5 @@
 <x-admin.nav-link :href="route('admin.contact-messages.index')" :active="$active"
+    icon="fa-regular fa-envelope" x-show="!navSearch.trim() || $el.innerText.toLowerCase().includes(navSearch.trim().toLowerCase())"
     wire:poll.15s.visible="refreshUnreadCount">
     <span>Contact Messages</span>
     <span class="ml-auto" aria-live="polite" aria-atomic="true">

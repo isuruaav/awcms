@@ -6,6 +6,8 @@ return [
     'gallery' => 'Gallery',
     'galleries' => 'Galleries',
     'documents' => 'Documents',
+    'publications' => 'Publications',
+    'courses' => 'Courses',
     'contact' => 'Contact',
     'about' => 'About Us',
     'history' => 'History',

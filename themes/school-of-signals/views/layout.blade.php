@@ -177,7 +177,9 @@
                         <a href="{{ $publicHomeUrl }}">{{ __('public.home') }}</a>
                         <a
                             href="{{ $publicNewsUrl }}">{{ __('public.news') }}</a>
+                        <a href="{{ \App\Models\Publication::indexUrl($currentLocale) }}">{{ __('public.publications') }}</a>
                         <a href="{{ \App\Services\GalleryLocale::indexUrl($currentLocale) }}">{{ $currentLocale === 'si' ? 'ඡායාරූප ගැලරිය' : 'Gallery' }}</a>
+                        <a href="{{ \App\Services\CourseLocale::indexUrl($currentLocale) }}">{{ __('public.courses') }}</a>
                     @endif
 
                     <div class="drop">
@@ -280,7 +282,10 @@
                         <a href="{{ $publicHomeUrl }}"><span>{{ __('public.home') }}</span><i class="fa-solid fa-arrow-right"></i></a>
                         <a href="{{ $publicNewsUrl }}"><span>{{ __('public.news') }}</span><i
                                 class="fa-solid fa-arrow-right"></i></a>
+                        <a href="{{ \App\Models\Publication::indexUrl($currentLocale) }}"><span>{{ __('public.publications') }}</span><i class="fa-solid fa-arrow-right" aria-hidden="true"></i></a>
                         <a href="{{ \App\Services\GalleryLocale::indexUrl($currentLocale) }}"><span>{{ $currentLocale === 'si' ? 'ඡායාරූප ගැලරිය' : 'Gallery' }}</span><i
+                                class="fa-solid fa-arrow-right"></i></a>
+                        <a href="{{ \App\Services\CourseLocale::indexUrl($currentLocale) }}"><span>{{ __('public.courses') }}</span><i
                                 class="fa-solid fa-arrow-right"></i></a>
                     @endif
 

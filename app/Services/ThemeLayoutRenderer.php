@@ -8,6 +8,7 @@ use App\Enums\ThemeLayoutStatus;
 use App\Models\Menu;
 use App\Models\MenuItem;
 use App\Models\Page;
+use App\Models\Publication;
 use App\Models\SiteSetting;
 use App\Models\SocialLink;
 use App\Models\ThemeLayout;
@@ -224,7 +225,31 @@ final class ThemeLayoutRenderer
             $html .= $this->menuItem($item, $locale);
         }
 
+        if (! $this->hasCoursesLink($items, $locale)) {
+            $html .= '<li class="cms-menu-item"><a href="'
+                .$this->escape($this->safeHref(CourseLocale::indexUrl($locale)))
+                .'">'.$this->escape(__('public.courses', [], $locale)).'</a></li>';
+        }
+
         return $html.'</ul>';
+    }
+
+    /** @param iterable<MenuItem> $items */
+    private function hasCoursesLink(iterable $items, string $locale): bool
+    {
+        foreach ($items as $item) {
+            $label = trim($item->labelForLocale($locale));
+            $path = parse_url((string) $item->url, PHP_URL_PATH);
+            $isCourseLink = in_array(mb_strtolower($label), ['courses', 'පාඨමාලා'], true)
+                || in_array($item->route_name, ['courses.index', 'courses.index.localized'], true)
+                || (is_string($path) && preg_match('~/(?:si/)?courses/?\z~', $path) === 1);
+
+            if ($isCourseLink || $this->hasCoursesLink($item->children, $locale)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function menuItem(MenuItem $item, string $locale): string
@@ -289,6 +314,8 @@ final class ThemeLayoutRenderer
             __('public.home', [], $locale) => $locale === 'en' ? route('home') : route('home.localized', ['locale' => $locale]),
             __('public.news', [], $locale) => $newsUrl,
             __('public.gallery', [], $locale) => GalleryLocale::indexUrl($locale),
+            __('public.publications', [], $locale) => Publication::indexUrl($locale),
+            __('public.courses', [], $locale) => CourseLocale::indexUrl($locale),
         ];
 
         $html = '<ul class="cms-primary-menu">';

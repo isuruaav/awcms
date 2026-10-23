@@ -328,6 +328,23 @@ test(
             ->assertSee(
                 'Published',
             );
+
+        Livewire::test(
+            NewsEdit::class,
+            [
+                'news' => $news,
+            ],
+        )
+            ->call('save')
+            ->assertHasErrors([
+                'news' => 'Unpublish this article before editing it.',
+            ])
+            ->assertSee(
+                'Editing locked',
+            )
+            ->assertSee(
+                'Unpublish this article before editing it.',
+            );
     },
 );
 
